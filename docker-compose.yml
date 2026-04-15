@@ -1,0 +1,98 @@
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: huigui-nginx
+    restart: unless-stopped
+    depends_on:
+      - app
+      - api
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ${UPLOADS_DIR:-./storage/uploads}:/var/www/uploads
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+
+  app:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+      args:
+        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-洄归生态客户管理与报价协同系统}
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-/api}
+    container_name: huigui-app
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-洄归生态客户管理与报价协同系统}
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-/api}
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: huigui-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    expose:
+      - "3001"
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      NODE_ENV: production
+      PORT: 3001
+      API_PORT: 3001
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost}
+      JWT_SECRET: ${JWT_SECRET}
+      DB_HOST: ${DB_HOST:-mysql}
+      DB_PORT: ${DB_PORT:-3306}
+      DATABASE_URL: ${DATABASE_URL:-}
+      DB_WAIT_TIMEOUT: ${DB_WAIT_TIMEOUT:-180}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-huigui_crm}
+      MYSQL_USER: ${MYSQL_USER:-huigui}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-huigui123}
+      DEFAULT_ADMIN_USERNAME: ${DEFAULT_ADMIN_USERNAME:-admin}
+      DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:-Huigui@123}
+      PDF_FONT_PATH: ${PDF_FONT_PATH:-/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc}
+      LOCAL_UPLOAD_DIR: ${LOCAL_UPLOAD_DIR:-/app/storage/uploads}
+      CONTRACT_REMINDER_DAYS: ${CONTRACT_REMINDER_DAYS:-7}
+      COS_REGION: ${COS_REGION:-}
+      COS_BUCKET: ${COS_BUCKET:-}
+      COS_SECRET_ID: ${COS_SECRET_ID:-}
+      COS_SECRET_KEY: ${COS_SECRET_KEY:-}
+      COS_UPLOAD_PREFIX: ${COS_UPLOAD_PREFIX:-uploads}
+      COS_UPLOAD_DURATION_SECONDS: ${COS_UPLOAD_DURATION_SECONDS:-1800}
+    volumes:
+      - ${UPLOADS_DIR:-./storage/uploads}:${LOCAL_UPLOAD_DIR:-/app/storage/uploads}
+
+  mysql:
+    image: mysql:8.0
+    container_name: huigui-mysql
+    restart: unless-stopped
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123456}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-huigui_crm}
+      MYSQL_USER: ${MYSQL_USER:-huigui}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-huigui123}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - ${MYSQL_DATA_DIR:-./storage/mysql}:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root123456}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s

@@ -1,0 +1,495 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum CustomerStatus {
+  UNCONTACTED
+  CONTACTED
+  MET
+  COOPERATING
+  PAUSED
+}
+
+enum ProductStatus {
+  ENABLED
+  DISABLED
+}
+
+enum OutputTemplateType {
+  AGRICULTURE_PLAN
+  PRODUCT_QUOTE
+  SOLUTION_QUOTE
+}
+
+enum QuotationType {
+  AGRICULTURE
+  INDUSTRY
+  SERVICE
+  BREEDING
+  GENERAL
+}
+
+enum QuotationStatus {
+  DRAFT
+  GENERATED
+  SENT
+  WON
+  LOST
+}
+
+enum ContractStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  TERMINATED
+}
+
+enum PermissionLevel {
+  ADMIN_ONLY
+  ADMIN_MANAGER
+  OWNER_ONLY
+  ALL_VISIBLE
+}
+
+enum TaskStatus {
+  TODO
+  DOING
+  DONE
+  CANCELED
+}
+
+enum TaskType {
+  FOLLOW_UP
+  MEETING
+  PLAN
+  CONTRACT
+  QUOTATION
+  OTHER
+}
+
+enum NotificationChannel {
+  SYSTEM
+  WECOM
+  EMAIL
+}
+
+enum NotificationSendStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model User {
+  id            String         @id @default(cuid())
+  name          String
+  mobile        String?        @db.VarChar(32)
+  email         String?        @db.VarChar(128)
+  passwordHash  String?        @db.VarChar(255)
+  wecomUserId   String?        @unique @db.VarChar(128)
+  wecomName     String?        @db.VarChar(128)
+  wecomAvatar   String?        @db.VarChar(500)
+  department    String?        @db.VarChar(128)
+  status        UserStatus     @default(ACTIVE)
+  roleId        String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  role          Role           @relation(fields: [roleId], references: [id])
+  customers     Customer[]     @relation("CustomerOwner")
+  followups     CustomerFollowup[]
+  quotations    Quotation[]
+  contracts     Contract[]
+  assignedTasks Task[]         @relation("TaskAssignee")
+  createdTasks  Task[]         @relation("TaskCreator")
+  comments      TaskComment[]
+  notifications Notification[]
+  files         FileRecord[]
+  productParseLogs ProductParseLog[]
+  auditLogs     AuditLog[]
+
+  @@index([roleId])
+  @@index([status])
+}
+
+model Role {
+  id              String           @id @default(cuid())
+  name            String
+  code            String           @unique @db.VarChar(64)
+  description     String?          @db.VarChar(255)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  users           User[]
+  rolePermissions RolePermission[]
+}
+
+model Permission {
+  id              String           @id @default(cuid())
+  code            String           @unique @db.VarChar(64)
+  name            String
+  module          String           @db.VarChar(64)
+  createdAt       DateTime         @default(now())
+
+  rolePermissions RolePermission[]
+}
+
+model RolePermission {
+  id            String      @id @default(cuid())
+  roleId        String
+  permissionId  String
+
+  role          Role        @relation(fields: [roleId], references: [id])
+  permission    Permission  @relation(fields: [permissionId], references: [id])
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+model IndustryGroup {
+  id            String             @id @default(cuid())
+  name          String             @unique
+  sortOrder     Int                @default(0)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  subgroups     IndustrySubgroup[]
+  customers     Customer[]
+  products      Product[]
+  quotations    Quotation[]
+}
+
+model IndustrySubgroup {
+  id            String         @id @default(cuid())
+  groupId       String
+  name          String
+  sortOrder     Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  group         IndustryGroup  @relation(fields: [groupId], references: [id])
+  customers     Customer[]
+  products      Product[]
+
+  @@unique([groupId, name])
+  @@index([groupId])
+}
+
+model Customer {
+  id                   String             @id @default(cuid())
+  customerName         String
+  companyName          String?            @db.VarChar(255)
+  contactName          String?            @db.VarChar(128)
+  mobile               String?            @db.VarChar(32)
+  wechatId             String?            @db.VarChar(128)
+  email                String?            @db.VarChar(128)
+  province             String?            @db.VarChar(64)
+  city                 String?            @db.VarChar(64)
+  district             String?            @db.VarChar(64)
+  address              String?            @db.VarChar(255)
+  source               String?            @db.VarChar(128)
+  industryGroupId      String?
+  industrySubgroupId   String?
+  status               CustomerStatus     @default(UNCONTACTED)
+  ownerUserId          String
+  cooperationDirection String?            @db.Text
+  cooperationContent   String?            @db.Text
+  estimatedAmount      Decimal?           @db.Decimal(12, 2)
+  dealProbability      Int?
+  remark               String?            @db.Text
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  owner                User               @relation("CustomerOwner", fields: [ownerUserId], references: [id])
+  industryGroup        IndustryGroup?     @relation(fields: [industryGroupId], references: [id])
+  industrySubgroup     IndustrySubgroup?  @relation(fields: [industrySubgroupId], references: [id])
+  followups            CustomerFollowup[]
+  quotations           Quotation[]
+  contracts            Contract[]
+  tasks                Task[]
+  agriculturePlans     AgriculturePlan[]
+
+  @@index([ownerUserId])
+  @@index([status])
+  @@index([industryGroupId])
+  @@index([industrySubgroupId])
+  @@index([province, city])
+}
+
+model CustomerFollowup {
+  id             String      @id @default(cuid())
+  customerId     String
+  followupDate   DateTime
+  followupType   String      @db.VarChar(64)
+  content        String      @db.Text
+  keyPoints      String?     @db.Text
+  nextAction     String?     @db.Text
+  nextContactAt  DateTime?
+  needReminder   Boolean     @default(false)
+  creatorUserId  String
+  createdAt      DateTime    @default(now())
+
+  customer       Customer    @relation(fields: [customerId], references: [id])
+  creator        User        @relation(fields: [creatorUserId], references: [id])
+
+  @@index([customerId])
+  @@index([creatorUserId])
+  @@index([followupDate])
+  @@index([nextContactAt])
+}
+
+model Product {
+  id                   String              @id @default(cuid())
+  name                 String
+  displayName          String
+  industryGroupId      String?
+  industrySubgroupId   String?
+  sku                  String?             @db.VarChar(64)
+  spec                 String?             @db.VarChar(128)
+  unit                 String?             @db.VarChar(32)
+  costPrice            Decimal?            @db.Decimal(12, 2)
+  salePrice            Decimal?            @db.Decimal(12, 2)
+  enterpriseStandardNo String?             @db.VarChar(128)
+  intro                String?             @db.Text
+  scenarios            String?             @db.Text
+  labelText            String?             @db.Text
+  labelImageUrl        String?             @db.VarChar(500)
+  productImageUrl      String?             @db.VarChar(500)
+  quoteEnabled         Boolean             @default(true)
+  employeeVisible      Boolean             @default(true)
+  customerVisible      Boolean             @default(true)
+  outputTemplateType   OutputTemplateType
+  remark               String?             @db.Text
+  status               ProductStatus       @default(ENABLED)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  industryGroup        IndustryGroup?      @relation(fields: [industryGroupId], references: [id])
+  industrySubgroup     IndustrySubgroup?   @relation(fields: [industrySubgroupId], references: [id])
+  quotationItems       QuotationItem[]
+
+  @@index([industryGroupId])
+  @@index([industrySubgroupId])
+  @@index([status])
+  @@index([quoteEnabled])
+}
+
+model Quotation {
+  id                    String           @id @default(cuid())
+  quotationNo           String           @unique @db.VarChar(64)
+  customerId            String
+  industryGroupId       String?
+  quotationType         QuotationType
+  totalOriginalAmount   Decimal          @db.Decimal(12, 2)
+  totalDiscountedAmount Decimal          @db.Decimal(12, 2)
+  discountType          String?          @db.VarChar(32)
+  discountValue         Decimal?         @db.Decimal(12, 2)
+  discountReason        String?          @db.Text
+  remark                String?          @db.Text
+  pdfUrl                String?          @db.VarChar(500)
+  shareToken            String?          @unique @db.VarChar(128)
+  creatorUserId         String
+  status                QuotationStatus  @default(DRAFT)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  customer              Customer         @relation(fields: [customerId], references: [id])
+  industryGroup         IndustryGroup?   @relation(fields: [industryGroupId], references: [id])
+  creator               User             @relation(fields: [creatorUserId], references: [id])
+  items                 QuotationItem[]
+  agriculturePlan       AgriculturePlan?
+  tasks                 Task[]
+
+  @@index([customerId])
+  @@index([creatorUserId])
+  @@index([industryGroupId])
+  @@index([quotationType])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model QuotationItem {
+  id               String    @id @default(cuid())
+  quotationId      String
+  productId        String?
+  itemName         String
+  quantity         Decimal   @db.Decimal(12, 2)
+  unitPrice        Decimal   @db.Decimal(12, 2)
+  originalAmount   Decimal   @db.Decimal(12, 2)
+  discountedAmount Decimal   @db.Decimal(12, 2)
+  detailJson       Json?
+
+  quotation        Quotation @relation(fields: [quotationId], references: [id])
+  product          Product?  @relation(fields: [productId], references: [id])
+
+  @@index([quotationId])
+  @@index([productId])
+}
+
+model AgriculturePlan {
+  id                    String      @id @default(cuid())
+  quotationId           String      @unique
+  customerId            String
+  totalOriginalAmount   Decimal     @db.Decimal(12, 2)
+  totalDiscountedAmount Decimal     @db.Decimal(12, 2)
+  detailJson            Json
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  quotation             Quotation   @relation(fields: [quotationId], references: [id])
+  customer              Customer    @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+}
+
+model Contract {
+  id              String           @id @default(cuid())
+  customerId      String
+  contractName    String
+  contractNo      String?          @db.VarChar(128)
+  contractType    String?          @db.VarChar(64)
+  signedAt        DateTime?
+  effectiveAt     DateTime?
+  expiredAt       DateTime?
+  amount          Decimal?         @db.Decimal(12, 2)
+  status          ContractStatus   @default(DRAFT)
+  permissionLevel PermissionLevel
+  fileUrl         String?          @db.VarChar(500)
+  remark          String?          @db.Text
+  creatorUserId   String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  customer        Customer         @relation(fields: [customerId], references: [id])
+  creator         User             @relation(fields: [creatorUserId], references: [id])
+
+  @@index([customerId])
+  @@index([creatorUserId])
+  @@index([status])
+  @@index([expiredAt])
+}
+
+model Task {
+  id              String       @id @default(cuid())
+  title           String
+  type            TaskType
+  customerId      String?
+  quotationId     String?
+  assigneeUserId  String
+  startAt         DateTime
+  endAt           DateTime?
+  reminderAt      DateTime?
+  content         String?      @db.Text
+  status          TaskStatus   @default(TODO)
+  createdBy       String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  customer        Customer?    @relation(fields: [customerId], references: [id])
+  quotation       Quotation?   @relation(fields: [quotationId], references: [id])
+  assignee        User         @relation("TaskAssignee", fields: [assigneeUserId], references: [id])
+  creator         User         @relation("TaskCreator", fields: [createdBy], references: [id])
+  comments        TaskComment[]
+
+  @@index([customerId])
+  @@index([quotationId])
+  @@index([assigneeUserId])
+  @@index([status])
+  @@index([reminderAt])
+  @@index([startAt])
+}
+
+model TaskComment {
+  id          String    @id @default(cuid())
+  taskId      String
+  userId      String
+  content     String    @db.Text
+  createdAt   DateTime  @default(now())
+
+  task        Task      @relation(fields: [taskId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@index([taskId])
+  @@index([userId])
+}
+
+model Notification {
+  id            String                  @id @default(cuid())
+  userId        String
+  type          String                  @db.VarChar(64)
+  title         String
+  content       String                  @db.Text
+  relatedType   String?                 @db.VarChar(64)
+  relatedId     String?                 @db.VarChar(128)
+  sendChannel   NotificationChannel
+  sendStatus    NotificationSendStatus  @default(PENDING)
+  sentAt        DateTime?
+  readAt        DateTime?
+  createdAt     DateTime                @default(now())
+
+  user          User                    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([userId, readAt])
+  @@index([sendStatus])
+  @@index([createdAt])
+}
+
+model FileRecord {
+  id              String    @id @default(cuid())
+  fileName        String
+  fileUrl         String    @db.VarChar(500)
+  fileType        String?   @db.VarChar(64)
+  businessType    String?   @db.VarChar(64)
+  businessId      String?   @db.VarChar(128)
+  uploaderUserId  String
+  createdAt       DateTime  @default(now())
+
+  uploader        User      @relation(fields: [uploaderUserId], references: [id])
+
+  @@index([uploaderUserId])
+  @@index([businessType, businessId])
+}
+
+model ProductParseLog {
+  id             String   @id @default(cuid())
+  rawText        String?  @db.Text
+  imageUrl       String?  @db.VarChar(500)
+  parsedJson     Json
+  sourceType     String   @db.VarChar(32)
+  operatorUserId String
+  createdAt      DateTime @default(now())
+
+  operator       User     @relation(fields: [operatorUserId], references: [id])
+
+  @@index([operatorUserId])
+  @@index([sourceType])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id          String    @id @default(cuid())
+  userId      String
+  action      String    @db.VarChar(64)
+  module      String    @db.VarChar(64)
+  targetType  String?   @db.VarChar(64)
+  targetId    String?   @db.VarChar(128)
+  content     String?   @db.Text
+  createdAt   DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([module])
+  @@index([createdAt])
+}

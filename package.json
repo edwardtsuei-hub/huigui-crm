@@ -1,0 +1,30 @@
+{
+  "name": "huigui-crm-quotation-system",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "db:up": "docker compose up -d mysql",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f mysql",
+    "dev": "concurrently \"npm run dev -w @huigui/api\" \"npm run dev -w @huigui/web\"",
+    "build": "npm run build -w @huigui/api && npm run build -w @huigui/web",
+    "lint": "npm run lint -w @huigui/api && npm run lint -w @huigui/web",
+    "db:generate": "prisma generate",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:sql": "prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/20260415130000_init/migration.sql",
+    "db:seed": "tsx prisma/seed/seed.ts"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "prettier": "^3.4.2",
+    "prisma": "^6.6.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.6.0"
+  }
+}

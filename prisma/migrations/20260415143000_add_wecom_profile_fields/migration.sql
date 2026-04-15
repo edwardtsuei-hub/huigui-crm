@@ -1,0 +1,3 @@
+ALTER TABLE `User`
+  ADD COLUMN `wecomName` VARCHAR(128) NULL,
+  ADD COLUMN `wecomAvatar` VARCHAR(500) NULL;

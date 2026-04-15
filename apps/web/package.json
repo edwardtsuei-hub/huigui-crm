@@ -1,0 +1,22 @@
+{
+  "name": "@huigui/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "cos-js-sdk-v5": "^1.10.1",
+    "next": "^14.2.26",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.14",
+    "@types/react": "^18.2.79",
+    "@types/react-dom": "^18.2.25"
+  }
+}

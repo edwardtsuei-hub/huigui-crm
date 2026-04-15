@@ -1,0 +1,11 @@
+CREATE DATABASE IF NOT EXISTS huigui_crm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE USER IF NOT EXISTS 'huigui'@'localhost' IDENTIFIED BY 'huigui123';
+CREATE USER IF NOT EXISTS 'huigui'@'127.0.0.1' IDENTIFIED BY 'huigui123';
+
+GRANT ALL PRIVILEGES ON huigui_crm.* TO 'huigui'@'localhost';
+GRANT ALL PRIVILEGES ON huigui_crm.* TO 'huigui'@'127.0.0.1';
+GRANT ALL PRIVILEGES ON *.* TO 'huigui'@'localhost';
+GRANT ALL PRIVILEGES ON *.* TO 'huigui'@'127.0.0.1';
+
+FLUSH PRIVILEGES;
