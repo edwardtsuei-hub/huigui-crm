@@ -37,11 +37,17 @@ ENV PDF_FONT_PATH=/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc
 
 COPY --from=builder /app/package.json /app/package-lock.json ./
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/api ./apps/api
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY api/start.sh /app/api/start.sh
 
 RUN mkdir -p /app/storage/uploads \
+  && test -d /app/node_modules/.prisma/client \
+  && test -d /app/node_modules/@prisma/client \
+  && test -f /app/apps/api/dist/main.js \
   && chmod +x /app/api/start.sh
 
 EXPOSE 3001
