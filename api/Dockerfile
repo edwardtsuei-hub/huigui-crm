@@ -23,29 +23,11 @@ RUN npx prisma generate \
 
 FROM node:20-bookworm-slim AS runner
 
-ARG APT_MIRROR=https://mirrors.tencent.com/debian
-ARG APT_SECURITY_MIRROR=https://mirrors.tencent.com/debian-security
-
 WORKDIR /app
 
-RUN set -eux; \
-  if [ -n "${APT_MIRROR:-}" ]; then \
-    if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
-      sed -i \
-        -e "s|https\\?://deb.debian.org/debian|${APT_MIRROR}|g" \
-        -e "s|https\\?://security.debian.org/debian-security|${APT_SECURITY_MIRROR}|g" \
-        /etc/apt/sources.list.d/debian.sources; \
-    fi; \
-    if [ -f /etc/apt/sources.list ]; then \
-      sed -i \
-        -e "s|https\\?://deb.debian.org/debian|${APT_MIRROR}|g" \
-        -e "s|https\\?://security.debian.org/debian-security|${APT_SECURITY_MIRROR}|g" \
-        /etc/apt/sources.list; \
-    fi; \
-  fi; \
-  apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout=30; \
-  apt-get install -y --no-install-recommends fonts-wqy-zenhei openssl; \
-  rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates fonts-wqy-zenhei \
+  && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 ENV PORT=3001
