@@ -14,6 +14,7 @@
 - `api`：NestJS，容器内监听 `3001`
 - `mysql`：本机 Docker 部署 MySQL 8.0
 - `api/start.sh`：容器启动时等待数据库、执行 `npx prisma migrate deploy`，再启动 NestJS
+- `api` 不强依赖 compose 内 `mysql`，因此可以直接切换到腾讯云数据库
 
 ## 1. 首次准备
 

@@ -39,9 +39,6 @@ services:
       dockerfile: api/Dockerfile
     container_name: huigui-api
     restart: unless-stopped
-    depends_on:
-      mysql:
-        condition: service_healthy
     expose:
       - "3001"
     environment:
