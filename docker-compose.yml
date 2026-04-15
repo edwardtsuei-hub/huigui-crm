@@ -57,7 +57,7 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-huigui123}
       DEFAULT_ADMIN_USERNAME: ${DEFAULT_ADMIN_USERNAME:-admin}
       DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:-Huigui@123}
-      PDF_FONT_PATH: ${PDF_FONT_PATH:-/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc}
+      PDF_FONT_PATH: ${PDF_FONT_PATH:-/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc}
       LOCAL_UPLOAD_DIR: ${LOCAL_UPLOAD_DIR:-/app/storage/uploads}
       CONTRACT_REMINDER_DAYS: ${CONTRACT_REMINDER_DAYS:-7}
       COS_REGION: ${COS_REGION:-}
