@@ -35,6 +35,7 @@ cache
 .cache
 .npm-cache
 .npm-cache/
+*.zip
 
 apps/web/tsconfig.tsbuildinfo
 apps/api/*.tsbuildinfo

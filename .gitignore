@@ -16,5 +16,6 @@ coverage
 .DS_Store
 *.log
 *.tsbuildinfo
+*.zip
 
 prisma/dev.db
