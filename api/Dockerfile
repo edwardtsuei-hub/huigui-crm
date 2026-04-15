@@ -18,8 +18,8 @@ RUN npm ci --no-audit --no-fund
 
 COPY apps/api/src apps/api/src
 
-RUN npx prisma generate \
-  && npm run build -w @huigui/api
+RUN npx prisma generate
+RUN npm run build -w @huigui/api
 
 FROM node:20-bookworm-slim AS runner
 
