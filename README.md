@@ -52,7 +52,7 @@ cp apps/web/.env.example apps/web/.env
 
 - 前端：`http://localhost:3000`
 - 后端：`http://localhost:3001/api`
-- 数据库：`mysql://huigui:huigui123@127.0.0.1:3306/huigui_crm`
+- 数据库：`mysql://huigui:HuiguiDB2026@127.0.0.1:3306/huigui_crm`
 
 3. 启动本地 MySQL
 

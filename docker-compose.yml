@@ -50,11 +50,11 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       DB_HOST: ${DB_HOST:-mysql}
       DB_PORT: ${DB_PORT:-3306}
-      DATABASE_URL: ${DATABASE_URL:-}
+      DATABASE_URL: ${DATABASE_URL:-mysql://huigui:HuiguiDB2026@mysql:3306/huigui_crm}
       DB_WAIT_TIMEOUT: ${DB_WAIT_TIMEOUT:-180}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-huigui_crm}
       MYSQL_USER: ${MYSQL_USER:-huigui}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-huigui123}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-HuiguiDB2026}
       DEFAULT_ADMIN_USERNAME: ${DEFAULT_ADMIN_USERNAME:-admin}
       DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:-Huigui@123}
       PDF_FONT_PATH: ${PDF_FONT_PATH:-/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc}
@@ -82,7 +82,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123456}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-huigui_crm}
       MYSQL_USER: ${MYSQL_USER:-huigui}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-huigui123}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-HuiguiDB2026}
     ports:
       - "${MYSQL_PORT:-3306}:3306"
     volumes:
