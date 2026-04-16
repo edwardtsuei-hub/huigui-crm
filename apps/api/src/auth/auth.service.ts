@@ -7,7 +7,15 @@ import { LoginDto } from "./dto/auth.dto";
 
 type UserWithRole = Prisma.UserGetPayload<{
   include: {
-    role: true;
+    role: {
+      include: {
+        rolePermissions: {
+          include: {
+            permission: true;
+          };
+        };
+      };
+    };
   };
 }>;
 
@@ -21,9 +29,24 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findFirst({
       where: {
-        OR: [{ name: dto.username }, { mobile: dto.username }, { email: dto.username }]
+        OR: [
+          { name: dto.username },
+          { loginAccount: dto.username },
+          { mobile: dto.username },
+          { email: dto.username }
+        ]
       },
-      include: { role: true }
+      include: {
+        role: {
+          include: {
+            rolePermissions: {
+              include: {
+                permission: true
+              }
+            }
+          }
+        }
+      }
     });
 
     if (!user || user.status !== UserStatus.ACTIVE || !user.passwordHash) {
@@ -35,13 +58,33 @@ export class AuthService {
       throw new UnauthorizedException("用户名或密码错误");
     }
 
-    return this.buildAuthPayload(user);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        lastLoginAt: new Date()
+      }
+    });
+
+    return this.buildAuthPayload({
+      ...user,
+      lastLoginAt: new Date()
+    } as UserWithRole);
   }
 
   async me(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { role: true }
+      include: {
+        role: {
+          include: {
+            rolePermissions: {
+              include: {
+                permission: true
+              }
+            }
+          }
+        }
+      }
     });
 
     if (!user) {
@@ -66,15 +109,26 @@ export class AuthService {
   }
 
   private serializeUser(user: NonNullable<UserWithRole>) {
+    const permissions = user.role.rolePermissions
+      .map((item) => item.permission.code)
+      .sort((left, right) => left.localeCompare(right));
+
     return {
       id: user.id,
       username: user.name,
       displayName: user.wecomName ?? user.name,
       name: user.name,
+      loginAccount: user.loginAccount,
       mobile: user.mobile,
       email: user.email,
+      department: user.department,
+      title: user.title,
+      managerUserId: user.managerUserId,
+      dataScope: user.dataScope,
       roleCode: user.role.code,
       roleName: user.role.name,
+      permissions,
+      lastLoginAt: user.lastLoginAt,
       wecomUserId: user.wecomUserId,
       wecomName: user.wecomName,
       wecomAvatar: user.wecomAvatar

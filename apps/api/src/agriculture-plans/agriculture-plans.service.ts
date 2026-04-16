@@ -2,6 +2,9 @@ import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/commo
 import { QuotationStatus, QuotationType } from "@prisma/client";
 import type { AuthenticatedUser } from "../common/types/authenticated-user";
 import { previewAgriculturePlan, PRICE_PER_BUCKET } from "../agriculture-engine";
+import { AccessControlService } from "../common/services/access-control.service";
+import { ApprovalService } from "../common/services/approval.service";
+import { AuditService } from "../common/services/audit.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { CalculateAgriculturePlanDto, CreateAgriculturePlanDto } from "./dto/agriculture-plan.dto";
 
@@ -13,23 +16,20 @@ function buildQuotationNo() {
 
 @Injectable()
 export class AgriculturePlansService {
-  constructor(private readonly prisma: PrismaService) {}
-
-  private isStaff(user: AuthenticatedUser) {
-    return user.roleCode === "STAFF";
-  }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly accessControl: AccessControlService,
+    private readonly approvalService: ApprovalService,
+    private readonly auditService: AuditService
+  ) {}
 
   private async ensureCustomerAccessible(customerId: string, user: AuthenticatedUser) {
-    const customer = await this.prisma.customer.findUnique({
-      where: { id: customerId }
+    const customer = await this.prisma.customer.findFirst({
+      where: await this.accessControl.buildCustomerWhere(user, { id: customerId })
     });
 
     if (!customer) {
-      throw new NotFoundException("客户不存在");
-    }
-
-    if (this.isStaff(user) && customer.ownerUserId !== user.id) {
-      throw new ForbiddenException("无权为该客户创建农业方案");
+      throw new NotFoundException("客户不存在或无权为该客户创建农业方案");
     }
 
     return customer;
@@ -57,6 +57,7 @@ export class AgriculturePlansService {
   }
 
   async create(dto: CreateAgriculturePlanDto, user: AuthenticatedUser) {
+    this.accessControl.assertPermission(user, "action.solution.create", "当前账号无权新建方案");
     const customer = await this.ensureCustomerAccessible(dto.customerId, user);
     const preview = this.calculate(dto);
 
@@ -66,7 +67,7 @@ export class AgriculturePlansService {
 
     const quotationNo = buildQuotationNo();
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const quotation = await tx.quotation.create({
         data: {
           quotationNo,
@@ -115,6 +116,21 @@ export class AgriculturePlansService {
         quotationNo: quotation.quotationNo
       };
     });
+
+    await this.approvalService.syncQuotationApprovals(result.quotationId, user);
+
+    await this.auditService.log({
+      userId: user.id,
+      action: "CREATE",
+      module: "方案",
+      targetType: "AgriculturePlan",
+      targetId: result.agriculturePlanId,
+      targetName: result.quotationNo,
+      content: "创建农业方案并生成报价",
+      afterSummary: `客户: ${customer.customerName}；折后金额: ${preview.totals.totalDiscounted}`
+    });
+
+    return result;
   }
 
   async getById(id: string, user: AuthenticatedUser) {
@@ -135,9 +151,7 @@ export class AgriculturePlansService {
       throw new NotFoundException("农业方案不存在");
     }
 
-    if (this.isStaff(user) && plan.customer.ownerUserId !== user.id) {
-      throw new ForbiddenException("无权查看该农业方案");
-    }
+    await this.ensureCustomerAccessible(plan.customerId, user);
 
     return plan;
   }

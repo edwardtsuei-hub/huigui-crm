@@ -13,6 +13,7 @@ COPY apps/api/tsconfig.json apps/api/tsconfig.json
 COPY apps/web/package.json apps/web/package.json
 COPY prisma/schema.prisma prisma/schema.prisma
 COPY prisma/migrations prisma/migrations
+COPY prisma/seed prisma/seed
 
 RUN npm ci --no-audit --no-fund
 
@@ -40,7 +41,9 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma/seed ./prisma/seed
 COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
+COPY --from=builder /app/apps/api/src/management ./apps/api/src/management
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY api/start.sh /app/api/start.sh
 

@@ -1,10 +1,16 @@
 "use client";
 
-import { useDeferredValue, useEffect, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
-  apiFetch,
-  emitNotificationsChanged
-} from "../../../lib/api";
+  EmptyState,
+  FilterBar,
+  SectionCard,
+  StatusBadge,
+  type Tone,
+} from "../../../components/system/primitives";
+import { WorkspacePageHeader } from "../../../components/dashboard/WorkspacePageHeader";
+import { apiFetch, emitNotificationsChanged } from "../../../lib/api";
+import { notificationTypeLabel } from "../../../lib/workspace";
 
 type NotificationItem = {
   id: string;
@@ -27,17 +33,24 @@ const typeOptions = [
   { value: "all", label: "全部类型" },
   { value: "FOLLOW_UP_REMINDER", label: "客户跟进提醒" },
   { value: "TASK_REMINDER", label: "工作计划提醒" },
-  { value: "CONTRACT_EXPIRY_REMINDER", label: "合同到期提醒" }
+  { value: "CONTRACT_EXPIRY_REMINDER", label: "合同到期提醒" },
 ];
 
 const statusOptions = [
   { value: "all", label: "全部状态" },
   { value: "unread", label: "仅看未读" },
-  { value: "read", label: "仅看已读" }
+  { value: "read", label: "仅看已读" },
 ];
 
-function typeLabel(type: string) {
-  return typeOptions.find((item) => item.value === type)?.label ?? type;
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(value));
 }
 
 export default function NotificationsPage() {
@@ -58,7 +71,7 @@ export default function NotificationsPage() {
       try {
         const params = new URLSearchParams({
           page: "1",
-          pageSize: "30"
+          pageSize: "30",
         });
 
         if (status !== "all") {
@@ -73,13 +86,19 @@ export default function NotificationsPage() {
           params.set("keyword", deferredKeyword);
         }
 
-        const response = await apiFetch<NotificationListResponse>(`/notifications?${params.toString()}`);
+        const response = await apiFetch<NotificationListResponse>(
+          `/notifications?${params.toString()}`,
+        );
         if (!cancelled) {
           setData(response);
         }
       } catch (requestError) {
         if (!cancelled) {
-          setError(requestError instanceof Error ? requestError.message : "加载通知失败");
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "加载通知失败",
+          );
         }
       }
     }
@@ -91,29 +110,22 @@ export default function NotificationsPage() {
     };
   }, [deferredKeyword, reloadVersion, status, type]);
 
-  function formatDateTime(value: string) {
-    return new Intl.DateTimeFormat("zh-CN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false
-    }).format(new Date(value));
-  }
-
   async function updateReadState(id: string, nextState: "read" | "unread") {
     setPendingAction(id);
     setError("");
 
     try {
       await apiFetch(`/notifications/${id}/${nextState}`, {
-        method: "PATCH"
+        method: "PATCH",
       });
       emitNotificationsChanged();
       setReloadVersion((current) => current + 1);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "更新通知状态失败");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "更新通知状态失败",
+      );
     } finally {
       setPendingAction(null);
     }
@@ -125,137 +137,187 @@ export default function NotificationsPage() {
 
     try {
       await apiFetch("/notifications/read-all", {
-        method: "POST"
+        method: "POST",
       });
       emitNotificationsChanged();
       setReloadVersion((current) => current + 1);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "批量更新通知失败");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "批量更新通知失败",
+      );
     } finally {
       setPendingAction(null);
     }
   }
 
+  const summary = useMemo(
+    (): Array<{ label: string; value: string; tone?: Tone }> => [
+      { label: "筛选结果", value: String(data?.total ?? 0) },
+      {
+        label: "未读",
+        tone: (data?.unreadCount ?? 0) > 0 ? "warning" : "neutral",
+        value: String(data?.unreadCount ?? 0),
+      },
+      {
+        label: "跟进提醒",
+        value: String(
+          data?.items.filter((item) => item.type === "FOLLOW_UP_REMINDER")
+            .length ?? 0,
+        ),
+      },
+      {
+        label: "合同到期",
+        value: String(
+          data?.items.filter((item) => item.type === "CONTRACT_EXPIRY_REMINDER")
+            .length ?? 0,
+        ),
+      },
+    ],
+    [data],
+  );
+
   return (
-    <section className="panel stack">
-      <div className="panel-header">
-        <div>
-          <h3>通知中心</h3>
-          <p className="muted">客户跟进、工作计划与合同到期提醒都会汇总到网页端通知中心。</p>
-        </div>
-        <div className="notification-summary">
-          <div className="status-badge">筛选结果 {data?.total ?? 0} 条</div>
-          <div className={`status-badge ${data?.unreadCount ? "alert" : ""}`}>
-            未读 {data?.unreadCount ?? 0} 条
-          </div>
-        </div>
-      </div>
-
-      <div className="filter-row">
-        <div className="field filter-field">
-          <label htmlFor="notification-status">状态</label>
-          <select
-            id="notification-status"
-            value={status}
-            onChange={(event) => setStatus(event.target.value)}
-          >
-            {statusOptions.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="field filter-field">
-          <label htmlFor="notification-type">类型</label>
-          <select
-            id="notification-type"
-            value={type}
-            onChange={(event) => setType(event.target.value)}
-          >
-            {typeOptions.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="field filter-field filter-field--wide">
-          <label htmlFor="notification-keyword">关键词</label>
-          <input
-            id="notification-keyword"
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-            placeholder="搜索标题或通知内容"
-          />
-        </div>
-
-        <div className="action-row">
+    <div className="workspace-stack">
+      <WorkspacePageHeader
+        actions={
           <button
             className="button secondary inline"
             disabled={!data?.unreadCount || pendingAction === "all"}
             onClick={markAllAsRead}
             type="button"
           >
-            {pendingAction === "all" ? "处理中..." : "全部标记已读"}
+            {pendingAction === "all" ? "处理中..." : "批量标记已读"}
           </button>
-          <button
-            className="button ghost inline"
-            onClick={() => {
-              setStatus("all");
-              setType("all");
-              setKeyword("");
-            }}
-            type="button"
-          >
-            清空筛选
-          </button>
-        </div>
-      </div>
+        }
+        description="顶部铃铛负责摘要，这里才是完整的筛选与历史中心，用于逐项处理、批量已读和回溯审批提醒。"
+        eyebrow="通知中心"
+        meta={summary}
+        title="通知中心"
+      />
 
       {error ? <div className="danger-text small">{error}</div> : null}
 
-      <div className="stack">
-        {data?.items?.length ? (
-          data.items.map((item) => {
-            const isUnread = !item.readAt;
+      <SectionCard
+        description="按状态、类型和关键词过滤所有提醒，快速找到今天需要先处理的通知。"
+        title="历史与筛选"
+      >
+        <FilterBar
+          actions={
+            <button
+              className="button ghost inline"
+              onClick={() => {
+                setStatus("all");
+                setType("all");
+                setKeyword("");
+              }}
+              type="button"
+            >
+              清空筛选
+            </button>
+          }
+        >
+          <div className="field filter-field">
+            <label htmlFor="notification-status">状态</label>
+            <select
+              id="notification-status"
+              onChange={(event) => setStatus(event.target.value)}
+              value={status}
+            >
+              {statusOptions.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-            return (
-              <article className={`notification-card ${isUnread ? "unread" : ""}`} key={item.id}>
-                <div className="notification-card__meta">
-                  <div className="stack compact-gap">
-                    <strong>{item.title}</strong>
-                    <div className="muted small">{formatDateTime(item.createdAt)}</div>
-                  </div>
-                  <div className="notification-summary">
-                    <div className="status-badge">{typeLabel(item.type)}</div>
-                    <div className={`status-badge ${isUnread ? "alert" : ""}`}>
-                      {isUnread ? "未读" : "已读"}
+          <div className="field filter-field">
+            <label htmlFor="notification-type">类型</label>
+            <select
+              id="notification-type"
+              onChange={(event) => setType(event.target.value)}
+              value={type}
+            >
+              {typeOptions.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="field filter-field--wide">
+            <label htmlFor="notification-keyword">关键词</label>
+            <input
+              id="notification-keyword"
+              onChange={(event) => setKeyword(event.target.value)}
+              placeholder="搜索标题或通知内容"
+              value={keyword}
+            />
+          </div>
+        </FilterBar>
+
+        <div className="focus-list">
+          {data?.items?.length ? (
+            data.items.map((item) => {
+              const isUnread = !item.readAt;
+
+              return (
+                <article
+                  className={`notification-card ${isUnread ? "unread" : ""}`}
+                  key={item.id}
+                >
+                  <div className="notification-card__meta">
+                    <div className="stack compact-gap">
+                      <strong>{item.title}</strong>
+                      <div className="muted small">
+                        {formatDateTime(item.createdAt)}
+                      </div>
+                    </div>
+                    <div className="notification-summary">
+                      <StatusBadge tone="neutral" variant="badge">
+                        {notificationTypeLabel(item.type)}
+                      </StatusBadge>
+                      <StatusBadge
+                        tone={isUnread ? "warning" : "neutral"}
+                        variant="badge"
+                      >
+                        {isUnread ? "未读" : "已读"}
+                      </StatusBadge>
                     </div>
                   </div>
-                </div>
 
-                <p>{item.content}</p>
+                  <p>{item.content}</p>
 
-                <div className="notification-card__actions">
-                  <button
-                    className="button secondary inline"
-                    disabled={pendingAction === item.id}
-                    onClick={() => updateReadState(item.id, isUnread ? "read" : "unread")}
-                    type="button"
-                  >
-                    {pendingAction === item.id ? "处理中..." : isUnread ? "标记已读" : "标记未读"}
-                  </button>
-                </div>
-              </article>
-            );
-          })
-        ) : (
-          <div className="empty">当前筛选条件下还没有通知，后续提醒会自动出现在这里。</div>
-        )}
-      </div>
-    </section>
+                  <div className="notification-card__actions">
+                    <button
+                      className="button secondary inline"
+                      disabled={pendingAction === item.id}
+                      onClick={() =>
+                        updateReadState(item.id, isUnread ? "read" : "unread")
+                      }
+                      type="button"
+                    >
+                      {pendingAction === item.id
+                        ? "处理中..."
+                        : isUnread
+                          ? "标记已读"
+                          : "标记未读"}
+                    </button>
+                  </div>
+                </article>
+              );
+            })
+          ) : (
+            <EmptyState
+              description="当前筛选条件下还没有通知，后续提醒、审批与系统消息会统一沉淀在这里。"
+              title="暂无通知"
+            />
+          )}
+        </div>
+      </SectionCard>
+    </div>
   );
 }

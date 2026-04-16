@@ -1,39 +1,50 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { NotificationDrawer } from "../../components/dashboard/NotificationDrawer";
+import { AppShell, SidebarNav, Topbar } from "../../components/system/shell";
+import { navigationTree, resolvePageMeta } from "../../lib/navigation";
+import {
+  normalizeNotifications,
+  type WorkspaceNotification,
+} from "../../lib/workspace";
 import {
   NOTIFICATIONS_CHANGED_EVENT,
   apiFetch,
   clearAuth,
   getCurrentUser,
   getToken,
-  type CurrentUser
+  type CurrentUser,
 } from "../../lib/api";
+const SIDEBAR_COLLAPSED_STORAGE_KEY = "huigui-sidebar-collapsed";
 
-const menuItems = [
-  { href: "/dashboard", label: "首页" },
-  { href: "/notifications", label: "通知中心" },
-  { href: "/customers", label: "客户管理" },
-  { href: "/products", label: "产品管理" },
-  { href: "/solutions/agriculture/new", label: "农业方案" },
-  { href: "/solutions/industry/new", label: "通用报价" },
-  { href: "/quotations", label: "报价记录" },
-  { href: "/settings", label: "系统设置" }
-];
+type NotificationResponse = {
+  items: Array<{
+    id: string;
+    title: string;
+    content: string;
+    type: string;
+    createdAt: string;
+    readAt: string | null;
+  }>;
+};
 
-function titleFromPath(pathname: string) {
-  const match = menuItems.find((item) => pathname.startsWith(item.href));
-  return match?.label ?? "业务后台";
-}
-
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationVersion, setNotificationVersion] = useState(0);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerLoading, setDrawerLoading] = useState(false);
+  const [drawerError, setDrawerError] = useState("");
+  const [drawerItems, setDrawerItems] = useState<WorkspaceNotification[]>([]);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     const token = getToken();
@@ -42,6 +53,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       router.replace("/login");
       return;
     }
+
     setUser(currentUser);
   }, [router]);
 
@@ -54,10 +66,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       setNotificationVersion((current) => current + 1);
     };
 
-    window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, handleNotificationsChanged);
+    window.addEventListener(
+      NOTIFICATIONS_CHANGED_EVENT,
+      handleNotificationsChanged,
+    );
     return () => {
-      window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, handleNotificationsChanged);
+      window.removeEventListener(
+        NOTIFICATIONS_CHANGED_EVENT,
+        handleNotificationsChanged,
+      );
     };
+  }, []);
+
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const stored = window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY);
+    setSidebarCollapsed(stored === "1");
   }, []);
 
   useEffect(() => {
@@ -69,7 +100,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     async function loadNotificationSummary() {
       try {
-        const summary = await apiFetch<{ unreadCount: number }>("/notifications/summary");
+        const summary = await apiFetch<{ unreadCount: number }>(
+          "/notifications/summary",
+        );
         if (!cancelled) {
           setUnreadCount(summary.unreadCount);
         }
@@ -87,10 +120,46 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     };
   }, [pathname, notificationVersion]);
 
-  const breadcrumb = useMemo(() => {
-    const segments = pathname.split("/").filter(Boolean);
-    return ["后台"].concat(segments).join(" / ");
-  }, [pathname]);
+  useEffect(() => {
+    if (!drawerOpen || !getToken()) {
+      return;
+    }
+
+    let cancelled = false;
+    setDrawerLoading(true);
+    setDrawerError("");
+
+    async function loadNotifications() {
+      try {
+        const response = await apiFetch<NotificationResponse>(
+          "/notifications?page=1&pageSize=16",
+        );
+        if (!cancelled) {
+          setDrawerItems(normalizeNotifications(response.items));
+        }
+      } catch (requestError) {
+        if (!cancelled) {
+          setDrawerError(
+            requestError instanceof Error
+              ? requestError.message
+              : "加载通知失败",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setDrawerLoading(false);
+        }
+      }
+    }
+
+    void loadNotifications();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [drawerOpen, notificationVersion]);
+
+  const pageMeta = useMemo(() => resolvePageMeta(pathname), [pathname]);
 
   if (!user) {
     return (
@@ -101,59 +170,51 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <h1 className="brand-title">洄归生态</h1>
-        <p className="brand-subtitle">客户管理与报价协同系统</p>
+    <AppShell
+      collapsed={sidebarCollapsed}
+      sidebar={
+        <SidebarNav
+          collapsed={sidebarCollapsed}
+          items={navigationTree}
+          notificationCount={unreadCount}
+          onToggleCollapse={() => {
+            const next = !sidebarCollapsed;
+            setSidebarCollapsed(next);
+            if (typeof window !== "undefined") {
+              window.localStorage.setItem(
+                SIDEBAR_COLLAPSED_STORAGE_KEY,
+                next ? "1" : "0",
+              );
+            }
+          }}
+          pathname={pathname}
+          user={user}
+        />
+      }
+      topbar={
+        <Topbar
+          notificationCount={unreadCount}
+          onLogout={() => {
+            clearAuth();
+            router.replace("/login");
+          }}
+          onToggleNotifications={() => setDrawerOpen((current) => !current)}
+          pageMeta={pageMeta}
+          pathname={pathname}
+          user={user}
+        />
+      }
+    >
+      {children}
 
-        <nav className="menu">
-          {menuItems.map((item) => (
-            <Link
-              key={item.href}
-              className={`menu-item ${pathname.startsWith(item.href) ? "active" : ""}`}
-              href={item.href}
-            >
-              <span>{item.label}</span>
-              {item.href === "/notifications" && unreadCount > 0 ? (
-                <span className="menu-item__count">{unreadCount > 99 ? "99+" : unreadCount}</span>
-              ) : null}
-            </Link>
-          ))}
-        </nav>
-      </aside>
-
-      <main className="main">
-        <header className="topbar">
-          <div>
-            <div className="breadcrumb">{breadcrumb}</div>
-            <h2>{titleFromPath(pathname)}</h2>
-          </div>
-
-          <div className="toolbar">
-            <Link className="button secondary inline notification-trigger" href="/notifications">
-              <span className={`notification-dot ${unreadCount > 0 ? "active" : ""}`} />
-              <span>通知中心</span>
-              {unreadCount > 0 ? (
-                <span className="notification-pill">{unreadCount > 99 ? "99+" : unreadCount}</span>
-              ) : null}
-            </Link>
-            <div className="status-badge">
-              {user.displayName} · {user.roleName}
-            </div>
-            <button
-              className="button secondary inline"
-              onClick={() => {
-                clearAuth();
-                router.replace("/login");
-              }}
-            >
-              退出登录
-            </button>
-          </div>
-        </header>
-
-        {children}
-      </main>
-    </div>
+      <NotificationDrawer
+        error={drawerError}
+        items={drawerItems}
+        loading={drawerLoading}
+        onClose={() => setDrawerOpen(false)}
+        open={drawerOpen}
+        unreadCount={unreadCount}
+      />
+    </AppShell>
   );
 }

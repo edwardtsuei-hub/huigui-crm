@@ -1,13 +1,19 @@
-import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { CustomerStatus, Prisma } from "@prisma/client";
 import type { AuthenticatedUser } from "../common/types/authenticated-user";
+import { AccessControlService } from "../common/services/access-control.service";
+import { AuditService } from "../common/services/audit.service";
 import { PrismaService } from "../prisma/prisma.service";
 import {
   CreateCustomerDto,
   CreateCustomerFollowupDto,
   CustomerQueryDto,
   UpdateCustomerDto,
-  UpdateCustomerFollowupDto
+  UpdateCustomerFollowupDto,
 } from "./dto/customer.dto";
 
 function toDate(value?: string) {
@@ -22,47 +28,49 @@ function toNullable<T>(value: T | undefined) {
 
 @Injectable()
 export class CustomersService {
-  constructor(private readonly prisma: PrismaService) {}
-
-  private isStaff(user: AuthenticatedUser) {
-    return user.roleCode === "STAFF";
-  }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly accessControl: AccessControlService,
+    private readonly auditService: AuditService,
+  ) {}
 
   private async ensureCustomerAccess(id: string, user: AuthenticatedUser) {
-    const customer = await this.prisma.customer.findUnique({
-      where: { id },
+    const customer = await this.prisma.customer.findFirst({
+      where: await this.accessControl.buildCustomerWhere(user, { id }),
       include: {
         owner: { include: { role: true } },
         industryGroup: true,
         industrySubgroup: true,
         followups: {
           orderBy: { followupDate: "desc" },
-          include: { creator: { include: { role: true } } }
+          include: { creator: { include: { role: true } } },
         },
         quotations: {
           orderBy: { createdAt: "desc" },
-          include: { creator: { include: { role: true } } }
+          include: { creator: { include: { role: true } } },
+        },
+        agriculturePlans: {
+          orderBy: { createdAt: "desc" },
+          include: {
+            quotation: true,
+          },
         },
         contracts: {
           orderBy: { createdAt: "desc" },
-          include: { creator: { include: { role: true } } }
+          include: { creator: { include: { role: true } } },
         },
         tasks: {
           orderBy: { startAt: "desc" },
           include: {
             assignee: { include: { role: true } },
-            creator: { include: { role: true } }
-          }
-        }
-      }
+            creator: { include: { role: true } },
+          },
+        },
+      },
     });
 
     if (!customer) {
-      throw new NotFoundException("客户不存在");
-    }
-
-    if (this.isStaff(user) && customer.ownerUserId !== user.id) {
-      throw new ForbiddenException("无权访问该客户");
+      throw new NotFoundException("客户不存在或无权访问");
     }
 
     return customer;
@@ -77,7 +85,7 @@ export class CustomersService {
       owner: customer.owner
         ? {
             ...customer.owner,
-            displayName: customer.owner.name
+            displayName: customer.owner.name,
           }
         : null,
       followups: Array.isArray(customer.followups)
@@ -87,28 +95,43 @@ export class CustomersService {
             creator: followup.creator
               ? {
                   ...followup.creator,
-                  displayName: followup.creator.name
+                  displayName: followup.creator.name,
                 }
-              : null
+              : null,
           }))
         : [],
       quotations: Array.isArray(customer.quotations)
         ? customer.quotations.map((quotation: any) => ({
             ...quotation,
             type: quotation.quotationType,
-            totalAmount: Number(quotation.totalDiscountedAmount ?? 0).toFixed(2)
+            totalAmount: Number(quotation.totalDiscountedAmount ?? 0).toFixed(
+              2,
+            ),
+          }))
+        : [],
+      agriculturePlans: Array.isArray(customer.agriculturePlans)
+        ? customer.agriculturePlans.map((plan: any) => ({
+            ...plan,
+            quotation: plan.quotation
+              ? {
+                  ...plan.quotation,
+                  type: plan.quotation.quotationType,
+                  totalAmount: Number(
+                    plan.quotation.totalDiscountedAmount ?? 0,
+                  ).toFixed(2),
+                }
+              : null,
           }))
         : [],
       recentFollowupAt: customer.followups?.[0]?.followupDate ?? null,
-      recentQuotation: customer.quotations?.[0] ?? null
+      recentQuotation: customer.quotations?.[0] ?? null,
     };
   }
 
   async list(query: CustomerQueryDto, user: AuthenticatedUser) {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 20;
-    const where: Prisma.CustomerWhereInput = {
-      ...(this.isStaff(user) ? { ownerUserId: user.id } : {}),
+    const baseWhere: Prisma.CustomerWhereInput = {
       ...(query.keyword
         ? {
             OR: [
@@ -116,17 +139,22 @@ export class CustomersService {
               { companyName: { contains: query.keyword } },
               { contactName: { contains: query.keyword } },
               { mobile: { contains: query.keyword } },
-              { wechatId: { contains: query.keyword } }
-            ]
+              { wechatId: { contains: query.keyword } },
+            ],
           }
         : {}),
       ...(query.status ? { status: query.status as CustomerStatus } : {}),
-      ...(query.industryGroupId ? { industryGroupId: query.industryGroupId } : {}),
-      ...(query.industrySubgroupId ? { industrySubgroupId: query.industrySubgroupId } : {}),
+      ...(query.industryGroupId
+        ? { industryGroupId: query.industryGroupId }
+        : {}),
+      ...(query.industrySubgroupId
+        ? { industrySubgroupId: query.industrySubgroupId }
+        : {}),
       ...(query.province ? { province: query.province } : {}),
       ...(query.city ? { city: query.city } : {}),
-      ...(query.ownerUserId && !this.isStaff(user) ? { ownerUserId: query.ownerUserId } : {})
+      ...(query.ownerUserId ? { ownerUserId: query.ownerUserId } : {}),
     };
+    const where = await this.accessControl.buildCustomerWhere(user, baseWhere);
 
     const [items, total] = await Promise.all([
       this.prisma.customer.findMany({
@@ -140,30 +168,45 @@ export class CustomersService {
           industrySubgroup: true,
           followups: {
             orderBy: { followupDate: "desc" },
-            take: 1
+            take: 1,
           },
           quotations: {
             orderBy: { createdAt: "desc" },
-            take: 1
+            take: 1,
           },
           _count: {
-            select: { followups: true, quotations: true, contracts: true, tasks: true }
-          }
-        }
+            select: {
+              followups: true,
+              quotations: true,
+              contracts: true,
+              tasks: true,
+            },
+          },
+        },
       }),
-      this.prisma.customer.count({ where })
+      this.prisma.customer.count({ where }),
     ]);
 
     return {
       page,
       pageSize,
       total,
-      items: items.map((item) => this.serializeCustomer(item))
+      items: items.map((item) => this.serializeCustomer(item)),
     };
   }
 
   async create(dto: CreateCustomerDto, user: AuthenticatedUser) {
-    const ownerUserId = this.isStaff(user) ? user.id : dto.ownerUserId;
+    this.accessControl.assertPermission(
+      user,
+      "action.customer.create",
+      "当前账号无权新增客户",
+    );
+    const ownerUserId = this.accessControl.hasPermission(
+      user,
+      "action.customer.transfer",
+    )
+      ? dto.ownerUserId
+      : user.id;
 
     const customer = await this.prisma.customer.create({
       data: {
@@ -186,8 +229,19 @@ export class CustomersService {
         cooperationContent: dto.cooperationContent,
         estimatedAmount: dto.estimatedAmount,
         dealProbability: dto.dealProbability,
-        remark: dto.remark
-      }
+        remark: dto.remark,
+      },
+    });
+
+    await this.auditService.log({
+      userId: user.id,
+      action: "CREATE",
+      module: "客户",
+      targetType: "Customer",
+      targetId: customer.id,
+      targetName: customer.customerName,
+      content: "新增客户档案",
+      afterSummary: `负责人: ${ownerUserId}；状态: ${customer.status}`,
     });
 
     return this.getById(customer.id, user);
@@ -199,9 +253,23 @@ export class CustomersService {
   }
 
   async update(id: string, dto: UpdateCustomerDto, user: AuthenticatedUser) {
-    await this.ensureCustomerAccess(id, user);
+    this.accessControl.assertPermission(
+      user,
+      "action.customer.update",
+      "当前账号无权编辑客户",
+    );
+    const currentCustomer = await this.ensureCustomerAccess(id, user);
+
+    if (
+      dto.ownerUserId &&
+      dto.ownerUserId !== currentCustomer.ownerUserId &&
+      !this.accessControl.hasPermission(user, "action.customer.transfer")
+    ) {
+      throw new ForbiddenException("当前账号无权调整客户负责人");
+    }
+
     const ownerUserId =
-      this.isStaff(user) ? user.id : toNullable(dto.ownerUserId);
+      dto.ownerUserId !== undefined ? toNullable(dto.ownerUserId) : undefined;
 
     await this.prisma.customer.update({
       where: { id },
@@ -225,26 +293,76 @@ export class CustomersService {
         cooperationContent: dto.cooperationContent,
         estimatedAmount: dto.estimatedAmount,
         dealProbability: dto.dealProbability,
-        remark: dto.remark
-      }
+        remark: dto.remark,
+      },
+    });
+
+    const action =
+      ownerUserId && ownerUserId !== currentCustomer.ownerUserId
+        ? "TRANSFER"
+        : "UPDATE";
+
+    await this.auditService.log({
+      userId: user.id,
+      action,
+      module: "客户",
+      targetType: "Customer",
+      targetId: id,
+      targetName: currentCustomer.customerName,
+      content: action === "TRANSFER" ? "调整客户负责人" : "编辑客户资料",
+      beforeSummary: this.auditService.summarizeChanges(
+        currentCustomer as any,
+        null,
+        [],
+      ),
+      afterSummary: this.auditService.summarizeChanges(
+        currentCustomer as any,
+        {
+          customerName: dto.customerName ?? currentCustomer.customerName,
+          companyName: dto.companyName ?? currentCustomer.companyName,
+          ownerUserId: ownerUserId ?? currentCustomer.ownerUserId,
+          status: dto.status ?? currentCustomer.status,
+        },
+        ["customerName", "companyName", "ownerUserId", "status"],
+      ),
     });
 
     return this.getById(id, user);
   }
 
   async remove(id: string, user: AuthenticatedUser) {
+    this.accessControl.assertPermission(
+      user,
+      "action.customer.delete",
+      "当前账号无权删除客户",
+    );
     const customer = await this.ensureCustomerAccess(id, user);
     const [quotationCount, contractCount, taskCount] = await Promise.all([
       this.prisma.quotation.count({ where: { customerId: customer.id } }),
       this.prisma.contract.count({ where: { customerId: customer.id } }),
-      this.prisma.task.count({ where: { customerId: customer.id } })
+      this.prisma.task.count({ where: { customerId: customer.id } }),
     ]);
 
     if (quotationCount > 0 || contractCount > 0 || taskCount > 0) {
       throw new ForbiddenException("客户已有关联业务数据，暂不允许删除");
     }
 
-    return this.prisma.customer.delete({ where: { id: customer.id } });
+    const removed = await this.prisma.customer.delete({
+      where: { id: customer.id },
+    });
+
+    await this.auditService.log({
+      userId: user.id,
+      action: "DELETE",
+      module: "客户",
+      targetType: "Customer",
+      targetId: customer.id,
+      targetName: customer.customerName,
+      content: "删除客户档案",
+      beforeSummary: `负责人: ${customer.ownerUserId}；状态: ${customer.status}`,
+    });
+
+    return removed;
   }
 
   async listFollowups(customerId: string, user: AuthenticatedUser) {
@@ -252,7 +370,16 @@ export class CustomersService {
     return customer.followups;
   }
 
-  async createFollowup(customerId: string, dto: CreateCustomerFollowupDto, user: AuthenticatedUser) {
+  async createFollowup(
+    customerId: string,
+    dto: CreateCustomerFollowupDto,
+    user: AuthenticatedUser,
+  ) {
+    this.accessControl.assertPermission(
+      user,
+      "action.schedule.create",
+      "当前账号无权新增提醒",
+    );
     await this.ensureCustomerAccess(customerId, user);
 
     return this.prisma.customerFollowup.create({
@@ -265,24 +392,31 @@ export class CustomersService {
         nextAction: dto.nextAction,
         nextContactAt: toDate(dto.nextContactAt),
         needReminder: dto.needReminder ?? false,
-        creatorUserId: user.id
-      }
+        creatorUserId: user.id,
+      },
     });
   }
 
-  async updateFollowup(id: string, dto: UpdateCustomerFollowupDto, user: AuthenticatedUser) {
+  async updateFollowup(
+    id: string,
+    dto: UpdateCustomerFollowupDto,
+    user: AuthenticatedUser,
+  ) {
+    this.accessControl.assertPermission(
+      user,
+      "action.schedule.update",
+      "当前账号无权编辑提醒",
+    );
     const followup = await this.prisma.customerFollowup.findUnique({
       where: { id },
-      include: { customer: true }
+      include: { customer: true },
     });
 
     if (!followup) {
       throw new NotFoundException("跟进记录不存在");
     }
 
-    if (this.isStaff(user) && followup.customer.ownerUserId !== user.id) {
-      throw new ForbiddenException("无权修改该跟进记录");
-    }
+    await this.ensureCustomerAccess(followup.customer.id, user);
 
     return this.prisma.customerFollowup.update({
       where: { id },
@@ -293,28 +427,33 @@ export class CustomersService {
         keyPoints: dto.keyPoints,
         nextAction: dto.nextAction,
         nextContactAt:
-          dto.nextContactAt !== undefined ? toDate(dto.nextContactAt) : undefined,
-        needReminder: dto.needReminder
-      }
+          dto.nextContactAt !== undefined
+            ? toDate(dto.nextContactAt)
+            : undefined,
+        needReminder: dto.needReminder,
+      },
     });
   }
 
   async deleteFollowup(id: string, user: AuthenticatedUser) {
+    this.accessControl.assertPermission(
+      user,
+      "action.schedule.delete",
+      "当前账号无权删除提醒",
+    );
     const followup = await this.prisma.customerFollowup.findUnique({
       where: { id },
-      include: { customer: true }
+      include: { customer: true },
     });
 
     if (!followup) {
       throw new NotFoundException("跟进记录不存在");
     }
 
-    if (this.isStaff(user) && followup.customer.ownerUserId !== user.id) {
-      throw new ForbiddenException("无权删除该跟进记录");
-    }
+    await this.ensureCustomerAccess(followup.customer.id, user);
 
     return this.prisma.customerFollowup.delete({
-      where: { id }
+      where: { id },
     });
   }
 }

@@ -1,4 +1,4 @@
-import { IsArray, IsEnum, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
+import { IsArray, IsEnum, IsIn, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
 import { Type } from "class-transformer";
 import { QuotationStatus, QuotationType } from "@prisma/client";
 
@@ -73,6 +73,18 @@ export class UpdateQuotationDto {
   @IsOptional()
   @IsString()
   pdfUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  remark?: string;
+}
+
+export class ReviewQuotationApprovalDto {
+  @IsIn(["discount", "export"])
+  type!: "discount" | "export";
+
+  @IsIn(["approve", "reject"])
+  decision!: "approve" | "reject";
 
   @IsOptional()
   @IsString()

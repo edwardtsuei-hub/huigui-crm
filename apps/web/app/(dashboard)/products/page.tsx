@@ -1,403 +1,387 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { apiFetch, getCurrentUser } from "../../../lib/api";
-import { ProductSmartParser } from "../../../components/products/ProductSmartParser";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import {
-  defaultProductForm,
+  ActionMenu,
+  DataTable,
+  EmptyState,
+  FilterBar,
+  SectionCard,
+  StatusBadge,
+  SummaryCard,
+} from "../../../components/system/primitives";
+import { WorkspacePageHeader } from "../../../components/dashboard/WorkspacePageHeader";
+import {
+  formatProductMoney,
+  outputTemplateLabelMap,
   type IndustryGroupOption,
-  type ProductFormValues
+  type ProductRecord,
 } from "../../../components/products/types";
+import { apiFetch, getCurrentUser, hasAnyPermission } from "../../../lib/api";
 
-type ProductRecord = {
-  id: string;
-  name: string;
-  displayName: string;
-  industryGroupId?: string | null;
-  industrySubgroupId?: string | null;
-  specification?: string | null;
-  unit?: string | null;
-  costPrice?: string | null;
-  suggestedPrice: string;
-  outputTemplateType: string;
-  status: string;
-  enabled: boolean;
-  standardNumber?: string | null;
-  summary?: string | null;
-  scenarios?: string | null;
-  remark?: string | null;
-  labelText?: string | null;
-  industryGroup?: { name: string } | null;
-  industrySubgroup?: { name: string } | null;
-  imageUrl?: string | null;
-  tagScreenshotUrl?: string | null;
-};
+function productStatusTone(product: ProductRecord) {
+  if (product.status === "PENDING") {
+    return "warning";
+  }
+
+  return product.enabled ? "success" : "neutral";
+}
+
+function productStatusLabel(product: ProductRecord) {
+  if (product.status === "PENDING") {
+    return "待完善";
+  }
+
+  return product.enabled ? "启用" : "停用";
+}
 
 export default function ProductsPage() {
   const currentUser = getCurrentUser();
-  const canEdit = currentUser?.roleCode !== "STAFF";
+  const canEdit = hasAnyPermission(currentUser, [
+    "action.product.create",
+    "action.product.update",
+  ]);
   const [industries, setIndustries] = useState<IndustryGroupOption[]>([]);
   const [products, setProducts] = useState<ProductRecord[]>([]);
-  const [filters, setFilters] = useState({ search: "", industryGroupId: "", enabled: "" });
-  const [form, setForm] = useState<ProductFormValues>(defaultProductForm);
-  const [message, setMessage] = useState("");
+  const [filters, setFilters] = useState({
+    search: "",
+    industryGroupId: "",
+    enabled: "",
+  });
   const [error, setError] = useState("");
 
-  const selectedIndustry = useMemo(
-    () => industries.find((item) => item.id === form.industryGroupId),
-    [industries, form.industryGroupId]
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadData() {
+      try {
+        const searchParams = new URLSearchParams();
+        if (filters.search) searchParams.set("keyword", filters.search);
+        if (filters.industryGroupId) {
+          searchParams.set("industryGroupId", filters.industryGroupId);
+        }
+        if (filters.enabled) searchParams.set("status", filters.enabled);
+
+        const [productResponse, industryResponse] = await Promise.all([
+          apiFetch<ProductRecord[]>(`/products?${searchParams.toString()}`),
+          apiFetch<IndustryGroupOption[]>("/meta/industries"),
+        ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        setProducts(productResponse);
+        setIndustries(industryResponse);
+      } catch (requestError) {
+        if (!cancelled) {
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "加载产品失败",
+          );
+        }
+      }
+    }
+
+    void loadData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [filters.enabled, filters.industryGroupId, filters.search]);
+
+  const stats = useMemo(
+    () => [
+      { label: "产品总量", value: String(products.length) },
+      {
+        label: "启用中",
+        value: String(products.filter((product) => product.enabled).length),
+      },
+      {
+        label: "农业模板",
+        value: String(
+          products.filter(
+            (product) => product.outputTemplateType === "AGRICULTURE_PLAN",
+          ).length,
+        ),
+      },
+      {
+        label: "报价模板",
+        value: String(
+          products.filter(
+            (product) => product.outputTemplateType !== "AGRICULTURE_PLAN",
+          ).length,
+        ),
+      },
+    ],
+    [products],
   );
 
-  async function loadData() {
-    const searchParams = new URLSearchParams();
-    if (filters.search) searchParams.set("keyword", filters.search);
-    if (filters.industryGroupId) searchParams.set("industryGroupId", filters.industryGroupId);
-    if (filters.enabled) searchParams.set("status", filters.enabled);
-
-    const [productResponse, industryResponse] = await Promise.all([
-      apiFetch<ProductRecord[]>(`/products?${searchParams.toString()}`),
-      apiFetch<IndustryGroupOption[]>("/meta/industries")
-    ]);
-
-    setProducts(productResponse);
-    setIndustries(industryResponse);
-  }
-
-  useEffect(() => {
-    loadData().catch((requestError) =>
-      setError(requestError instanceof Error ? requestError.message : "加载产品失败")
-    );
-  }, [filters.search, filters.industryGroupId, filters.enabled]);
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!canEdit) {
-      setError("员工角色当前仅可查看产品，管理角色可维护产品库。");
-      return;
-    }
-
-    setMessage("");
-    setError("");
-
-    try {
-      const payload = {
-        ...form,
-        costPrice: form.costPrice ? Number(form.costPrice) : undefined,
-        salePrice: Number(form.salePrice)
-      };
-
-      if (form.id) {
-        await apiFetch(`/products/${form.id}`, {
-          method: "PATCH",
-          body: JSON.stringify(payload)
-        });
-        setMessage("产品已更新");
-      } else {
-        await apiFetch("/products", {
-          method: "POST",
-          body: JSON.stringify(payload)
-        });
-        setMessage("产品已创建");
-      }
-
-      setForm(defaultProductForm);
-      await loadData();
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "保存产品失败");
-    }
-  }
+  const templateSummary = useMemo(
+    () =>
+      Object.entries(
+        products.reduce<Record<string, number>>((result, product) => {
+          result[product.outputTemplateType] =
+            (result[product.outputTemplateType] ?? 0) + 1;
+          return result;
+        }, {}),
+      ),
+    [products],
+  );
 
   return (
-    <div className="stack">
-      <ProductSmartParser
-        form={form}
-        industries={industries}
-        onApplyParsedData={(patch) => setForm((prev) => ({ ...prev, ...patch }))}
+    <div className="workspace-stack">
+      <WorkspacePageHeader
+        actions={
+          <>
+            {canEdit ? (
+              <Link
+                className="button secondary inline"
+                href="/products/new#smart-parser"
+              >
+                AI 解析辅助
+              </Link>
+            ) : null}
+            {canEdit ? (
+              <Link className="button inline" href="/products/new">
+                新增产品
+              </Link>
+            ) : null}
+          </>
+        }
+        description="产品页回到资产管理视角，优先用表格和筛选维护产品资产，AI 解析仅保留为辅助入口。"
+        eyebrow="产品资产"
+        meta={stats}
+        title="产品管理"
       />
 
-      <div className="layout-grid">
-      <section className="panel stack">
-        <div className="toolbar">
-          <input
-            value={filters.search}
-            onChange={(event) => setFilters((prev) => ({ ...prev, search: event.target.value }))}
-            placeholder="搜索产品名称 / 对外显示名称"
-          />
-          <select
-            value={filters.industryGroupId}
-            onChange={(event) =>
-              setFilters((prev) => ({ ...prev, industryGroupId: event.target.value }))
+      {error ? <div className="danger-text small">{error}</div> : null}
+
+      <section className="split-workspace">
+        <div className="workspace-main">
+          <SectionCard
+            actions={
+              <StatusBadge
+                tone={products.length ? "success" : "neutral"}
+                variant="badge"
+              >
+                当前结果 {products.length}
+              </StatusBadge>
             }
+            description="统一维护产品名称、分类、适用行业、建议售价、模板类型与启用状态。"
+            title="产品管理"
           >
-            <option value="">全部行业</option>
-            {industries.map((industry) => (
-              <option key={industry.id} value={industry.id}>
-                {industry.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filters.enabled}
-            onChange={(event) => setFilters((prev) => ({ ...prev, enabled: event.target.value }))}
-          >
-            <option value="">全部状态</option>
-            <option value="ENABLED">启用</option>
-            <option value="DISABLED">停用</option>
-          </select>
+            <FilterBar
+              actions={
+                <button
+                  className="button ghost inline"
+                  onClick={() =>
+                    setFilters({ search: "", industryGroupId: "", enabled: "" })
+                  }
+                  type="button"
+                >
+                  清空筛选
+                </button>
+              }
+            >
+              <div className="field filter-field--wide">
+                <label htmlFor="product-search">搜索</label>
+                <input
+                  id="product-search"
+                  onChange={(event) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      search: event.target.value,
+                    }))
+                  }
+                  placeholder="搜索产品名称 / 对外显示名称"
+                  value={filters.search}
+                />
+              </div>
+
+              <div className="field filter-field">
+                <label htmlFor="product-industry">适用行业</label>
+                <select
+                  id="product-industry"
+                  onChange={(event) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      industryGroupId: event.target.value,
+                    }))
+                  }
+                  value={filters.industryGroupId}
+                >
+                  <option value="">全部行业</option>
+                  {industries.map((industry) => (
+                    <option key={industry.id} value={industry.id}>
+                      {industry.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field filter-field">
+                <label htmlFor="product-status">启用状态</label>
+                <select
+                  id="product-status"
+                  onChange={(event) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      enabled: event.target.value,
+                    }))
+                  }
+                  value={filters.enabled}
+                >
+                  <option value="">全部状态</option>
+                  <option value="ENABLED">启用</option>
+                  <option value="DISABLED">停用</option>
+                </select>
+              </div>
+            </FilterBar>
+
+            {products.length ? (
+              <DataTable>
+                <thead>
+                  <tr>
+                    <th>产品名称</th>
+                    <th>分类 / 行业</th>
+                    <th>规格</th>
+                    <th>建议售价</th>
+                    <th>模板类型</th>
+                    <th>启用状态</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {products.map((product) => (
+                    <tr key={product.id}>
+                      <td>
+                        <strong>{product.displayName}</strong>
+                        <div className="small muted">{product.name}</div>
+                      </td>
+                      <td>
+                        <strong>
+                          {product.industryGroup?.name || "未设置行业"}
+                        </strong>
+                        <div className="small muted">
+                          {product.industrySubgroup?.name || "默认分类"}
+                        </div>
+                      </td>
+                      <td>
+                        {product.specification || "--"} / {product.unit || "--"}
+                      </td>
+                      <td>{formatProductMoney(product.suggestedPrice)}</td>
+                      <td>
+                        {outputTemplateLabelMap[product.outputTemplateType] ??
+                          product.outputTemplateType}
+                      </td>
+                      <td>
+                        <StatusBadge tone={productStatusTone(product)}>
+                          {productStatusLabel(product)}
+                        </StatusBadge>
+                      </td>
+                      <td>
+                        <div className="table-actions">
+                          <Link
+                            className="button secondary inline"
+                            href={`/products/${product.id}`}
+                          >
+                            详情
+                          </Link>
+                          {canEdit ? (
+                            <Link
+                              className="button secondary inline"
+                              href={`/products/${product.id}/edit`}
+                            >
+                              编辑
+                            </Link>
+                          ) : null}
+                          <ActionMenu
+                            items={[
+                              {
+                                href: `/quotes/general?productId=${product.id}`,
+                                label: "新建相关报价",
+                              },
+                              ...(canEdit
+                                ? [
+                                    {
+                                      href: `/products/${product.id}/edit`,
+                                      label: "编辑产品",
+                                    },
+                                  ]
+                                : []),
+                            ]}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </DataTable>
+            ) : (
+              <EmptyState
+                action={
+                  canEdit ? (
+                    <Link className="button inline" href="/products/new">
+                      新增产品
+                    </Link>
+                  ) : undefined
+                }
+                description="当前筛选条件下没有产品，建议新增产品或调整筛选条件。"
+                title="暂无匹配产品"
+              />
+            )}
+          </SectionCard>
         </div>
 
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>产品</th>
-                <th>行业</th>
-                <th>规格 / 单位</th>
-                <th>建议售价</th>
-                <th>成本价</th>
-                <th>模板</th>
-                <th>状态</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.length ? (
-                products.map((product) => (
-                  <tr key={product.id}>
-                    <td>
-                      <strong>{product.displayName}</strong>
-                      <div className="small muted">{product.name}</div>
-                    </td>
-                    <td>
-                      {product.industryGroup?.name || "--"}
-                      <div className="small muted">{product.industrySubgroup?.name || ""}</div>
-                    </td>
-                    <td>
-                      {product.specification || "--"} / {product.unit || "--"}
-                    </td>
-                    <td>¥{product.suggestedPrice}</td>
-                    <td>{product.costPrice ? `¥${product.costPrice}` : "--"}</td>
-                    <td>{product.outputTemplateType}</td>
-                    <td>{product.enabled ? "启用" : "停用"}</td>
-                    <td>
-                      <button
-                        className="button secondary inline"
-                        onClick={() =>
-                          setForm({
-                            id: product.id,
-                            name: product.name,
-                            displayName: product.displayName,
-                            industryGroupId: product.industryGroupId ?? "",
-                            industrySubgroupId: product.industrySubgroupId ?? "",
-                            spec: product.specification ?? "",
-                            unit: product.unit ?? "项",
-                            costPrice: product.costPrice ?? "",
-                            salePrice: product.suggestedPrice ?? "",
-                            enterpriseStandardNo: product.standardNumber ?? "",
-                            intro: product.summary ?? "",
-                            scenarios: product.scenarios ?? "",
-                            tagText: product.labelText ?? "",
-                            labelImageUrl: product.tagScreenshotUrl ?? "",
-                            productImageUrl: product.imageUrl ?? "",
-                            outputTemplateType: product.outputTemplateType,
-                            status: product.enabled ? "ENABLED" : "DISABLED",
-                            remark: product.remark ?? ""
-                          })
-                        }
-                      >
-                        编辑
-                      </button>
-                    </td>
-                  </tr>
+        <aside className="workspace-side sticky-side">
+          <SummaryCard
+            description="按模板类型快速判断当前资产更偏农业方案、产品报价还是方案报价。"
+            title="模板结构"
+          >
+            <div className="focus-list">
+              {templateSummary.length ? (
+                templateSummary.map(([template, count]) => (
+                  <article className="summary-card" key={template}>
+                    <div className="summary-list">
+                      <div className="summary-row">
+                        <span>
+                          {outputTemplateLabelMap[template] ?? template}
+                        </span>
+                        <strong>{count}</strong>
+                      </div>
+                    </div>
+                  </article>
                 ))
               ) : (
-                <tr>
-                  <td colSpan={8}>
-                    <div className="empty">产品库为空，建议先补农业方案与通用报价所需产品。</div>
-                  </td>
-                </tr>
+                <EmptyState
+                  description="新增产品后，系统会按模板类型在这里自动汇总。"
+                  title="暂无模板汇总"
+                />
               )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+            </div>
+          </SummaryCard>
 
-      <section className="panel">
-        <h3>{form.id ? "编辑产品" : "新增产品"}</h3>
-        <p className="muted">图片与标签截图先保留 URL / 上传入口，Sprint 2 接入腾讯云 COS 直传。</p>
-        {!canEdit ? <div className="warning-text small">当前为员工角色，仅可查看产品库。</div> : null}
-        <form className="form-grid" onSubmit={handleSubmit}>
-          <div className="field">
-            <label>产品名称</label>
-            <input value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} required />
-          </div>
-          <div className="field">
-            <label>对外显示名称</label>
-            <input
-              value={form.displayName}
-              onChange={(event) => setForm((prev) => ({ ...prev, displayName: event.target.value }))}
-              required
-            />
-          </div>
-          <div className="field">
-            <label>行业大类</label>
-            <select
-              value={form.industryGroupId}
-              onChange={(event) =>
-                setForm((prev) => ({
-                  ...prev,
-                  industryGroupId: event.target.value,
-                  industrySubgroupId: ""
-                }))
-              }
-            >
-              <option value="">请选择行业</option>
-              {industries.map((industry) => (
-                <option key={industry.id} value={industry.id}>
-                  {industry.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label>细分行业</label>
-            <select
-              value={form.industrySubgroupId}
-              onChange={(event) => setForm((prev) => ({ ...prev, industrySubgroupId: event.target.value }))}
-            >
-              <option value="">请选择细分行业</option>
-              {selectedIndustry?.subgroups.map((subgroup) => (
-                <option key={subgroup.id} value={subgroup.id}>
-                  {subgroup.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label>规格</label>
-            <input
-              value={form.spec}
-              onChange={(event) => setForm((prev) => ({ ...prev, spec: event.target.value }))}
-            />
-          </div>
-          <div className="field">
-            <label>单位</label>
-            <input value={form.unit} onChange={(event) => setForm((prev) => ({ ...prev, unit: event.target.value }))} />
-          </div>
-          <div className="field">
-            <label>成本价</label>
-            <input
-              type="number"
-              value={form.costPrice}
-              onChange={(event) => setForm((prev) => ({ ...prev, costPrice: event.target.value }))}
-            />
-          </div>
-          <div className="field">
-            <label>建议售价</label>
-            <input
-              type="number"
-              value={form.salePrice}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, salePrice: event.target.value }))
-              }
-              required
-            />
-          </div>
-          <div className="field">
-            <label>企业标准号</label>
-            <input
-              value={form.enterpriseStandardNo}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, enterpriseStandardNo: event.target.value }))
-              }
-            />
-          </div>
-          <div className="field">
-            <label>标签文字</label>
-            <input value={form.tagText} onChange={(event) => setForm((prev) => ({ ...prev, tagText: event.target.value }))} />
-          </div>
-          <div className="field">
-            <label>标签截图 URL</label>
-            <input
-              value={form.labelImageUrl}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, labelImageUrl: event.target.value }))
-              }
-            />
-          </div>
-          <div className="field">
-            <label>产品图片 URL</label>
-            <input
-              value={form.productImageUrl}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, productImageUrl: event.target.value }))
-              }
-            />
-          </div>
-          <div className="field">
-            <label>输出模板类型</label>
-            <select
-              value={form.outputTemplateType}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, outputTemplateType: event.target.value }))
-              }
-            >
-              <option value="AGRICULTURE_PLAN">农业方案</option>
-              <option value="PRODUCT_QUOTE">产品报价</option>
-              <option value="SOLUTION_QUOTE">方案报价</option>
-            </select>
-          </div>
-          <div className="field full">
-            <label>产品简介</label>
-            <textarea
-              value={form.intro}
-              onChange={(event) => setForm((prev) => ({ ...prev, intro: event.target.value }))}
-            />
-          </div>
-          <div className="field full">
-            <label>适用场景</label>
-            <textarea
-              value={form.scenarios}
-              onChange={(event) => setForm((prev) => ({ ...prev, scenarios: event.target.value }))}
-            />
-          </div>
-          <div className="field full">
-            <label>标签文字</label>
-            <textarea
-              value={form.tagText}
-              onChange={(event) => setForm((prev) => ({ ...prev, tagText: event.target.value }))}
-            />
-          </div>
-          <div className="field">
-            <label>是否启用</label>
-            <select
-              value={form.status}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, status: event.target.value }))
-              }
-            >
-              <option value="ENABLED">启用</option>
-              <option value="DISABLED">停用</option>
-            </select>
-          </div>
-          <div className="field full">
-            <label>备注</label>
-            <textarea
-              value={form.remark}
-              onChange={(event) => setForm((prev) => ({ ...prev, remark: event.target.value }))}
-            />
-          </div>
-          {message ? <div className="small">{message}</div> : null}
-          {error ? <div className="small danger-text">{error}</div> : null}
-          <div className="toolbar">
-            <button type="submit">{form.id ? "更新产品" : "创建产品"}</button>
-            <button type="button" className="button secondary" onClick={() => setForm(defaultProductForm)}>
-              清空表单
-            </button>
-          </div>
-        </form>
+          <SummaryCard
+            description="AI 解析继续保留，但从主首屏退到辅助入口，避免稀释产品库管理效率。"
+            title="辅助入口"
+          >
+            <div className="focus-list">
+              <Link className="list-card" href="/products/new#smart-parser">
+                <div className="focus-card__top">
+                  <strong>打开 AI 解析辅助</strong>
+                  <StatusBadge tone="neutral">辅助</StatusBadge>
+                </div>
+                <div className="small muted">
+                  在新增产品页吸收标签截图或文本解析结果，再带入正式产品表单。
+                </div>
+              </Link>
+            </div>
+          </SummaryCard>
+        </aside>
       </section>
-      </div>
     </div>
   );
 }

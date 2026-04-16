@@ -13,6 +13,8 @@ storage
 logs
 coverage
 .npm-cache
+.playwright-cli
+tmp
 .DS_Store
 *.log
 *.tsbuildinfo

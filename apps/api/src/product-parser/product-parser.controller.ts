@@ -48,7 +48,18 @@ export class ProductParserController {
   }
 
   @Post("parse-mixed")
-  async parseMixed(@Body() dto: ParseProductMixedDto, @Req() req: RequestWithUser) {
-    return this.productParserService.parseMixed(dto, req.user);
+  @UseInterceptors(
+    FileInterceptor("image", {
+      limits: {
+        fileSize: 5 * 1024 * 1024
+      }
+    })
+  )
+  async parseMixed(
+    @UploadedFile() file: UploadedImageFile | undefined,
+    @Body() dto: ParseProductMixedDto,
+    @Req() req: RequestWithUser
+  ) {
+    return this.productParserService.parseMixed(dto, req.user, file);
   }
 }

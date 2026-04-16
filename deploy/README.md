@@ -17,7 +17,7 @@
 - CVM：Ubuntu 22.04 LTS，4 核 8G
 - 数据库：TDSQL-C MySQL 8.0
 - COS：私有读写 Bucket
-- 域名：`crm.example.com`
+- 域名：`crm.hui-health.com`
 
 初始化命令：
 
@@ -120,7 +120,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-把 `crm.example.com`、证书路径替换为你的正式值。
+确认 `server_name`、证书路径和 DNS 解析都已指向 `crm.hui-health.com`。
 
 ## 9. 部署后检查
 
@@ -133,8 +133,8 @@ curl http://127.0.0.1:3001/api/health
 
 浏览器检查：
 
-- `https://crm.example.com/login`
-- `https://crm.example.com/dashboard`
+- `https://crm.hui-health.com/login`
+- `https://crm.hui-health.com/dashboard`
 
 ## 10. 第一阶段上线范围
 
@@ -149,3 +149,40 @@ curl http://127.0.0.1:3001/api/health
 - COS 上传接口：`/api/files/upload-token`、`/api/files/callback`
 - 企业微信登录：Sprint 2 接入
 - 企业微信消息提醒：Sprint 3 接入
+
+## 12. HTTPS 回归检查
+
+证书续期、Nginx 重载或 Docker 重建后，可以直接运行仓库内的脚本做一轮入口回归：
+
+```bash
+cd /srv/huigui/current
+CRM_DOMAIN=crm.hui-health.com ./scripts/ops/check-crm-https.sh
+```
+
+如果希望顺带校验登录接口，可临时传入管理员账号：
+
+```bash
+CRM_DOMAIN=crm.hui-health.com CRM_USERNAME=admin CRM_PASSWORD='Huigui@123' ./scripts/ops/check-crm-https.sh
+```
+
+## 13. 本地工作区直推生产
+
+如果当前修改还没有整理成 Git 提交，但需要把“本地当前状态”完整同步到生产服务器，优先使用：
+
+```bash
+./scripts/ops/deploy-local-to-production.sh
+```
+
+这条脚本会自动执行：
+
+- 备份服务器当前源代码到 `/opt/huigui-backups/`
+- 用 `rsync` 将本地工作区同步到 `/opt/huigui-crm`
+- 重建并重启 `api / app / nginx`
+- 等待 API 健康检查恢复
+- 执行 `npm run db:seed`
+- 运行 HTTPS 回归脚本
+
+每次执行完成后，记得同步更新：
+
+- `docs/deployment-log.md`
+- `docs/deployments/`

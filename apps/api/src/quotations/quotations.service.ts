@@ -1,9 +1,12 @@
-import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import PDFDocument from "pdfkit";
 import fs from "fs";
-import { QuotationType } from "@prisma/client";
+import { ApprovalRuleType, ApprovalStatus, QuotationType } from "@prisma/client";
 import type { Response } from "express";
 import type { AuthenticatedUser } from "../common/types/authenticated-user";
+import { AccessControlService } from "../common/services/access-control.service";
+import { ApprovalService } from "../common/services/approval.service";
+import { AuditService } from "../common/services/audit.service";
 import { PrismaService } from "../prisma/prisma.service";
 
 function formatMoney(value: any) {
@@ -24,13 +27,21 @@ function resolvePdfFontPath() {
 
 @Injectable()
 export class QuotationsService {
-  constructor(private readonly prisma: PrismaService) {}
-
-  private isStaff(user: AuthenticatedUser) {
-    return user.roleCode === "STAFF";
-  }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly accessControl: AccessControlService,
+    private readonly approvalService: ApprovalService,
+    private readonly auditService: AuditService
+  ) {}
 
   private serializeQuotation(quotation: any) {
+    const totalOriginalAmount = Number(quotation.totalOriginalAmount || 0);
+    const totalDiscountedAmount = Number(quotation.totalDiscountedAmount || 0);
+    const discountRate =
+      totalOriginalAmount > 0
+        ? (((totalOriginalAmount - totalDiscountedAmount) / totalOriginalAmount) * 100).toFixed(1)
+        : "0.0";
+
     return {
       ...quotation,
       type: quotation.quotationType,
@@ -98,20 +109,37 @@ export class QuotationsService {
               ) ?? 0
             )
           }
-        : null
+        : null,
+      discountRate,
+      approvalRequests: Array.isArray(quotation.approvalRequests)
+        ? quotation.approvalRequests.map((request: any) => ({
+            id: request.id,
+            type: request.type,
+            status: request.status,
+            title: request.title,
+            summary: request.summary,
+            requiredRoleCode: request.requiredRoleCode,
+            createdAt: request.createdAt
+          }))
+        : []
     };
   }
 
   async list(user: AuthenticatedUser) {
+    const where = await this.accessControl.buildQuotationWhere(user);
     const items = await this.prisma.quotation.findMany({
-      where: this.isStaff(user) ? { creatorUserId: user.id } : undefined,
+      where,
       orderBy: { createdAt: "desc" },
       include: {
         customer: true,
         creator: { include: { role: true } },
         industryGroup: true,
         items: true,
-        agriculturePlan: true
+        agriculturePlan: true,
+        approvalRequests: {
+          where: { status: ApprovalStatus.PENDING },
+          orderBy: { createdAt: "desc" }
+        }
       }
     });
 
@@ -119,29 +147,30 @@ export class QuotationsService {
   }
 
   async getById(id: string, user: AuthenticatedUser) {
-    const quotation = await this.prisma.quotation.findUnique({
-      where: { id },
+    const quotation = await this.prisma.quotation.findFirst({
+      where: await this.accessControl.buildQuotationWhere(user, { id }),
       include: {
         customer: true,
         creator: { include: { role: true } },
         industryGroup: true,
         items: true,
-        agriculturePlan: true
+        agriculturePlan: true,
+        approvalRequests: {
+          orderBy: { createdAt: "desc" }
+        }
       }
     });
 
     if (!quotation) {
-      throw new NotFoundException("报价不存在");
-    }
-
-    if (this.isStaff(user) && quotation.creatorUserId !== user.id) {
-      throw new ForbiddenException("无权查看该报价");
+      throw new NotFoundException("报价不存在或无权访问");
     }
 
     return this.serializeQuotation(quotation);
   }
 
   async streamPdf(id: string, user: AuthenticatedUser, res: Response) {
+    this.accessControl.assertPermission(user, "action.quotation.export_pdf", "当前账号无权导出 PDF");
+    await this.approvalService.ensureQuotationExportable(id, user);
     const quotation = await this.getById(id, user);
     const doc = new PDFDocument({ size: "A4", margin: 40 });
     const fontPath = resolvePdfFontPath();
@@ -202,5 +231,66 @@ export class QuotationsService {
       doc.text(`备注：${quotation.remark}`);
     }
     doc.end();
+
+    await this.prisma.quotation.update({
+      where: { id },
+      data: {
+        exportedAt: new Date()
+      }
+    });
+
+    await this.auditService.log({
+      userId: user.id,
+      action: "EXPORT",
+      module: "报价",
+      targetType: "Quotation",
+      targetId: quotation.id,
+      targetName: quotation.quotationNo,
+      content: "导出正式报价 PDF",
+      afterSummary: `总价: ${quotation.totalAmount}`
+    });
+  }
+
+  async reviewApproval(
+    id: string,
+    type: "discount" | "export",
+    decision: "approve" | "reject",
+    user: AuthenticatedUser,
+    remark?: string
+  ) {
+    if (decision === "approve") {
+      this.accessControl.assertPermission(user, "action.quotation.approve", "当前账号无权审批通过");
+    } else {
+      this.accessControl.assertPermission(user, "action.quotation.reject", "当前账号无权驳回审批");
+    }
+
+    const normalizedType =
+      type === "discount" ? ApprovalRuleType.DISCOUNT : ApprovalRuleType.EXPORT_QUOTATION;
+    const result = await this.approvalService.reviewQuotationRequest(
+      id,
+      normalizedType,
+      decision,
+      user,
+      remark
+    );
+
+    const quotation = await this.prisma.quotation.findUnique({
+      where: { id }
+    });
+
+    if (quotation) {
+      await this.auditService.log({
+        userId: user.id,
+        action: decision === "approve" ? "APPROVE" : "REJECT",
+        module: "报价",
+        targetType: "Quotation",
+        targetId: id,
+        targetName: quotation.quotationNo,
+        content: type === "discount" ? "处理折扣审批" : "处理导出审批",
+        afterSummary: remark
+      });
+    }
+
+    return result;
   }
 }

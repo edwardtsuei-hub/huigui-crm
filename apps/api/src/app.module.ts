@@ -12,7 +12,11 @@ import { AppHealthController } from "./health/health.controller";
 import { AuthController } from "./auth/auth.controller";
 import { AuthService } from "./auth/auth.service";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
+import { PermissionsGuard } from "./common/guards/permissions.guard";
 import { RolesGuard } from "./common/guards/roles.guard";
+import { AccessControlService } from "./common/services/access-control.service";
+import { ApprovalService } from "./common/services/approval.service";
+import { AuditService } from "./common/services/audit.service";
 import {
   CustomerFollowupsController,
   CustomersController
@@ -28,6 +32,8 @@ import {
   MetaController
 } from "./meta/meta.controller";
 import { MetaService } from "./meta/meta.service";
+import { ManagementController } from "./management/management.controller";
+import { ManagementService } from "./management/management.service";
 import { NotificationsController } from "./notifications/notifications.controller";
 import { NotificationService } from "./modules/notifications/notification.service";
 import { ReminderService } from "./modules/reminders/reminder.service";
@@ -72,10 +78,13 @@ import { QuotationsService } from "./quotations/quotations.service";
     LegacyAgricultureController,
     GeneralQuotesController,
     QuotationsController
+    ,
+    ManagementController
   ],
   providers: [
     AuthService,
     MetaService,
+    ManagementService,
     CustomersService,
     ProductsService,
     AgriculturePlansService,
@@ -83,6 +92,9 @@ import { QuotationsService } from "./quotations/quotations.service";
     QuotationsService,
     NotificationService,
     ReminderService,
+    AccessControlService,
+    ApprovalService,
+    AuditService,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard
@@ -90,6 +102,10 @@ import { QuotationsService } from "./quotations/quotations.service";
     {
       provide: APP_GUARD,
       useClass: RolesGuard
+    },
+    {
+      provide: APP_GUARD,
+      useClass: PermissionsGuard
     }
   ]
 })

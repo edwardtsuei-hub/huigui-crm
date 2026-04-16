@@ -7,7 +7,6 @@ export type IndustryGroupOption = {
 };
 
 export type ProductFormValues = {
-  id: string;
   name: string;
   displayName: string;
   industryGroupId: string;
@@ -27,8 +26,36 @@ export type ProductFormValues = {
   remark: string;
 };
 
+export type ProductRecord = {
+  id: string;
+  name: string;
+  displayName: string;
+  industryGroupId?: string | null;
+  industrySubgroupId?: string | null;
+  specification?: string | null;
+  unit?: string | null;
+  costPrice?: string | null;
+  suggestedPrice: string;
+  outputTemplateType: string;
+  status: string;
+  enabled: boolean;
+  standardNumber?: string | null;
+  summary?: string | null;
+  scenarios?: string | null;
+  remark?: string | null;
+  labelText?: string | null;
+  industryGroup?: { id?: string; name: string } | null;
+  industrySubgroup?: { id?: string; name: string } | null;
+  imageUrl?: string | null;
+  tagScreenshotUrl?: string | null;
+  quoteEnabled?: boolean;
+  employeeVisible?: boolean;
+  customerVisible?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export const defaultProductForm: ProductFormValues = {
-  id: "",
   name: "",
   displayName: "",
   industryGroupId: "",
@@ -47,6 +74,82 @@ export const defaultProductForm: ProductFormValues = {
   status: "ENABLED",
   remark: ""
 };
+
+export const productStatusOptions = [
+  { value: "ENABLED", label: "启用" },
+  { value: "DISABLED", label: "停用" }
+] as const;
+
+export const outputTemplateOptions = [
+  { value: "AGRICULTURE_PLAN", label: "农业方案" },
+  { value: "PRODUCT_QUOTE", label: "产品报价" },
+  { value: "SOLUTION_QUOTE", label: "方案报价" }
+] as const;
+
+export const outputTemplateLabelMap: Record<string, string> = Object.fromEntries(
+  outputTemplateOptions.map((option) => [option.value, option.label])
+);
+
+export function productToFormValues(product: ProductRecord): ProductFormValues {
+  return {
+    name: product.name,
+    displayName: product.displayName,
+    industryGroupId: product.industryGroupId ?? "",
+    industrySubgroupId: product.industrySubgroupId ?? "",
+    spec: product.specification ?? "",
+    unit: product.unit ?? "项",
+    costPrice: product.costPrice ?? "",
+    salePrice: product.suggestedPrice ?? "",
+    enterpriseStandardNo: product.standardNumber ?? "",
+    intro: product.summary ?? "",
+    scenarios: product.scenarios ?? "",
+    tagText: product.labelText ?? "",
+    labelImageUrl: product.tagScreenshotUrl ?? "",
+    productImageUrl: product.imageUrl ?? "",
+    outputTemplateType: product.outputTemplateType,
+    status: product.enabled ? "ENABLED" : product.status,
+    remark: product.remark ?? ""
+  };
+}
+
+export function toProductPayload(form: ProductFormValues) {
+  return {
+    name: form.name,
+    displayName: form.displayName,
+    industryGroupId: form.industryGroupId || undefined,
+    industrySubgroupId: form.industrySubgroupId || undefined,
+    spec: form.spec || undefined,
+    unit: form.unit || undefined,
+    costPrice: form.costPrice ? Number(form.costPrice) : undefined,
+    salePrice: Number(form.salePrice),
+    enterpriseStandardNo: form.enterpriseStandardNo || undefined,
+    intro: form.intro || undefined,
+    scenarios: form.scenarios || undefined,
+    labelText: form.tagText || undefined,
+    labelImageUrl: form.labelImageUrl || undefined,
+    productImageUrl: form.productImageUrl || undefined,
+    outputTemplateType: form.outputTemplateType,
+    status: form.status,
+    remark: form.remark || undefined
+  };
+}
+
+export function formatProductMoney(value?: string | number | null) {
+  if (value === null || value === undefined || value === "") {
+    return "--";
+  }
+
+  const amount = typeof value === "number" ? value : Number(value);
+
+  if (Number.isNaN(amount)) {
+    return "--";
+  }
+
+  return `¥${amount.toLocaleString("zh-CN", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  })}`;
+}
 
 export const PRODUCT_PARSE_FIELD_LABELS = {
   name: "产品名称",

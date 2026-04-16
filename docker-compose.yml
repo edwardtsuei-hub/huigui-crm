@@ -8,9 +8,11 @@ services:
       - api
     ports:
       - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
     volumes:
       - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ${UPLOADS_DIR:-./storage/uploads}:/var/www/uploads
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     environment:
       TZ: ${TZ:-Asia/Shanghai}
 

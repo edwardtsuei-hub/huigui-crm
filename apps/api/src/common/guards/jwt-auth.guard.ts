@@ -50,7 +50,17 @@ export class JwtAuthGuard implements CanActivate {
       const payload = await this.jwtService.verifyAsync<{ sub: string }>(token);
       const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
-        include: { role: true }
+        include: {
+          role: {
+            include: {
+              rolePermissions: {
+                include: {
+                  permission: true
+                }
+              }
+            }
+          }
+        }
       });
 
       if (!user || user.status !== UserStatus.ACTIVE) {
@@ -60,10 +70,16 @@ export class JwtAuthGuard implements CanActivate {
       request.user = {
         id: user.id,
         name: user.name,
+        loginAccount: user.loginAccount,
         mobile: user.mobile,
         email: user.email,
+        department: user.department,
+        title: user.title,
+        managerUserId: user.managerUserId,
+        dataScope: user.dataScope,
         roleCode: user.role.code,
         roleName: user.role.name,
+        permissions: user.role.rolePermissions.map((item) => item.permission.code),
         wecomUserId: user.wecomUserId,
         wecomName: user.wecomName,
         wecomAvatar: user.wecomAvatar

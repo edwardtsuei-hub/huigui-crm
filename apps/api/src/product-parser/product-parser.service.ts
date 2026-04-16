@@ -48,15 +48,17 @@ export class ProductParserService {
     return response;
   }
 
-  async parseMixed(dto: ParseProductMixedDto, user: AuthenticatedUser) {
-    if (!dto.rawText?.trim() && !dto.imageUrl?.trim()) {
+  async parseMixed(dto: ParseProductMixedDto, user: AuthenticatedUser, file?: UploadedImageFile) {
+    if (!dto.rawText?.trim() && !dto.imageUrl?.trim() && !file) {
       throw new BadRequestException("至少提供文字或图片其一");
     }
 
     const originalText = dto.rawText?.trim() || "";
-    const imageText = dto.imageUrl
-      ? await this.imageParserService.extractTextFromUrl(dto.imageUrl)
-      : "";
+    const imageText = file
+      ? await this.imageParserService.extractTextFromFile(file)
+      : dto.imageUrl
+        ? await this.imageParserService.extractTextFromUrl(dto.imageUrl)
+        : "";
 
     const textDraft = originalText
       ? this.textParserService.parse(originalText, "text")

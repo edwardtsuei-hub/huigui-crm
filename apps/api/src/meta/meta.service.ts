@@ -1,13 +1,17 @@
 import { Injectable } from "@nestjs/common";
-import { TaskStatus } from "@prisma/client";
+import { ApprovalStatus, TaskStatus } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import type { AuthenticatedUser } from "../common/types/authenticated-user";
+import { AccessControlService } from "../common/services/access-control.service";
+import { ApprovalService } from "../common/services/approval.service";
 import { NotificationService } from "../modules/notifications/notification.service";
 
 @Injectable()
 export class MetaService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly accessControl: AccessControlService,
+    private readonly approvalService: ApprovalService,
     private readonly notificationService: NotificationService
   ) {}
 
@@ -31,16 +35,14 @@ export class MetaService {
   }
 
   async getUsers(currentUser: AuthenticatedUser) {
-    const users = await this.prisma.user.findMany({
-      where: currentUser.roleCode === "STAFF" ? { id: currentUser.id } : undefined,
-      orderBy: { createdAt: "asc" },
-      include: { role: true }
-    });
+    const users = await this.accessControl.getAssignableUsers(currentUser);
 
     return users.map((user) => ({
       id: user.id,
       name: user.name,
       displayName: user.wecomName ?? user.name,
+      department: user.department,
+      title: user.title,
       roleCode: user.role.code,
       roleName: user.role.name,
       mobile: user.mobile,
@@ -52,10 +54,8 @@ export class MetaService {
   }
 
   async getDashboard(currentUser: AuthenticatedUser) {
-    const customerWhere =
-      currentUser.roleCode === "STAFF" ? { ownerUserId: currentUser.id } : undefined;
-    const quotationWhere =
-      currentUser.roleCode === "STAFF" ? { creatorUserId: currentUser.id } : undefined;
+    const customerWhere = await this.accessControl.buildCustomerWhere(currentUser);
+    const quotationWhere = await this.accessControl.buildQuotationWhere(currentUser);
     const taskWhere = {
       assigneeUserId: currentUser.id,
       status: {
@@ -102,6 +102,12 @@ export class MetaService {
       customerCount,
       productCount,
       quotationCount,
+      pendingApprovalCount:
+        currentUser.roleCode === "SUPER_ADMIN" || currentUser.roleCode === "ADMIN"
+          ? await this.prisma.approvalRequest.count({
+              where: { status: ApprovalStatus.PENDING }
+            })
+          : (await this.approvalService.listPendingForRoleCodes([currentUser.roleCode], 50)).length,
       recentCustomers,
       recentNotifications,
       recentQuotations: recentQuotations.map((quotation) => ({

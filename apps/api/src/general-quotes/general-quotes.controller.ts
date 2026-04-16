@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Post, Req } from "@nestjs/common";
 import type { Request } from "express";
+import { Permissions } from "../common/decorators/permissions.decorator";
 import type { AuthenticatedUser } from "../common/types/authenticated-user";
 import {
   CalculateGeneralQuoteDto,
@@ -15,16 +16,19 @@ type RequestWithUser = Request & {
 export class GeneralQuotesController {
   constructor(private readonly generalQuotesService: GeneralQuotesService) {}
 
+  @Permissions("action.solution.create")
   @Post("calculate")
   async calculate(@Body() dto: CalculateGeneralQuoteDto) {
     return this.generalQuotesService.calculate(dto);
   }
 
+  @Permissions("action.quotation.create")
   @Post()
   async create(@Body() dto: CreateGeneralQuoteDto, @Req() req: RequestWithUser) {
     return this.generalQuotesService.create(dto, req.user);
   }
 
+  @Permissions("page.quotations.detail")
   @Get(":id")
   async getById(@Param("id") id: string, @Req() req: RequestWithUser) {
     return this.generalQuotesService.getById(id, req.user);

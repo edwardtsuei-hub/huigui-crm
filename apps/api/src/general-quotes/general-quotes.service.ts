@@ -1,6 +1,9 @@
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { ProductStatus, QuotationStatus, QuotationType } from "@prisma/client";
 import type { AuthenticatedUser } from "../common/types/authenticated-user";
+import { AccessControlService } from "../common/services/access-control.service";
+import { ApprovalService } from "../common/services/approval.service";
+import { AuditService } from "../common/services/audit.service";
 import { PrismaService } from "../prisma/prisma.service";
 import {
   CalculateGeneralQuoteDto,
@@ -23,23 +26,20 @@ function buildQuotationNo() {
 
 @Injectable()
 export class GeneralQuotesService {
-  constructor(private readonly prisma: PrismaService) {}
-
-  private isStaff(user: AuthenticatedUser) {
-    return user.roleCode === "STAFF";
-  }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly accessControl: AccessControlService,
+    private readonly approvalService: ApprovalService,
+    private readonly auditService: AuditService
+  ) {}
 
   private async ensureCustomerAccessible(customerId: string, user: AuthenticatedUser) {
-    const customer = await this.prisma.customer.findUnique({
-      where: { id: customerId }
+    const customer = await this.prisma.customer.findFirst({
+      where: await this.accessControl.buildCustomerWhere(user, { id: customerId })
     });
 
     if (!customer) {
-      throw new NotFoundException("客户不存在");
-    }
-
-    if (this.isStaff(user) && customer.ownerUserId !== user.id) {
-      throw new ForbiddenException("无权为该客户创建报价");
+      throw new NotFoundException("客户不存在或无权为该客户创建报价");
     }
 
     return customer;
@@ -151,6 +151,7 @@ export class GeneralQuotesService {
   }
 
   async create(dto: CreateGeneralQuoteDto, user: AuthenticatedUser) {
+    this.accessControl.assertPermission(user, "action.quotation.create", "当前账号无权新建报价");
     const customer = await this.ensureCustomerAccessible(dto.customerId, user);
     const preview = await this.calculate(dto);
     const quotationNo = buildQuotationNo();
@@ -210,6 +211,19 @@ export class GeneralQuotesService {
       return createdQuotation;
     });
 
+    await this.approvalService.syncQuotationApprovals(quotation.id, user);
+
+    await this.auditService.log({
+      userId: user.id,
+      action: "CREATE",
+      module: "报价",
+      targetType: "Quotation",
+      targetId: quotation.id,
+      targetName: quotation.quotationNo,
+      content: "创建通用报价",
+      afterSummary: `客户: ${customer.customerName}；总价: ${preview.totalAmount}`
+    });
+
     return {
       id: quotation.id,
       quotationId: quotation.id,
@@ -218,23 +232,15 @@ export class GeneralQuotesService {
   }
 
   async getById(id: string, user: AuthenticatedUser) {
-    const quotation = await this.prisma.quotation.findUnique({
-      where: { id },
+    const quotation = await this.prisma.quotation.findFirst({
+      where: await this.accessControl.buildQuotationWhere(user, { id }),
       include: {
         customer: true
       }
     });
 
     if (!quotation) {
-      throw new NotFoundException("报价不存在");
-    }
-
-    if (
-      this.isStaff(user) &&
-      quotation.creatorUserId !== user.id &&
-      quotation.customer.ownerUserId !== user.id
-    ) {
-      throw new ForbiddenException("无权查看该通用报价");
+      throw new NotFoundException("报价不存在或无权查看");
     }
 
     return {

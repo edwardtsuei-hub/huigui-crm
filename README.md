@@ -102,9 +102,12 @@ npm run dev
 
 腾讯云 CVM 部署说明见 [deploy/README.md](./deploy/README.md)。
 
+生产发版记录见 [docs/deployment-log.md](./docs/deployment-log.md)。
+
 仓库内已提供：
 
 - 后端环境变量模板：`apps/api/.env.example`
 - 前端环境变量模板：`apps/web/.env.example`
 - Nginx 示例：`deploy/nginx/huigui.conf`
 - PM2 配置：`deploy/pm2/ecosystem.config.cjs`
+- 生产同步脚本：`scripts/ops/deploy-local-to-production.sh`

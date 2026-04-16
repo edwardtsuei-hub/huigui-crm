@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { apiFetch } from "../../lib/api";
-import { uploadImageToCos, type UploadedCosImage } from "../../lib/cos";
 import { ParserFieldMapper } from "./ParserFieldMapper";
 import { ParserInputPanel } from "./ParserInputPanel";
 import { ParserResultPanel } from "./ParserResultPanel";
@@ -92,7 +91,6 @@ export function ProductSmartParser(props: ProductSmartParserProps) {
   const [statusMessage, setStatusMessage] = useState("");
   const [applyMessage, setApplyMessage] = useState("");
   const [result, setResult] = useState<ProductParseResponse | null>(null);
-  const [uploadedImage, setUploadedImage] = useState<UploadedCosImage | null>(null);
   const [mappingValues, setMappingValues] = useState<Partial<ProductFormValues>>({});
   const [fieldModes, setFieldModes] = useState<
     Partial<Record<ProductParserMappableField, "apply" | "keep">>
@@ -123,26 +121,18 @@ export function ProductSmartParser(props: ProductSmartParserProps) {
     setLoading(true);
 
     try {
-      let uploaded = uploadedImage;
-      if (imageFile && !uploaded) {
-        setStatusMessage("正在上传图片到 COS...");
-        uploaded = await uploadImageToCos(imageFile, {
-          businessType: "product-parser-image",
-          onProgress: (percent) => setStatusMessage(`正在上传图片到 COS... ${percent}%`)
-        });
-        setUploadedImage(uploaded);
-      }
-
       let response: ProductParseResponse;
 
-      if (rawText.trim() && uploaded?.fileUrl) {
-        setStatusMessage("正在进行图文融合解析...");
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append("image", imageFile);
+        if (rawText.trim()) {
+          formData.append("rawText", rawText.trim());
+        }
+        setStatusMessage(rawText.trim() ? "正在进行图文融合解析..." : "正在解析图片内容...");
         response = await apiFetch<ProductParseResponse>("/products/parse-mixed", {
           method: "POST",
-          body: JSON.stringify({
-            rawText,
-            imageUrl: uploaded.fileUrl
-          })
+          body: formData
         });
       } else if (rawText.trim()) {
         setStatusMessage("正在解析文字内容...");
@@ -153,17 +143,11 @@ export function ProductSmartParser(props: ProductSmartParserProps) {
           })
         });
       } else {
-        setStatusMessage("正在解析图片内容...");
-        response = await apiFetch<ProductParseResponse>("/products/parse-mixed", {
-          method: "POST",
-          body: JSON.stringify({
-            imageUrl: uploaded?.fileUrl
-          })
-        });
+        throw new Error("请至少粘贴一段文字或上传一张标签图片。");
       }
 
       setResult(response);
-      setStatusMessage(uploaded?.fileUrl ? "图片已上传到 COS，并完成智能解析。" : "解析完成。");
+      setStatusMessage(imageFile ? "图片已上传并完成智能解析。" : "解析完成。");
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "解析失败");
       setStatusMessage("");
@@ -178,19 +162,17 @@ export function ProductSmartParser(props: ProductSmartParserProps) {
     if (!file) {
       setImageFile(null);
       setImagePreview("");
-      setUploadedImage(null);
       return;
     }
 
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
-    setUploadedImage(null);
   }
 
   function handleClear() {
     setResult(null);
     setApplyMessage("");
-    setStatusMessage(uploadedImage?.fileUrl ? "已保留已上传图片，可继续调整文字后再次解析。" : "");
+    setStatusMessage(imageFile ? "已保留当前图片，可继续调整文字后再次解析。" : "");
   }
 
   function handleModeChange(field: ProductParserMappableField, mode: "apply" | "keep") {

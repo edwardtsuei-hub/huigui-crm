@@ -2,12 +2,13 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { API_BASE_URL, getToken, readErrorMessage, setAuth } from "../../../lib/api";
+import { fetchApi, getToken, readErrorMessage, setAuth } from "../../../lib/api";
+import { PUBLIC_ENTRY_HOST } from "../../../lib/public-entry";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("Huigui@123");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -23,7 +24,7 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetchApi("/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })
@@ -50,7 +51,8 @@ export default function LoginPage() {
           <p className="small">Sprint 1 MVP</p>
           <h1>洄归生态客户管理与报价协同系统</h1>
           <p>
-            当前以网页端 CRM 与报价协同为主，优先覆盖农业方案、通用报价、客户管理与站内提醒。
+            当前以网页端 CRM 与报价协同为主，优先覆盖农业方案、通用报价、客户管理与站内提醒，
+            团队正式入口统一为 {PUBLIC_ENTRY_HOST}。
           </p>
           <ul>
             <li>客户全生命周期管理与跟进记录</li>
@@ -61,11 +63,11 @@ export default function LoginPage() {
 
         <section className="panel">
           <div className="login-panel-stack">
-            <div className="status-badge">网页端登录</div>
+            <div className="status-badge">正式入口</div>
             <div className="stack">
               <h2>登录系统</h2>
               <p className="muted">
-                企业微信接入已暂缓，当前统一通过网页端账号密码登录，并在系统内查看提醒通知。
+                请统一从 {PUBLIC_ENTRY_HOST} 进入系统，避免继续使用临时 IP 或历史地址。
               </p>
             </div>
           </div>
@@ -75,6 +77,7 @@ export default function LoginPage() {
               <label htmlFor="username">用户名</label>
               <input
                 id="username"
+                autoComplete="username"
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 placeholder="请输入用户名"
@@ -86,6 +89,7 @@ export default function LoginPage() {
               <input
                 id="password"
                 type="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="请输入密码"

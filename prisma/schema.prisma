@@ -13,6 +13,14 @@ enum UserStatus {
   DISABLED
 }
 
+enum DataScope {
+  ALL
+  DEPARTMENT
+  TEAM
+  OWNED
+  PARTICIPATED
+}
+
 enum CustomerStatus {
   UNCONTACTED
   CONTACTED
@@ -90,9 +98,24 @@ enum NotificationSendStatus {
   FAILED
 }
 
+enum ApprovalRuleType {
+  DISCOUNT
+  LOW_PRICE
+  EXPORT_QUOTATION
+  CUSTOMER_TRANSFER
+}
+
+enum ApprovalStatus {
+  NOT_REQUIRED
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id            String         @id @default(cuid())
   name          String
+  loginAccount  String?        @unique @db.VarChar(64)
   mobile        String?        @db.VarChar(32)
   email         String?        @db.VarChar(128)
   passwordHash  String?        @db.VarChar(255)
@@ -100,12 +123,22 @@ model User {
   wecomName     String?        @db.VarChar(128)
   wecomAvatar   String?        @db.VarChar(500)
   department    String?        @db.VarChar(128)
+  title         String?        @db.VarChar(128)
+  managerUserId String?
+  dataScope     DataScope      @default(OWNED)
+  note          String?        @db.Text
   status        UserStatus     @default(ACTIVE)
   roleId        String
+  lastLoginAt   DateTime?
+  createdByUserId String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
   role          Role           @relation(fields: [roleId], references: [id])
+  manager       User?          @relation("UserManager", fields: [managerUserId], references: [id])
+  subordinates  User[]         @relation("UserManager")
+  createdByUser User?          @relation("UserCreator", fields: [createdByUserId], references: [id])
+  createdMembers User[]        @relation("UserCreator")
   customers     Customer[]     @relation("CustomerOwner")
   followups     CustomerFollowup[]
   quotations    Quotation[]
@@ -117,9 +150,17 @@ model User {
   files         FileRecord[]
   productParseLogs ProductParseLog[]
   auditLogs     AuditLog[]
+  approvalRulesUpdated ApprovalRule[] @relation("ApprovalRuleUpdatedBy")
+  requestedApprovals ApprovalRequest[] @relation("ApprovalRequester")
+  actingApprovals ApprovalRequest[] @relation("ApprovalActor")
 
   @@index([roleId])
   @@index([status])
+  @@index([department])
+  @@index([managerUserId])
+  @@index([dataScope])
+  @@index([lastLoginAt])
+  @@index([createdByUserId])
 }
 
 model Role {
@@ -127,6 +168,9 @@ model Role {
   name            String
   code            String           @unique @db.VarChar(64)
   description     String?          @db.VarChar(255)
+  isSystem        Boolean          @default(true)
+  defaultDataScope DataScope       @default(OWNED)
+  sortOrder       Int              @default(0)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
@@ -139,6 +183,9 @@ model Permission {
   code            String           @unique @db.VarChar(64)
   name            String
   module          String           @db.VarChar(64)
+  category        String           @db.VarChar(32)
+  description     String?          @db.VarChar(255)
+  sortOrder       Int              @default(0)
   createdAt       DateTime         @default(now())
 
   rolePermissions RolePermission[]
@@ -300,6 +347,9 @@ model Quotation {
   pdfUrl                String?          @db.VarChar(500)
   shareToken            String?          @unique @db.VarChar(128)
   creatorUserId         String
+  approvalStatus        ApprovalStatus   @default(NOT_REQUIRED)
+  exportApprovalStatus  ApprovalStatus   @default(NOT_REQUIRED)
+  exportedAt            DateTime?
   status                QuotationStatus  @default(DRAFT)
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt
@@ -310,6 +360,7 @@ model Quotation {
   items                 QuotationItem[]
   agriculturePlan       AgriculturePlan?
   tasks                 Task[]
+  approvalRequests      ApprovalRequest[]
 
   @@index([customerId])
   @@index([creatorUserId])
@@ -317,6 +368,8 @@ model Quotation {
   @@index([quotationType])
   @@index([status])
   @@index([createdAt])
+  @@index([approvalStatus])
+  @@index([exportApprovalStatus])
 }
 
 model QuotationItem {
@@ -485,7 +538,14 @@ model AuditLog {
   module      String    @db.VarChar(64)
   targetType  String?   @db.VarChar(64)
   targetId    String?   @db.VarChar(128)
+  targetName  String?   @db.VarChar(255)
+  result      String?   @db.VarChar(32)
   content     String?   @db.Text
+  beforeSummary String? @db.Text
+  afterSummary String?  @db.Text
+  source      String?   @db.VarChar(32)
+  ipAddress   String?   @db.VarChar(64)
+  deviceInfo  String?   @db.VarChar(255)
   createdAt   DateTime  @default(now())
 
   user        User      @relation(fields: [userId], references: [id])
@@ -493,4 +553,54 @@ model AuditLog {
   @@index([userId])
   @@index([module])
   @@index([createdAt])
+  @@index([result])
+}
+
+model ApprovalRule {
+  id              String            @id @default(cuid())
+  code            ApprovalRuleType  @unique
+  name            String
+  description     String?           @db.VarChar(255)
+  enabled         Boolean           @default(true)
+  configJson      Json
+  sortOrder       Int               @default(0)
+  updatedByUserId String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  updatedBy       User?             @relation("ApprovalRuleUpdatedBy", fields: [updatedByUserId], references: [id])
+
+  @@index([enabled])
+  @@index([sortOrder])
+}
+
+model ApprovalRequest {
+  id              String            @id @default(cuid())
+  type            ApprovalRuleType
+  targetType      String            @db.VarChar(64)
+  targetId        String            @db.VarChar(128)
+  quotationId     String?
+  status          ApprovalStatus    @default(PENDING)
+  requesterUserId String
+  requiredRoleCode String?          @db.VarChar(64)
+  actorUserId     String?
+  title           String            @db.VarChar(255)
+  summary         String?           @db.Text
+  payloadJson     Json?
+  decisionRemark  String?           @db.Text
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  decidedAt       DateTime?
+
+  quotation       Quotation?        @relation(fields: [quotationId], references: [id])
+  requester       User              @relation("ApprovalRequester", fields: [requesterUserId], references: [id])
+  actor           User?             @relation("ApprovalActor", fields: [actorUserId], references: [id])
+
+  @@index([type])
+  @@index([status])
+  @@index([targetType, targetId])
+  @@index([quotationId])
+  @@index([requesterUserId])
+  @@index([requiredRoleCode])
+  @@index([actorUserId])
 }
