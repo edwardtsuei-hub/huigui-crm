@@ -451,6 +451,10 @@ function formatTrashRetentionLabel(item: FileSummary) {
   return `剩余 ${item.retentionDaysRemaining} 天 · 截止 ${formatFileDate(item.retentionExpiresAt)}`;
 }
 
+function formatMetricNumber(value: number) {
+  return new Intl.NumberFormat("zh-CN").format(value);
+}
+
 function FilesGuideNotice({
   onCreateFolder,
   onUpload
@@ -512,6 +516,38 @@ function FilesGuideNotice({
           </div>
         </div>
       ) : null}
+    </section>
+  );
+}
+
+function FilesOverviewStrip({
+  currentViewLabel,
+  visibleCount,
+  totalFiles,
+  pendingReviewCount,
+}: {
+  currentViewLabel: string;
+  visibleCount: number;
+  totalFiles: number;
+  pendingReviewCount: number;
+}) {
+  return (
+    <section className="files-overview-strip" aria-label="档案总览">
+      <article className="files-overview-card">
+        <span className="files-overview-card__label">当前视图</span>
+        <strong className="files-overview-card__value">{formatMetricNumber(visibleCount)}</strong>
+        <small className="files-overview-card__helper">{currentViewLabel}</small>
+      </article>
+      <article className="files-overview-card">
+        <span className="files-overview-card__label">正式文件</span>
+        <strong className="files-overview-card__value">{formatMetricNumber(totalFiles)}</strong>
+        <small className="files-overview-card__helper">全部正式资料总量</small>
+      </article>
+      <article className="files-overview-card">
+        <span className="files-overview-card__label">待审核</span>
+        <strong className="files-overview-card__value">{formatMetricNumber(pendingReviewCount)}</strong>
+        <small className="files-overview-card__helper">优先复核交付与合同</small>
+      </article>
     </section>
   );
 }
@@ -952,6 +988,7 @@ export function FilesWorkbench() {
       ? findFolderPath(library.folderTree, selectedLibraryItem.id)
       : [];
   const currentDirectoryLabel = library?.currentFolder?.name ?? currentViewMeta.label;
+  const pendingReviewCount = library?.quickViews.find((item) => item.key === "pending-review")?.count ?? 0;
   const currentFolderLocationLabel = library?.currentFolder
     ? dedupeConsecutiveLabels([
         "档案中心",
@@ -1158,25 +1195,52 @@ export function FilesWorkbench() {
   return (
     <div className="workspace-stack files-workbench">
       <PageHeader
+        eyebrow={trashMode ? "管理员工作区" : "正式资料工作区"}
         title="档案中心"
         description="管理正式资料、合同与归档文件，支持在线预览与业务关联。"
+        meta={
+          library
+            ? [
+                { label: "当前视图", value: currentViewMeta.label },
+                { label: "可见项目", value: formatMetricNumber(visibleItems.length) },
+                {
+                  label: trashMode ? "待清理" : "待审核",
+                  value: formatMetricNumber(
+                    trashMode
+                      ? library.quickViews.find((item) => item.key === "trash")?.count ?? 0
+                      : pendingReviewCount
+                  ),
+                  tone: trashMode ? "danger" : "warning",
+                },
+              ]
+            : undefined
+        }
         actions={
-          <div className="action-row">
-            <button className="button inline" onClick={() => setUploadOpen(true)} type="button">
+          <div className="action-row files-header-actions">
+            <button className="button inline files-header-actions__primary" onClick={() => setUploadOpen(true)} type="button">
               <UploadLineIcon />
               <span>上传文件</span>
             </button>
-            <button className="button secondary inline" onClick={() => openCreateFolder()} type="button">
+            <button className="button secondary inline files-header-actions__secondary" onClick={() => openCreateFolder()} type="button">
               <FolderPlusLineIcon />
               <span>新建资料夹</span>
             </button>
-            <button className="button ghost inline" onClick={() => setRefreshKey((value) => value + 1)} type="button">
+            <button className="button ghost inline files-header-actions__tertiary" onClick={() => setRefreshKey((value) => value + 1)} type="button">
               <RefreshLineIcon />
               <span>刷新清单</span>
             </button>
           </div>
         }
       />
+
+      {!trashMode && library ? (
+        <FilesOverviewStrip
+          currentViewLabel={currentViewMeta.label}
+          pendingReviewCount={pendingReviewCount}
+          totalFiles={library.stats.totalFiles}
+          visibleCount={visibleItems.length}
+        />
+      ) : null}
 
       <FilesGuideNotice onCreateFolder={() => openCreateFolder()} onUpload={() => setUploadOpen(true)} />
 
@@ -1271,6 +1335,7 @@ export function FilesWorkbench() {
                 />
               ) : null}
               <FilesListHeader
+                eyebrow={trashMode ? "管理员工作区" : "Workspace"}
                 currentLabel={currentDirectoryLabel}
                 itemCount={visibleItems.length}
                 folderCount={visibleFolders.length}
@@ -1991,7 +2056,7 @@ export function FilesSidebar({
     <div className="files-sidebar">
       <div className="files-sidebar__context">
         <span>档案视图</span>
-        <strong>切换浏览范围与常用目录</strong>
+        <strong>更像企业工作台的导航</strong>
       </div>
 
       {groups.map((group) => (
@@ -2023,7 +2088,7 @@ export function FilesSidebar({
 
       <section className="files-sidebar__group">
         <button className="files-sidebar__toggle" onClick={() => setFoldersExpanded((current) => !current)} type="button">
-          <span>常用目录</span>
+          <span>目录浏览</span>
           <span>{foldersExpanded ? "收起" : "展开"}</span>
         </button>
 
@@ -2094,6 +2159,7 @@ function FolderTreeNodeRow({
 }
 
 export function FilesListHeader({
+  eyebrow,
   currentLabel,
   itemCount,
   folderCount,
@@ -2104,6 +2170,7 @@ export function FilesListHeader({
   bulkActions,
   headerActions
 }: {
+  eyebrow?: string;
   currentLabel: string;
   itemCount: number;
   folderCount: number;
@@ -2119,6 +2186,7 @@ export function FilesListHeader({
       <section className="files-list-header">
         <div className="files-list-header__summary">
           <div className="files-list-header__copy">
+            {eyebrow ? <span className="files-list-header__eyebrow">{eyebrow}</span> : null}
             <strong>{currentLabel}</strong>
             {browseHint ? <p className="files-list-header__note">{browseHint}</p> : null}
           </div>
