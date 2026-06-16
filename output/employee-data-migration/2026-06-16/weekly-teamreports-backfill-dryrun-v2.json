@@ -1,0 +1,429 @@
+{
+  "generatedAt": "2026-06-16T22:23:04.861Z",
+  "status": "safe_dry_run_only",
+  "mode": "dry-run-v2",
+  "sourceDir": "storage/uploads/employee-launch-weekly",
+  "inputs": {
+    "usersTsv": "output/employee-data-migration/2026-06-16/users.tsv",
+    "weeklyDbTsv": "output/employee-data-migration/2026-06-16/weekly-db.tsv",
+    "readDb": false,
+    "databaseUrlProvided": false
+  },
+  "safety": {
+    "writesDatabase": false,
+    "safeToApply": false,
+    "applyDisabled": true,
+    "productionSqlGenerated": false,
+    "sqlOutIsSelectOnlyPrecheck": true
+  },
+  "summary": {
+    "entries": 8,
+    "matchedUsers": 8,
+    "missingUsers": 0,
+    "existingWeeklyReports": 0,
+    "existingReportIdMismatches": 0,
+    "newReportCandidates": 8,
+    "couldBeHistoricalFormalCandidates": 8,
+    "approvedForAutomaticImport": 0,
+    "entriesWithTruncatedText": 5,
+    "entriesWithSupersededSubmission": 2,
+    "managerRelationUpdates": 2,
+    "blockedEntries": 0
+  },
+  "risks": [
+    {
+      "gate": "production_writes",
+      "severity": "blocker",
+      "status": "blocked",
+      "note": "This script is dry-run only; --apply is disabled."
+    },
+    {
+      "gate": "production_sql",
+      "severity": "blocker",
+      "status": "blocked",
+      "note": "No INSERT/UPDATE/DELETE SQL is generated."
+    },
+    {
+      "gate": "manager_relation",
+      "severity": "medium",
+      "status": "separate_approval_required",
+      "note": "User.managerUserId changes are organization data changes and must be approved separately."
+    },
+    {
+      "gate": "candidate_content",
+      "severity": "medium",
+      "status": "business_review_required",
+      "note": "The 8 rows are historical candidates only and are not approved for automatic import."
+    },
+    {
+      "gate": "child_rows",
+      "severity": "high",
+      "status": "needs_design",
+      "note": "Review and plan item replacement must not delete user-edited content without backup and id alignment."
+    }
+  ],
+  "entries": [
+    {
+      "id": "wtr_5f2602a4ae738ce748a07bf3",
+      "name": "阿蕊",
+      "loginAccount": "Han",
+      "sourceFileName": "b0a1a524b401e3b032dd1967fc750e4e.json",
+      "sourceSha16": "f114ef8c8df3b6c5",
+      "sourcePriority": 2,
+      "reportScope": "熊抱大地 · 门店经营",
+      "completedSummary": "1:周六日喜乐瑜伽活动已经确定沟通好！包含用餐流程全部梳理 2:儿童节活动套餐已经搭配好，流程全部和前厅伙伴沟通 3:六月份活动已经和lisa沟通确定活动内容，具体事项6月份提前安...",
+      "focusSummary": "下周计划。6.1-6.7工作计划 1:六一活动安排。 2:周六日两天颂铂课程周四确定用餐人数，用餐模式和后厨沟通备货 3:梅门甩茶进货，热果饮和工厂沟通制作 4:上月考勤上交立猛 ...",
+      "supportRequest": "暂无",
+      "managerReviewComment": "",
+      "submittedAt": "2026-05-30T05:23:15.694Z",
+      "submittedAtLabel": "2026-05-30 13:23",
+      "weekStartDate": "2026-05-24T16:00:00.000Z",
+      "weekEndDate": "2026-05-30T16:00:00.000Z",
+      "weekStartKey": "2026-05-25",
+      "weekEndKey": "2026-05-31",
+      "year": 2026,
+      "month": 5,
+      "weekNumber": 5,
+      "qualityScore": 366,
+      "matchedUser": {
+        "id": "manual-han-672d26ec5b6511f19d0d56ca918eaa42",
+        "loginAccount": "Han",
+        "name": "阿蕊"
+      },
+      "existingWeeklyReport": null,
+      "proposedReportId": "wr_b3f18d418c27145ced5e627c",
+      "candidateReview": {
+        "status": "candidate_needs_business_review",
+        "couldBeHistoricalFormalCandidate": true,
+        "approvedForAutomaticImport": false,
+        "hasTruncatedText": true,
+        "hasSupersededSubmission": false,
+        "notes": [
+          "contains ellipsis from legacy content and should be checked against source",
+          "candidate only; not approved for production write"
+        ]
+      },
+      "recommendedAction": "dry_run_create_candidate_only",
+      "needsExistingReportIdReview": false
+    },
+    {
+      "id": "wtr_01e45aca94b66e8a2fb599f7",
+      "name": "申琦",
+      "loginAccount": "greatchef",
+      "sourceFileName": "b0a1a524b401e3b032dd1967fc750e4e.json",
+      "sourceSha16": "f114ef8c8df3b6c5",
+      "sourcePriority": 2,
+      "reportScope": "熊抱大地 · 后厨与排班配合",
+      "completedSummary": "本周工作内容： 1.红豆沙的改良。 2.制作上新菜品台南炸豆腐。 3.制作上新菜品番茄豆腐面。 4.菜单的出品正规化，口味、摆盘符合门店标准。",
+      "focusSummary": "下周工作计划： 1.厨房员工的菜品培训。 2.日常每天厨房卫生的保持工作。 3.新菜品贝果的研发制作。 4.日常节约用水、用电的培训。 5.保持门店现菜单菜品的出餐统一化。",
+      "supportRequest": "需要协调事项： 1.随和和店长沟通每天日常顾客的食品反馈。 2.和店员凯欣沟通订货的数量及规格采买。 3.和Lisa沟通后期店面的活动时间及活动出餐客人的需求。",
+      "managerReviewComment": "",
+      "submittedAt": "2026-05-30T05:19:38.546Z",
+      "submittedAtLabel": "2026-05-30 13:19",
+      "weekStartDate": "2026-05-24T16:00:00.000Z",
+      "weekEndDate": "2026-05-30T16:00:00.000Z",
+      "weekStartKey": "2026-05-25",
+      "weekEndKey": "2026-05-31",
+      "year": 2026,
+      "month": 5,
+      "weekNumber": 5,
+      "qualityScore": 357,
+      "matchedUser": {
+        "id": "manual-user-greatchef-20260529",
+        "loginAccount": "greatchef",
+        "name": "申琦"
+      },
+      "existingWeeklyReport": null,
+      "proposedReportId": "wr_f6d96e2ecf408970676e6808",
+      "candidateReview": {
+        "status": "candidate_needs_business_review",
+        "couldBeHistoricalFormalCandidate": true,
+        "approvedForAutomaticImport": false,
+        "hasTruncatedText": false,
+        "hasSupersededSubmission": false,
+        "notes": [
+          "candidate only; not approved for production write"
+        ]
+      },
+      "recommendedAction": "dry_run_create_candidate_only",
+      "needsExistingReportIdReview": false
+    },
+    {
+      "id": "wtr_59b63039e29f61036e187a6b",
+      "name": "lisa",
+      "loginAccount": "lisali",
+      "sourceFileName": "fbfa90f2cb747790bfbd57e4af6752df.json",
+      "sourceSha16": "ae7f7ed4bc296647",
+      "sourcePriority": 3,
+      "reportScope": "熊抱大地 · 经营回顾",
+      "completedSummary": "本周完成红豆沙调试，六一儿童节儿童餐和礼品已定下，现有菜单SOP已经整理完成并配照片，已经发给申厨供厨房参考。整理联营前期需要准备的list。",
+      "focusSummary": "做联营需要的品牌介绍和章程方面的PPT，番茄豆腐汤面需要测试完成，拍菜品制作视频，配合申厨后续动作。",
+      "supportRequest": "",
+      "managerReviewComment": "",
+      "submittedAt": "2026-05-30T05:19:00.000Z",
+      "submittedAtLabel": "2026-05-30 13:19",
+      "weekStartDate": "2026-05-24T16:00:00.000Z",
+      "weekEndDate": "2026-05-30T16:00:00.000Z",
+      "weekStartKey": "2026-05-25",
+      "weekEndKey": "2026-05-31",
+      "year": 2026,
+      "month": 5,
+      "weekNumber": 5,
+      "qualityScore": 421,
+      "matchedUser": {
+        "id": "employee-lisali-user",
+        "loginAccount": "lisali",
+        "name": "Lisa Li"
+      },
+      "existingWeeklyReport": null,
+      "proposedReportId": "wr_3e8fad063c44a5bba1ee02f4",
+      "candidateReview": {
+        "status": "candidate_needs_business_review",
+        "couldBeHistoricalFormalCandidate": true,
+        "approvedForAutomaticImport": false,
+        "hasTruncatedText": false,
+        "hasSupersededSubmission": false,
+        "notes": [
+          "candidate only; not approved for production write"
+        ]
+      },
+      "recommendedAction": "dry_run_create_candidate_only",
+      "needsExistingReportIdReview": false
+    },
+    {
+      "id": "wtr_c5009bca49f5d6330d55f7f7",
+      "name": "程程",
+      "loginAccount": "ChengCheng",
+      "sourceFileName": "b0a1a524b401e3b032dd1967fc750e4e.json",
+      "sourceSha16": "f114ef8c8df3b6c5",
+      "sourcePriority": 2,
+      "reportScope": "道冲元气 · 经营与预约回访",
+      "completedSummary": "1、家庭振动师推文 2、定制班12号开课报名2人，房间定制，各群发招募信息发朋友圈 3、准备道冲元气资料做白皮书（可以集体参与汇总） 4、道冲元气客户三档餐标确定，做出简易菜单供客...",
+      "focusSummary": "2、定制班12号开课报名2人，房间定制，各群发招募信息发朋友圈",
+      "supportRequest": "暂无",
+      "managerReviewComment": "订制餐先按昨天的沟通，一个套餐，一万以下的选现有，这样不造成厨房压力。",
+      "submittedAt": "2026-06-06T21:26:33.350Z",
+      "submittedAtLabel": "2026-06-07 05:26",
+      "weekStartDate": "2026-05-31T16:00:00.000Z",
+      "weekEndDate": "2026-06-06T16:00:00.000Z",
+      "weekStartKey": "2026-06-01",
+      "weekEndKey": "2026-06-07",
+      "year": 2026,
+      "month": 6,
+      "weekNumber": 1,
+      "qualityScore": 314,
+      "matchedUser": {
+        "id": "manual-chengcheng-dc9ce6815b1411f19d0d56ca918eaa42",
+        "loginAccount": "ChengCheng",
+        "name": "程程"
+      },
+      "existingWeeklyReport": null,
+      "proposedReportId": "wr_fa07cbec542a9d71ea66f8a7",
+      "candidateReview": {
+        "status": "candidate_needs_business_review",
+        "couldBeHistoricalFormalCandidate": true,
+        "approvedForAutomaticImport": false,
+        "hasTruncatedText": true,
+        "hasSupersededSubmission": false,
+        "notes": [
+          "contains ellipsis from legacy content and should be checked against source",
+          "candidate only; not approved for production write"
+        ]
+      },
+      "recommendedAction": "dry_run_create_candidate_only",
+      "needsExistingReportIdReview": false
+    },
+    {
+      "id": "wtr_6dceff93320fa52bb05d8c85",
+      "name": "申琦",
+      "loginAccount": "greatchef",
+      "sourceFileName": "b0a1a524b401e3b032dd1967fc750e4e.json",
+      "sourceSha16": "f114ef8c8df3b6c5",
+      "sourcePriority": 2,
+      "reportScope": "熊抱大地 · 后厨与排班配合",
+      "completedSummary": "本周工作内容： 1.贝果菜品的上新制作。 2.制作上新菜品台南炸豆腐。 3.制作上新菜品番茄豆腐面。 4.菜单的出品正规化，口味、摆盘符合门店标准。",
+      "focusSummary": "下周工作计划： 1.西班牙冷汤的制作。 2.日常每天厨房卫生的保持工作。 3.包浆豆腐酱汁的调试。 4.日常节约用水、用电的培训。 5.保持门店现菜单菜品的出餐统一化。 6.黑胡椒...",
+      "supportRequest": "需要协调事项： 1.随时和店长沟通每天日常顾客的食品反馈。 2.和店员凯欣沟通订货的数量及规格采买。 3.和Lisa沟通后期店面的活动时间及活动出餐客人的需求。",
+      "managerReviewComment": "",
+      "submittedAt": "2026-06-05T09:55:08.597Z",
+      "submittedAtLabel": "2026-06-05 17:55",
+      "weekStartDate": "2026-05-31T16:00:00.000Z",
+      "weekEndDate": "2026-06-06T16:00:00.000Z",
+      "weekStartKey": "2026-06-01",
+      "weekEndKey": "2026-06-07",
+      "year": 2026,
+      "month": 6,
+      "weekNumber": 1,
+      "qualityScore": 357,
+      "matchedUser": {
+        "id": "manual-user-greatchef-20260529",
+        "loginAccount": "greatchef",
+        "name": "申琦"
+      },
+      "existingWeeklyReport": null,
+      "proposedReportId": "wr_ee35a6b8731ee3a02c2515df",
+      "candidateReview": {
+        "status": "candidate_needs_business_review",
+        "couldBeHistoricalFormalCandidate": true,
+        "approvedForAutomaticImport": false,
+        "hasTruncatedText": true,
+        "hasSupersededSubmission": false,
+        "notes": [
+          "contains ellipsis from legacy content and should be checked against source",
+          "candidate only; not approved for production write"
+        ]
+      },
+      "recommendedAction": "dry_run_create_candidate_only",
+      "needsExistingReportIdReview": false
+    },
+    {
+      "id": "wtr_fde9e666a879106c000897c2",
+      "name": "lisa",
+      "loginAccount": "lisali",
+      "sourceFileName": "b0a1a524b401e3b032dd1967fc750e4e.json",
+      "sourceSha16": "f114ef8c8df3b6c5",
+      "sourcePriority": 2,
+      "reportScope": "熊抱大地 · 经营回顾",
+      "completedSummary": "1. 下周二计划和万科商业见面沟通店面选址事项 2. 整理2道新菜品的SOP及视频培训拍摄 3. 梳理及更新会员机制 4. 小红书推广文案",
+      "focusSummary": "1. 下周二计划和万科商业见面沟通店面选址事项",
+      "supportRequest": "暂无",
+      "managerReviewComment": "已看完3点，之后每周的周报周五大家发过来后，周六会统一由系统汇总，然后再发给大家一个总的工作内容，这样子大家会更方便同步，也知道彼此要配合什么，程程的内容也会一起并入进来。 所以还是要麻烦你再写的仔细一点，这样子可以帮助自己更多的回顾，还有让大家知道工作的方向。",
+      "submittedAt": "2026-06-06T09:59:58.472Z",
+      "submittedAtLabel": "2026-06-06 17:59",
+      "weekStartDate": "2026-05-31T16:00:00.000Z",
+      "weekEndDate": "2026-06-06T16:00:00.000Z",
+      "weekStartKey": "2026-06-01",
+      "weekEndKey": "2026-06-07",
+      "year": 2026,
+      "month": 6,
+      "weekNumber": 1,
+      "qualityScore": 292,
+      "matchedUser": {
+        "id": "employee-lisali-user",
+        "loginAccount": "lisali",
+        "name": "Lisa Li"
+      },
+      "existingWeeklyReport": null,
+      "proposedReportId": "wr_c681a1d1666dd11fde497046",
+      "candidateReview": {
+        "status": "candidate_needs_business_review",
+        "couldBeHistoricalFormalCandidate": true,
+        "approvedForAutomaticImport": false,
+        "hasTruncatedText": false,
+        "hasSupersededSubmission": false,
+        "notes": [
+          "candidate only; not approved for production write"
+        ]
+      },
+      "recommendedAction": "dry_run_create_candidate_only",
+      "needsExistingReportIdReview": false
+    },
+    {
+      "id": "wtr_fd067c49b3f7ab8dafdd797b",
+      "name": "程程",
+      "loginAccount": "ChengCheng",
+      "sourceFileName": "b0a1a524b401e3b032dd1967fc750e4e.json",
+      "sourceSha16": "f114ef8c8df3b6c5",
+      "sourcePriority": 2,
+      "reportScope": "道冲元气 · 经营与预约回访",
+      "completedSummary": "1、家庭振动师推海报已做完发圈推广，发推文，做直播2场 2、定制班12～16号开课，培训5天 3、21天打卡奖励驻颜术6.22 4、周三开会做课程总结和家庭振动师推广计划\n同周较早提交（2026-06-14 04:27）：\n1、家庭振动师推文 2、定制班12号开课报名2人，房间定制，各群发招募信息发朋友圈 3、准备道冲元气资料做白皮书（可以集体参与汇总） 4、道冲元气客户三档餐标确定，做出简易菜单供客...\n下周计划：2、定制班12号开课报名2人，房间定制，各群发招募信息发朋友圈",
+      "focusSummary": "4、周三开会做课程总结和家庭振动师推广计划",
+      "supportRequest": "暂无",
+      "managerReviewComment": "订制餐先按昨天的沟通，一个套餐，一万以下的选现有，这样不造成厨房压力。",
+      "submittedAt": "2026-06-13T20:36:27.633Z",
+      "submittedAtLabel": "2026-06-14 04:36",
+      "weekStartDate": "2026-06-07T16:00:00.000Z",
+      "weekEndDate": "2026-06-13T16:00:00.000Z",
+      "weekStartKey": "2026-06-08",
+      "weekEndKey": "2026-06-14",
+      "year": 2026,
+      "month": 6,
+      "weekNumber": 2,
+      "qualityScore": 306,
+      "matchedUser": {
+        "id": "manual-chengcheng-dc9ce6815b1411f19d0d56ca918eaa42",
+        "loginAccount": "ChengCheng",
+        "name": "程程"
+      },
+      "existingWeeklyReport": null,
+      "proposedReportId": "wr_b361a1934ab724cd56c5da14",
+      "candidateReview": {
+        "status": "candidate_needs_business_review",
+        "couldBeHistoricalFormalCandidate": true,
+        "approvedForAutomaticImport": false,
+        "hasTruncatedText": true,
+        "hasSupersededSubmission": true,
+        "notes": [
+          "contains ellipsis from legacy content and should be checked against source",
+          "contains merged earlier same-week submission context",
+          "candidate only; not approved for production write"
+        ]
+      },
+      "recommendedAction": "dry_run_create_candidate_only",
+      "needsExistingReportIdReview": false
+    },
+    {
+      "id": "wtr_fbab2977959366c5387bd32b",
+      "name": "lisa",
+      "loginAccount": "lisali",
+      "sourceFileName": "b0a1a524b401e3b032dd1967fc750e4e.json",
+      "sourceSha16": "f114ef8c8df3b6c5",
+      "sourcePriority": 2,
+      "reportScope": "熊抱大地 · 经营回顾",
+      "completedSummary": "Lisa: 1. 下周五之前确认新菜单 2. 跟进雯雯新的橱窗kt板制作进度 3. 日本友人过来交流准备工作，前厅厨房清洁工作跟进,计划28-29号下午2点-5点，由申厨和陈师傅负...\n同周较早提交（2026-06-12 15:51）：\n1. 下周五之前确认新菜单 2. 跟进雯雯新的橱窗kt板制作进度 3. 日本友人过来交流准备工作，前厅厨房清洁工作跟进,计划28-29号下午2点-5点，由申厨和陈师傅负责交流培训，...\n下周计划：1. 下周五之前确认新菜单",
+      "focusSummary": "1. 下周五之前确认新菜单",
+      "supportRequest": "暂无",
+      "managerReviewComment": "已看完3点，之后每周的周报周五大家发过来后，周六会统一由系统汇总，然后再发给大家一个总的工作内容，这样子大家会更方便同步，也知道彼此要配合什么，程程的内容也会一起并入进来。 所以还是要麻烦你再写的仔细一点，这样子可以帮助自己更多的回顾，还有让大家知道工作的方向。",
+      "submittedAt": "2026-06-12T08:01:46.648Z",
+      "submittedAtLabel": "2026-06-12 16:01",
+      "weekStartDate": "2026-06-07T16:00:00.000Z",
+      "weekEndDate": "2026-06-13T16:00:00.000Z",
+      "weekStartKey": "2026-06-08",
+      "weekEndKey": "2026-06-14",
+      "year": 2026,
+      "month": 6,
+      "weekNumber": 2,
+      "qualityScore": 296,
+      "matchedUser": {
+        "id": "employee-lisali-user",
+        "loginAccount": "lisali",
+        "name": "Lisa Li"
+      },
+      "existingWeeklyReport": null,
+      "proposedReportId": "wr_6bf6e9ba0d49a18000a3fb7a",
+      "candidateReview": {
+        "status": "candidate_needs_business_review",
+        "couldBeHistoricalFormalCandidate": true,
+        "approvedForAutomaticImport": false,
+        "hasTruncatedText": true,
+        "hasSupersededSubmission": true,
+        "notes": [
+          "contains ellipsis from legacy content and should be checked against source",
+          "contains merged earlier same-week submission context",
+          "candidate only; not approved for production write"
+        ]
+      },
+      "recommendedAction": "dry_run_create_candidate_only",
+      "needsExistingReportIdReview": false
+    }
+  ],
+  "missingUsers": [],
+  "managerLinks": [
+    {
+      "memberLogin": "Han",
+      "memberName": "阿蕊",
+      "managerLogin": "lisali",
+      "managerName": "Lisa Li",
+      "currentManagerUserId": null,
+      "shouldUpdate": true
+    },
+    {
+      "memberLogin": "greatchef",
+      "memberName": "申琦",
+      "managerLogin": "lisali",
+      "managerName": "Lisa Li",
+      "currentManagerUserId": null,
+      "shouldUpdate": true
+    }
+  ]
+}
