@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "workstream": "release-readonly-check-after-pr1",
+  "line": "D",
+  "status": "ready_for_release_decision_with_gate",
+  "checkedAt": "2026-06-16T22:56:55+08:00",
+  "recordedAt": "2026-06-16T22:57:09+08:00",
+  "trigger": "PR #1 merged to main",
+  "restrictionsObserved": {
+    "deployed": false,
+    "restartedService": false,
+    "createdRollbackTag": false,
+    "wroteDatabase": false,
+    "changedApiCode": false,
+    "changedFrontendCode": false,
+    "changedSchema": false,
+    "printedEnvPlaintext": false
+  },
+  "health": {
+    "httpStatus": 200,
+    "body": {
+      "status": "ok",
+      "service": "huigui-api",
+      "timestamp": "2026-06-16T14:56:55.511Z"
+    }
+  },
+  "containers": {
+    "huigui-api": {
+      "status": "Up 5 hours"
+    },
+    "huigui-app": {
+      "status": "Up 8 hours"
+    },
+    "huigui-nginx": {
+      "status": "Up 2 days"
+    },
+    "huigui-mysql": {
+      "status": "Up 3 weeks (healthy)"
+    }
+  },
+  "database": {
+    "rosterCounts": {
+      "RosterWeek": 6,
+      "RosterShift": 210,
+      "orphan_RosterShift": 0
+    },
+    "rosterCountsMatchExpected": true,
+    "weeklyReportPayloadTotal": 19,
+    "weeklyReportPayloadBySourceAndStatus": [
+      {
+        "source": "api_db_first_bridge",
+        "migrationStatus": "IMPORTED",
+        "count": 13
+      },
+      {
+        "source": "legacy_weekly_workspace",
+        "migrationStatus": "IMPORTED",
+        "count": 3
+      },
+      {
+        "source": "legacy_weekly_workspace",
+        "migrationStatus": "NEEDS_REVIEW",
+        "count": 3
+      }
+    ],
+    "sharedSharedDraft": {
+      "sourceUserKey": "shared",
+      "canonicalUserKey": "shared",
+      "reportState": "draft",
+      "source": "api_db_first_bridge",
+      "migrationStatus": "IMPORTED",
+      "count": 13,
+      "distinctSourceSha16": 13,
+      "matchesGateBaseline": true,
+      "grewSinceV2Baseline": false
+    }
+  },
+  "releaseGate": {
+    "deploymentAllowed": false,
+    "readonlyCheckPassed": true,
+    "sharedSharedGrowthBlocked": false,
+    "reason": "Read-only checks passed after PR #1 merge; D-line gate still requires explicit release decision before deployment."
+  },
+  "writtenFiles": [
+    "docs/parallel-collab-release-readonly-check-after-pr1-2026-06-16.md",
+    "output/employee-data-migration/2026-06-16/parallel-collab-release-readonly-check-after-pr1.json"
+  ],
+  "stopPoint": "Read-only pre-release check after PR #1 completed; deployment remains gated pending explicit user/mainline decision."
+}
