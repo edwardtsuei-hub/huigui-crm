@@ -577,7 +577,7 @@ function renderPrecheckSql(plan) {
     "FROM `WeeklyReport` wr",
     "JOIN `User` u ON u.id = wr.userId",
     `WHERE u.loginAccount IN (${logins.map(mysqlString).join(", ")})`,
-    `  AND DATE(wr.weekStartDate) IN (${weekKeys.map(mysqlString).join(", ")})`,
+    `  AND DATE(DATE_ADD(wr.weekStartDate, INTERVAL 8 HOUR)) IN (${weekKeys.map(mysqlString).join(", ")})`,
     `  AND wr.partitionKey = ${mysqlString(REAL_PARTITION_KEY)}`,
     "ORDER BY wr.weekStartDate ASC, u.loginAccount ASC;",
     "",

@@ -10,7 +10,7 @@ SELECT wr.id, u.loginAccount, wr.weekStartDate, wr.partitionKey, wr.status, wr.u
 FROM `WeeklyReport` wr
 JOIN `User` u ON u.id = wr.userId
 WHERE u.loginAccount IN ('Han', 'greatchef', 'lisali', 'ChengCheng')
-  AND DATE(wr.weekStartDate) IN ('2026-05-25', '2026-06-01', '2026-06-08')
+  AND DATE(DATE_ADD(wr.weekStartDate, INTERVAL 8 HOUR)) IN ('2026-05-25', '2026-06-01', '2026-06-08')
   AND wr.partitionKey = 'REAL'
 ORDER BY wr.weekStartDate ASC, u.loginAccount ASC;
 

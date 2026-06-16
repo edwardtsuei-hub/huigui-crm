@@ -1,7 +1,7 @@
 # Weekly teamReports safe dry-run v2
 
 Source dir: `storage/uploads/employee-launch-weekly`
-Generated at: 2026-06-16T22:23:04.861Z
+Generated at: 2026-06-16T22:42:31.598Z
 Status: `safe_dry_run_only`
 
 ## Summary
