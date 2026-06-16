@@ -1,0 +1,191 @@
+{
+  "date": "2026-06-16",
+  "workstream": "second_phase_plan",
+  "status": "ready_for_review",
+  "started_at": "2026-06-16 12:46:49 CST",
+  "scope": [
+    "refine implementation order for finance, OCR, platform, schedule",
+    "classify data into formal database records versus attachment or audit archive",
+    "recommend next schema, API and dry-run script work",
+    "do not write production database",
+    "do not generate production SQL",
+    "do not modify API, frontend or Prisma"
+  ],
+  "read_files": [
+    "/opt/huigui-crm/docs/parallel-collaboration-control-2026-06-16.md",
+    "/opt/huigui-crm/docs/parallel-collab-second-phase-dryrun-2026-06-16.md",
+    "/opt/huigui-crm/docs/employee-data-cross-function-sync-assessment-2026-06-16.md",
+    "/opt/huigui-crm/output/employee-data-migration/2026-06-16/parallel-collab-second-phase-dryrun.json",
+    "/opt/huigui-crm/storage/uploads/employee-launch-contract/finance.json",
+    "/opt/huigui-crm/storage/uploads/employee-launch-contract/ocr-tasks.json",
+    "/opt/huigui-crm/storage/uploads/employee-launch-contract/platform.json",
+    "/opt/huigui-crm/storage/uploads/employee-launch-contract/schedule.json",
+    "/opt/huigui-crm/prisma/schema.prisma"
+  ],
+  "written_files": [
+    "/opt/huigui-crm/docs/parallel-collab-second-phase-plan-2026-06-16.md",
+    "/opt/huigui-crm/output/employee-data-migration/2026-06-16/parallel-collab-second-phase-plan.json"
+  ],
+  "production_actions_executed": [],
+  "database_writes_executed": [],
+  "production_sql_generated": false,
+  "code_changes_executed": [],
+  "implementation_order": [
+    {
+      "step": 0,
+      "module": "business_confirmation",
+      "action": "confirm whether four Phase2 finance claims are formal business records or test records",
+      "gate": "required before ExpenseClaim migration"
+    },
+    {
+      "step": 1,
+      "module": "schedule",
+      "action": "archive snapshot to AttendancePeriod only",
+      "target": "AttendancePeriod.rawSnapshot",
+      "risk": "low"
+    },
+    {
+      "step": 2,
+      "module": "platform.attachments",
+      "action": "migrate accessible attachments to FileRecord or pending attachment index",
+      "target": "FileRecord",
+      "risk": "high for six local enterprise-cloud attachments"
+    },
+    {
+      "step": 3,
+      "module": "ocr",
+      "action": "split 8 finance-linked tasks from 20 historical/orphan tasks",
+      "target": "new OcrTask or FileOcrTask table",
+      "risk": "medium"
+    },
+    {
+      "step": 4,
+      "module": "finance",
+      "action": "migrate claims only after business confirmation; otherwise archive as TEST",
+      "target": "new ExpenseClaim tables",
+      "risk": "high"
+    },
+    {
+      "step": 5,
+      "module": "platform.messages_audit",
+      "action": "dedupe weekly messages and archive audit items",
+      "target": "Notification or AuditLog after mapping",
+      "risk": "medium"
+    }
+  ],
+  "classification": {
+    "formal_database_candidates": [
+      "schedule snapshot to AttendancePeriod",
+      "platform attachments to FileRecord after storage validation",
+      "8 OCR tasks if linked finance claims are confirmed formal",
+      "4 finance expense claims only after business confirmation"
+    ],
+    "test_or_audit_archive": [
+      "4 finance expense claims by default because titles include Phase2/test semantics",
+      "20 OCR historical or orphan tasks",
+      "schedule missing attachment notice",
+      "platform auditItems until user mapping is available",
+      "platform weekly messages until deduped against weekly notifications"
+    ]
+  },
+  "finance_check": {
+    "can_directly_migrate_as_real": false,
+    "reason": "all four claims contain Phase2, COS/OCR, route/CORS fix, or test wording",
+    "claim_count": 4,
+    "total_amount": 150.4,
+    "status_counts": {
+      "pending_review": 4
+    },
+    "claim_ids": [
+      "EX-MQBHZYOV-IM808",
+      "EX-MQBGMQ6B-1TVDK",
+      "EX-MQBG4UCE-J375P",
+      "EX-MQAXBSDG-WRNXA"
+    ]
+  },
+  "ocr_check": {
+    "total_tasks": 28,
+    "finance_closed_loop_task_count": 8,
+    "historical_or_orphan_task_count": 20,
+    "finance_closed_loop_task_ids": [
+      "ocr-mqaxbwxr-3kw78u",
+      "ocr-mqaxbwyy-n6qhio",
+      "ocr-mqbg4wal-uat6iq",
+      "ocr-mqbg4wf2-xt01p2",
+      "ocr-mqbgmt13-w1ih9d",
+      "ocr-mqbgmt27-yja64d",
+      "ocr-mqbi02ef-fj1hqn",
+      "ocr-mqbi02ei-h4nnio"
+    ],
+    "missing_finance_referenced_tasks": []
+  },
+  "platform_check": {
+    "attachment_count": 12,
+    "finance_attachment_count": 8,
+    "meeting_attachment_count": 4,
+    "cos_attachment_count_with_urls": 6,
+    "local_enterprise_cloud_attachment_count_without_urls": 6,
+    "file_record_ready_without_schema_change": false,
+    "reason": "FileRecord requires fileUrl and uploaderUserId and lacks explicit storageKey/source fields"
+  },
+  "schedule_check": {
+    "disposition": "AttendancePeriod archive only",
+    "snapshot": {
+      "date": "2026-05-30",
+      "status": "empty",
+      "reviewState": "approved",
+      "makeupConfirmed": true,
+      "attendanceLocked": true,
+      "totalOpenItems": 0
+    },
+    "missing_attachment_should_create_file_record": false
+  },
+  "schema_recommendations": [
+    "add legacy/source/storage fields to FileRecord or create a dedicated attachment import table",
+    "add ExpenseClaim and ExpenseClaimFile tables",
+    "add OcrTask or FileOcrTask table",
+    "extend ApprovalRuleType with employee expense only if workflow approval is required",
+    "reuse existing AttendancePeriod for schedule"
+  ],
+  "api_recommendations": [
+    "use DB-first plus JSON fallback for schedule, platform attachments, OCR and finance",
+    "keep frontend paths stable and put compatibility in API",
+    "generate file access URLs from storageKey rather than persisting signed URLs",
+    "do not enable finance write path until REAL versus TEST decision is made"
+  ],
+  "dryrun_script_recommendations": [
+    "employee-second-phase-classify.mjs",
+    "employee-platform-attachments-dryrun-v2.mjs",
+    "employee-ocr-dryrun-v2.mjs",
+    "employee-finance-expense-dryrun-v2.mjs",
+    "employee-schedule-attendance-dryrun-v2.mjs"
+  ],
+  "risk_ranking": [
+    {
+      "priority": "P0",
+      "risk": "finance claims have test semantics",
+      "mitigation": "business confirmation before REAL migration"
+    },
+    {
+      "priority": "P0",
+      "risk": "six local enterprise-cloud attachments have no fileUrl",
+      "mitigation": "validate real file accessibility before FileRecord ACTIVE import"
+    },
+    {
+      "priority": "P1",
+      "risk": "20 OCR tasks are historical or orphan relative to current finance",
+      "mitigation": "audit archive first, do not bind to current claims"
+    },
+    {
+      "priority": "P1",
+      "risk": "signed COS URLs are temporary",
+      "mitigation": "store storageKey and sign on demand"
+    },
+    {
+      "priority": "P2",
+      "risk": "weekly platform messages may duplicate notifications",
+      "mitigation": "dedupe before Notification import"
+    }
+  ],
+  "stop_point": "Implementation plan is complete. Do not run production migration until business confirms finance claim classification and a dry-run v2 is reviewed."
+}

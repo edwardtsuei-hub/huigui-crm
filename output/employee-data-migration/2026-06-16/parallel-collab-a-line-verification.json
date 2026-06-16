@@ -1,0 +1,69 @@
+{
+  "date": "2026-06-16",
+  "executedAt": "2026-06-16 19:05:58 CST",
+  "workstream": "A",
+  "scope": "verify API DB-first handoff, code fingerprints, production health, and read-only counts",
+  "status": "verified_with_followup_risk",
+  "remoteHandoffDocument": "/opt/huigui-crm/docs/parallel-collab-api-db-first-2026-06-16.md",
+  "localHandoffDocument": "docs/parallel-collab-api-db-first-2026-06-16.md",
+  "codeFingerprints": {
+    "apps/api/src/employee-launch/employee-launch.service.ts": "c07e0845d3e5daf464d489041f1ad009cdd652cd5d94f5c4707ba8958c6310e7",
+    "apps/api/src/employee-launch/employee-launch.controller.ts": "90314cdfa46c22ebf5714d1e1ca090aa58a0674d8f2a41259adea1efcb5089bf"
+  },
+  "fingerprintsMatchRemoteHandoff": true,
+  "health": {
+    "status": "ok",
+    "service": "huigui-api"
+  },
+  "containerStatus": {
+    "huigui-api": "Up 42 minutes",
+    "huigui-app": "Up 4 hours",
+    "huigui-nginx": "Up 2 days",
+    "huigui-mysql": "Up 3 weeks (healthy)"
+  },
+  "readOnlyCounts": {
+    "WeeklyReportPayload": 19,
+    "WeeklyReportPayload.IMPORTED": 16,
+    "WeeklyReportPayload.NEEDS_REVIEW": 3,
+    "RosterWeek": 6,
+    "RosterShift": 210,
+    "orphan.RosterShift": 0
+  },
+  "weeklyPayloadSourceBreakdown": [
+    {
+      "source": "api_db_first_bridge",
+      "migrationStatus": "IMPORTED",
+      "count": 13
+    },
+    {
+      "source": "legacy_weekly_workspace",
+      "migrationStatus": "IMPORTED",
+      "count": 3
+    },
+    {
+      "source": "legacy_weekly_workspace",
+      "migrationStatus": "NEEDS_REVIEW",
+      "count": 3
+    }
+  ],
+  "followupRisk": {
+    "summary": "WeeklyReportPayload grew from 6 to 19; 13 rows were written by api_db_first_bridge with sourceUserKey=shared and canonicalUserKey=shared.",
+    "duplicateGroup": {
+      "sourceUserKey": "shared",
+      "canonicalUserKey": "shared",
+      "source": "api_db_first_bridge",
+      "migrationStatus": "IMPORTED",
+      "count": 13,
+      "distinctSourceSha16": 13
+    },
+    "recommendation": "Update D line runbook to validate WeeklyReportPayload by source and review whether shared workspace writes need a stable idempotency key."
+  },
+  "actionsNotTaken": [
+    "no API code edits",
+    "no production database writes",
+    "no deployment",
+    "no service restart",
+    "no env secrets printed",
+    "no PR merge"
+  ]
+}

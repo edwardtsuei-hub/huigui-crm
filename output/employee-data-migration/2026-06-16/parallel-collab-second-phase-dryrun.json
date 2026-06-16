@@ -1,0 +1,453 @@
+{
+  "workstream": "second_phase_dryrun",
+  "date": "2026-06-16",
+  "generatedAt": "2026-06-16T12:30:52+08:00",
+  "status": "done",
+  "environmentNote": "Local /opt/huigui-crm was not present. Read same-named files from the current workspace mirror under /Users/i-datsuei/Desktop/大爱归心系统.",
+  "safety": {
+    "dryRunOnly": true,
+    "readEnvPlaintext": false,
+    "databaseWrites": false,
+    "apiChanged": false,
+    "frontendChanged": false,
+    "prismaChanged": false,
+    "productionSqlGenerated": false
+  },
+  "filesRead": [
+    "docs/parallel-collaboration-control-2026-06-16.md",
+    "docs/employee-data-cross-function-sync-assessment-2026-06-16.md",
+    "storage/uploads/employee-launch-contract/schedule.json",
+    "storage/uploads/employee-launch-contract/finance.json",
+    "storage/uploads/employee-launch-contract/ocr-tasks.json",
+    "storage/uploads/employee-launch-contract/platform.json",
+    "prisma/schema.prisma"
+  ],
+  "expectedProductionPaths": [
+    "/opt/huigui-crm/docs/parallel-collaboration-control-2026-06-16.md",
+    "/opt/huigui-crm/docs/employee-data-cross-function-sync-assessment-2026-06-16.md",
+    "/opt/huigui-crm/storage/uploads/employee-launch-contract/schedule.json",
+    "/opt/huigui-crm/storage/uploads/employee-launch-contract/finance.json",
+    "/opt/huigui-crm/storage/uploads/employee-launch-contract/ocr-tasks.json",
+    "/opt/huigui-crm/storage/uploads/employee-launch-contract/platform.json"
+  ],
+  "filesWritten": [
+    "docs/parallel-collab-second-phase-dryrun-2026-06-16.md",
+    "output/employee-data-migration/2026-06-16/parallel-collab-second-phase-dryrun.json"
+  ],
+  "sourceFiles": [
+    {
+      "name": "schedule.json",
+      "sizeBytes": 1735,
+      "mtimeUtc": "2026-05-30T04:24:07.000Z",
+      "sha16": "0f5ecba5e4de95cb"
+    },
+    {
+      "name": "finance.json",
+      "sizeBytes": 8165,
+      "mtimeUtc": "2026-06-12T22:28:36.000Z",
+      "sha16": "ca3fc6f74b4720b9"
+    },
+    {
+      "name": "ocr-tasks.json",
+      "sizeBytes": 38516,
+      "mtimeUtc": "2026-06-12T22:28:36.000Z",
+      "sha16": "f5778a33f59cbd49"
+    },
+    {
+      "name": "platform.json",
+      "sizeBytes": 53387,
+      "mtimeUtc": "2026-06-15T03:33:03.000Z",
+      "sha16": "9aaf13d5b6a98cb2"
+    }
+  ],
+  "summary": {
+    "schedule": {
+      "topLevelKeys": [
+        "snapshot",
+        "attachments",
+        "auditTrail",
+        "meta"
+      ],
+      "snapshot": {
+        "date": "2026-05-30",
+        "status": "empty",
+        "reviewState": "approved",
+        "makeupConfirmed": true,
+        "attendanceLocked": true,
+        "totalOpenItems": 0
+      },
+      "attachmentCount": 1,
+      "auditTrailCount": 4,
+      "targetTables": [
+        "AttendancePeriod",
+        "AuditLog",
+        "FileRecord only if a real file exists"
+      ],
+      "disposition": "light_sync_candidate"
+    },
+    "finance": {
+      "topLevelKeys": [
+        "attendanceArchive",
+        "imports",
+        "monthlyReports",
+        "monthlyAdjustments",
+        "courseSettlement",
+        "expenseClaims",
+        "reviewRequests",
+        "invoiceFollowUps",
+        "expenseApprovalPolicy",
+        "bankTransactions",
+        "internalReports",
+        "statutoryJobs",
+        "meta"
+      ],
+      "nonEmptySections": [
+        "attendanceArchive",
+        "courseSettlement",
+        "expenseClaims",
+        "expenseApprovalPolicy"
+      ],
+      "emptyArraySections": [
+        "imports",
+        "monthlyReports",
+        "monthlyAdjustments",
+        "reviewRequests",
+        "invoiceFollowUps",
+        "bankTransactions",
+        "internalReports",
+        "statutoryJobs"
+      ],
+      "expenseClaimCount": 4,
+      "expenseStatusCounts": {
+        "pending_review": 4
+      },
+      "expenseAmountSum": 150.4,
+      "expenseClaims": [
+        {
+          "id": "EX-MQBHZYOV-IM808",
+          "amount": 37.6,
+          "status": "pending_review",
+          "submittedAt": "2026-06-12T22:28:30.175Z",
+          "attachmentCount": 2,
+          "ocrTaskCount": 2,
+          "ocrStatuses": [
+            "succeeded",
+            "succeeded"
+          ],
+          "title": "Phase2 COS CORS 修复实票测试 20260613-0620"
+        },
+        {
+          "id": "EX-MQBGMQ6B-1TVDK",
+          "amount": 37.6,
+          "status": "pending_review",
+          "submittedAt": "2026-06-12T21:50:12.995Z",
+          "attachmentCount": 2,
+          "ocrTaskCount": 2,
+          "ocrStatuses": [
+            "succeeded",
+            "succeeded"
+          ],
+          "title": "Phase2 COS/OCR v1 路由修复实票测试 20260613-0544"
+        },
+        {
+          "id": "EX-MQBG4UCE-J375P",
+          "amount": 37.6,
+          "status": "pending_review",
+          "submittedAt": "2026-06-12T21:36:18.590Z",
+          "attachmentCount": 2,
+          "ocrTaskCount": 2,
+          "ocrStatuses": [
+            "succeeded",
+            "succeeded"
+          ],
+          "title": "Phase2 COS/OCR 修复实票测试 20260613-0524"
+        },
+        {
+          "id": "EX-MQAXBSDG-WRNXA",
+          "amount": 37.6,
+          "status": "pending_review",
+          "submittedAt": "2026-06-12T12:49:49.924Z",
+          "attachmentCount": 2,
+          "ocrTaskCount": 2,
+          "ocrStatuses": [
+            "succeeded",
+            "succeeded"
+          ],
+          "title": "Phase2 实票测试 20260612-2031"
+        }
+      ],
+      "attendanceArchive": {
+        "archived": false,
+        "month": "2026-06",
+        "fileName": null,
+        "archivedAt": null,
+        "operator": null
+      },
+      "expenseApprovalPolicy": {
+        "thresholdAmount": 1000,
+        "notifyOnEachStage": true,
+        "financeApproverCount": 1,
+        "superAdminApproverCount": 2,
+        "departmentRuleCount": 4,
+        "departments": [
+          "熊抱大地",
+          "道冲元气",
+          "光的家园",
+          "综合办公室"
+        ]
+      },
+      "targetTables": [
+        "new ExpenseClaim or EmployeeExpenseClaim table",
+        "ApprovalRequest for workflow state if reused",
+        "ApprovalRule or finance policy config for expenseApprovalPolicy"
+      ],
+      "disposition": "must_sync_candidate_after_business_confirmation"
+    },
+    "ocr": {
+      "taskCount": 28,
+      "statusCounts": {
+        "confirmed": 16,
+        "succeeded": 10,
+        "failed": 2
+      },
+      "taskTypeCounts": {
+        "invoice": 28
+      },
+      "sourceModuleCounts": {
+        "报销审批": 28
+      },
+      "mimeTypeCounts": {
+        "image/jpeg": 19,
+        "application/pdf": 8,
+        "image/png": 1
+      },
+      "engineCounts": {
+        "empty": 19,
+        "tencent-cloud-ocr:RecognizeGeneralInvoice": 7,
+        "ocr:not-configured": 2
+      },
+      "tasksWithClaimId": 28,
+      "uniqueClaimIdCount": 18,
+      "uniqueAttachmentIdCount": 22,
+      "confirmedCount": 16,
+      "correctedCount": 16,
+      "warningTaskCount": 9,
+      "targetTables": [
+        "new OcrTask or FileOcrTask table",
+        "FileRecord relation",
+        "ExpenseClaim relation",
+        "raw payload JSON archive"
+      ],
+      "disposition": "split_current_finance_linked_tasks_from_historical_archive"
+    },
+    "platform": {
+      "messageCount": 13,
+      "messageCategoryCounts": {
+        "周报": 13
+      },
+      "messageStatusCounts": {
+        "unread": 13
+      },
+      "messagePriorityCounts": {
+        "中": 12,
+        "高": 1
+      },
+      "attachmentCount": 12,
+      "attachmentModuleCounts": {
+        "会议纪要": 4,
+        "报销审批": 8
+      },
+      "attachmentCategoryCounts": {
+        "会议录音": 4,
+        "报销票据": 8
+      },
+      "attachmentStatusCounts": {
+        "pending": 12
+      },
+      "attachmentStorageProviderCounts": {
+        "cos": 6,
+        "local": 6
+      },
+      "attachmentMimeTypeCounts": {
+        "audio/x-m4a": 4,
+        "application/pdf": 8
+      },
+      "attachmentWithFileUrlCount": 6,
+      "attachmentWithPreviewUrlCount": 6,
+      "attachmentWithReceiptCount": 12,
+      "auditItemCount": 24,
+      "auditModuleCounts": {
+        "消息中心": 11,
+        "附件中心": 8,
+        "报销审批": 4,
+        "财务导入": 1
+      },
+      "auditSourceCounts": {
+        "周报": 11,
+        "手动上传": 8,
+        "手机员工工作台": 4,
+        "导入中心": 1
+      },
+      "targetTables": [
+        "Notification",
+        "FileRecord",
+        "FileFolder",
+        "AuditLog"
+      ],
+      "disposition": "attachments_and_audit_must_sync_or_archive_messages_require_dedup"
+    }
+  },
+  "crossReferences": {
+    "financeAttachmentIdCount": 8,
+    "financeAttachmentIdsInPlatform": 8,
+    "financeAttachmentIdsMissingInPlatform": [],
+    "financeOcrTaskIdCount": 8,
+    "financeOcrTaskIdsInOcr": 8,
+    "financeOcrTaskIdsMissingInOcr": [],
+    "ocrAttachmentUniqueCount": 22,
+    "ocrAttachmentIdsInPlatform": 8,
+    "ocrAttachmentIdsMissingInPlatformCount": 14,
+    "ocrAttachmentIdsMissingInPlatform": [
+      "attachment-ocr-contract-invoice",
+      "attachment-mprstxnt-pve6d2",
+      "attachment-mprsz60t-zu2krt",
+      "attachment-mprt3c1p-7m66pr",
+      "attachment-mprt6fga-rmsnq3",
+      "attachment-mprtdsb5-4wsfbx",
+      "attachment-mprtiueb-m30sdx",
+      "attachment-mprtorc2-er8gsl",
+      "attachment-mprtu5hh-8ubvvr",
+      "attachment-mprtzdlb-39deas",
+      "attachment-mpru52zq-cbkhig",
+      "attachment-mpruddgx-f6btrp",
+      "attachment-mpruijh8-4rrd67",
+      "attachment-ocr-contract-debug"
+    ],
+    "ocrClaimIdsInFinanceCount": 4,
+    "ocrClaimIdsMissingInFinanceCount": 14,
+    "ocrClaimIdsMissingInFinance": [
+      "expense-ocr-contract",
+      "EX-MPRSTXN9-WW5I9",
+      "EX-MPRSZ609-VCQJ9",
+      "EX-MPRT3C18-F90IV",
+      "EX-MPRT6FFN-HIR67",
+      "EX-MPRTDSAK-ZDUQW",
+      "EX-MPRTIUDP-VAMME",
+      "EX-MPRTORBH-WUPQK",
+      "EX-MPRTU5GU-R5FT3",
+      "EX-MPRTZDKM-ES8MT",
+      "EX-MPRU52Z2-P755A",
+      "EX-MPRUDDGG-DGLM8",
+      "EX-MPRUIJGJ-YIMZ0",
+      "expense-ocr-contract-debug"
+    ]
+  },
+  "syncDisposition": {
+    "mustSyncCandidates": [
+      {
+        "source": "finance.expenseClaims",
+        "count": 4,
+        "condition": "Only after business confirms Phase2 test-titled claims should remain formal workflow data."
+      },
+      {
+        "source": "platform.attachments finance-linked invoices",
+        "count": 8,
+        "condition": "Sync with expense claims and OCR task links."
+      },
+      {
+        "source": "ocr tasks linked by finance",
+        "count": 8,
+        "condition": "Sync if corresponding expense claims sync."
+      },
+      {
+        "source": "platform.attachments meeting audio",
+        "count": 4,
+        "condition": "Sync to FileRecord if meeting-minutes collaboration remains active."
+      },
+      {
+        "source": "schedule.snapshot",
+        "count": 1,
+        "condition": "Light archive into AttendancePeriod."
+      }
+    ],
+    "archiveOrAuditCandidates": [
+      {
+        "source": "ocr tasks not referenced by current finance claims",
+        "count": 20,
+        "reason": "Historical or orphan OCR tasks need claim matching before formal binding."
+      },
+      {
+        "source": "platform.messages",
+        "count": 13,
+        "reason": "Weekly notifications require dedup against WeeklyReportPayload and Notification."
+      },
+      {
+        "source": "platform.auditItems",
+        "count": 24,
+        "reason": "Useful as AuditLog or JSON audit archive."
+      },
+      {
+        "source": "schedule.attachments",
+        "count": 1,
+        "reason": "Missing-proof prompt only; do not create fake FileRecord."
+      },
+      {
+        "source": "finance empty arrays",
+        "count": 8,
+        "reason": "No records to migrate in this dry-run."
+      }
+    ]
+  },
+  "riskRanking": [
+    {
+      "rank": 1,
+      "severity": "high",
+      "area": "finance.expenseClaims",
+      "risk": "All four claims are pending_review and titled as Phase2 tests; importing as formal reimbursement could pollute production workflow.",
+      "mitigation": "Business confirmation before schema backfill; otherwise archive as test records."
+    },
+    {
+      "rank": 2,
+      "severity": "high",
+      "area": "platform.attachments",
+      "risk": "Six local attachments have no fileUrl or previewUrl; FileRecord import needs a stable object/path resolution.",
+      "mitigation": "Validate receipt.storageKey and file availability before import."
+    },
+    {
+      "rank": 3,
+      "severity": "high",
+      "area": "ocr-tasks",
+      "risk": "Twenty OCR tasks are not referenced by current finance claims; fourteen claimIds are absent from finance.json.",
+      "mitigation": "Import finance-linked OCR first; archive the rest with source fingerprints and later reconcile historical claims."
+    },
+    {
+      "rank": 4,
+      "severity": "medium",
+      "area": "platform COS URLs",
+      "risk": "Signed COS URLs should not become long-term canonical file URLs.",
+      "mitigation": "Store stable storageKey and metadata; issue signed URLs on demand."
+    },
+    {
+      "rank": 5,
+      "severity": "medium",
+      "area": "platform.messages",
+      "risk": "Weekly messages may duplicate migrated weekly payload or notification records.",
+      "mitigation": "Dedup by title, target URL, receivedAt, and related weekly payload before Notification import."
+    },
+    {
+      "rank": 6,
+      "severity": "low",
+      "area": "schedule",
+      "risk": "Schedule contains a locked empty snapshot with minimal business data.",
+      "mitigation": "Archive lightly into AttendancePeriod/rawSnapshot; no complex migration."
+    }
+  ],
+  "recommendedOrder": [
+    "Confirm whether four Phase2 expense claims are formal records or test archive.",
+    "Design ExpenseClaim/OcrTask schema or payload bridge; keep JSON fallback.",
+    "Validate all platform attachment storage keys and user mappings.",
+    "Dry-run v2 with row-level import candidates, dedup keys, and failure list.",
+    "Only after backup and user confirmation, generate production backfill SQL in a separate workstream."
+  ],
+  "stopPoint": "Generated Markdown and JSON dry-run only. No production SQL, no DB write, no API/frontend changes."
+}

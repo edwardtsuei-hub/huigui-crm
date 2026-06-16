@@ -1,0 +1,139 @@
+{
+  "date": "2026-06-16",
+  "line": "B",
+  "task": "大爱归心前端 /calendar/roster halfDay UI 修复方案",
+  "status": "ready_for_review",
+  "constraints": {
+    "read_only_analysis": true,
+    "business_code_modified": false,
+    "database_written": false,
+    "deployed": false,
+    "service_restarted": false
+  },
+  "inputs_read": [
+    "docs/parallel-collaboration-control-2026-06-16.md",
+    "docs/parallel-collab-shift-roster-halfday-auth-pagecheck-2026-06-16.md",
+    "docs/parallel-collab-shift-roster-halfday-ui-trace-2026-06-16.md",
+    "docs/parallel-collab-frontend-localstorage-2026-06-16.md"
+  ],
+  "route_source_trace": {
+    "target_url": "https://management.hui-health.com/calendar/roster",
+    "runtime_kind": "Vite SPA static bundle",
+    "active_js_asset": "/assets/index-C20sRqov.js",
+    "active_css_asset": "/assets/index-DUmE3prg.css",
+    "local_release_dir": "apps/web/public/employee-frontend/releases/20260616090241",
+    "local_js_asset": "apps/web/public/employee-frontend/releases/20260616090241/assets/index-C20sRqov.js",
+    "local_css_asset": "apps/web/public/employee-frontend/releases/20260616090241/assets/index-DUmE3prg.css",
+    "route_component_in_minified_bundle": "dP",
+    "source_map_available": false,
+    "unminified_source_located_in_current_repo": false,
+    "not_current_runtime_sources": [
+      "apps/web/app/(dashboard)/schedule/shifts/page.tsx",
+      "apps/web/components/shift-roster/ShiftSchedulerNative.tsx",
+      "apps/web/public/embedded/shift-scheduler-v9.html"
+    ],
+    "shift_scheduler_native_in_active_bundle": false,
+    "shift_local_standalone_v9_in_active_bundle": false
+  },
+  "current_halfday_chain": {
+    "template_team": "bearhug-front",
+    "template": {
+      "value": "半天班",
+      "label": "半天",
+      "title": "半天班",
+      "time": "09:50-14:00",
+      "detail": "前厅兼职"
+    },
+    "normalization": {
+      "halfday_preserved_as": "半天班",
+      "early_mid_booking_fullday_normalized_to": "全天班",
+      "duty_evening_normalized_to": "晚班"
+    },
+    "problem_summary": "数据值和时间正确，用户界面部分位置使用短 label，导致显示 半天 而不是 半天班。"
+  },
+  "halfday_ui_recommendation": {
+    "keep_internal_value": "半天班",
+    "do_not_fix_via_localstorage": true,
+    "recommended_helper": "getRosterShiftDisplayName(template) => template.title || template.value || template.label",
+    "surfaces": {
+      "desktop_table": {
+        "change_to_full_label": true,
+        "expected_text": "半天班",
+        "expected_time": "09:50-14:00"
+      },
+      "narrow_mobile_button_or_card": {
+        "change_to_full_label": true,
+        "expected_text": "半天班",
+        "expected_time": "09:50-14:00"
+      },
+      "shift_selector_or_popup": {
+        "change_to_full_label": true,
+        "expected_option_text": "半天班"
+      },
+      "shift_settings_template_panel": {
+        "title_already_full": true,
+        "badge_currently_may_be_short": true,
+        "strict_acceptance_recommendation": "badge 也改为 半天班，或隐藏短 badge"
+      },
+      "export_image": {
+        "change_to_full_label": true,
+        "draw_text_from": "template.title || template.value || template.label",
+        "expected_text": "半天班",
+        "expected_time": "09:50-14:00"
+      }
+    }
+  },
+  "export_mojibake_trace": {
+    "export_implementation": "manual canvas fillText rendering",
+    "canvas_font_stack_seen": "\"PingFang SC\", \"Microsoft YaHei\", Inter, sans-serif",
+    "document_fonts_ready_seen": false,
+    "html2canvas_seen": false,
+    "dom_to_image_seen": false,
+    "likely_cause": "canvas 绘制时 CJK 字体加载或 fallback 不稳定；页面 DOM 中文正常，较不像数据编码问题。"
+  },
+  "export_mojibake_fix_plan": {
+    "phase_1_minimal_canvas_fix": [
+      "将 canvas 与页面共用 CJK-safe 字体栈，加入 PingFang SC、Hiragino Sans GB、Noto Sans SC、Microsoft YaHei、Source Han Sans SC、system-ui、sans-serif。",
+      "导出绘制前 await document.fonts.ready。",
+      "如引入自托管 CJK webfont，绘制前 await document.fonts.load(...) 再 await document.fonts.ready。",
+      "所有 canvas font 设置统一使用同一 CJK 字体栈。",
+      "导出 halfDay 文案同步改为 半天班。"
+    ],
+    "phase_2_dom_export_fallback": [
+      "如 canvas 仍乱码，使用隐藏导出 DOM + html-to-image 或 html2canvas。",
+      "仍需等待 document.fonts.ready，并处理字体跨域和移动端内存风险。"
+    ],
+    "phase_3_server_side_export": [
+      "如需跨平台强一致，使用 Playwright 截图、Node canvas 或 Satori 类服务端渲染。",
+      "服务端内置 CJK 字体，但该方案涉及服务端与部署，不属于本次只读 B 线范围。"
+    ]
+  },
+  "acceptance_checklist": [
+    "/calendar/roster 活跃包仍不是 ShiftSchedulerNative。",
+    "活跃包中不含 shift_local_standalone_v9。",
+    "前厅 迦迦 2026-06-15 显示 半天班 和 09:50-14:00。",
+    "前厅 迦迦 2026-06-16 显示 半天班 和 09:50-14:00。",
+    "前厅 迦迦 2026-06-17 显示 半天班 和 09:50-14:00。",
+    "前厅 迦迦 2026-06-20 显示 半天班 和 09:50-14:00。",
+    "前厅 迦迦 2026-06-21 显示 半天班 和 09:50-14:00。",
+    "桌面表格、窄屏按钮/卡片、选择控件、班次设置、导出预览均不再以 半天 作为主要 halfDay 文案。",
+    "导出预览中文标题、姓名、日期、星期、班次名无乱码。",
+    "复制图片和下载图片与预览一致。"
+  ],
+  "risks": [
+    "直接修改 label 可能影响紧凑徽标；推荐显示 helper 而不是全局改 label。",
+    "半天班 比 半天 更长，select、窄屏格子、canvas 胶囊宽度需复核。",
+    "document.fonts.ready 不能替代缺失 CJK 字体；跨平台稳定性可能需要自托管 CJK 字体。",
+    "当前缺少 sourcemap 和未压缩源码定位，实际修复前应先确认构建来源。"
+  ],
+  "outputs": {
+    "markdown": "docs/parallel-collab-halfday-ui-fix-plan-2026-06-16.md",
+    "json": "output/employee-data-migration/2026-06-16/parallel-collab-halfday-ui-fix-plan.json"
+  },
+  "next_steps": [
+    "由前端修复线定位 /calendar/roster 未压缩源码或补齐 sourcemap。",
+    "按统一显示 helper 修改 halfDay 可见文案。",
+    "按字体等待和 CJK 字体方案修复 canvas 导出乱码。",
+    "重新构建部署后做桌面、窄屏、选择控件、班次设置、导出预览全链路验收。"
+  ]
+}

@@ -1,0 +1,689 @@
+{
+  "date": "2026-06-16",
+  "workstream": "second_phase_dryrun_v2",
+  "status": "ready_for_review",
+  "generated_at": "2026-06-16T09:17:05.094Z",
+  "business_decision": {
+    "decision": "TEST_AUDIT_ONLY",
+    "decision_text": "4 条 Phase2 实票测试报销单只作为 TEST / 审计证据保留，不进入正式报销。",
+    "formal_reimbursement_records_to_create": 0
+  },
+  "safety": {
+    "dry_run_only": true,
+    "production_database_writes": false,
+    "executable_production_sql_generated": false,
+    "code_changes": false,
+    "prisma_changes": false,
+    "api_changes": false,
+    "frontend_changes": false,
+    "deployment": false
+  },
+  "source_fingerprints": [
+    {
+      "name": "finance.json",
+      "sha16": "ca3fc6f74b4720b9",
+      "sizeBytes": 8165
+    },
+    {
+      "name": "ocr-tasks.json",
+      "sha16": "f5778a33f59cbd49",
+      "sizeBytes": 38516
+    },
+    {
+      "name": "platform.json",
+      "sha16": "9aaf13d5b6a98cb2",
+      "sizeBytes": 53387
+    }
+  ],
+  "summary_counts": {
+    "finance_claims": 4,
+    "finance_total_amount": 150.4,
+    "real_expense_claims_to_import": 0,
+    "test_audit_claims_to_archive": 4,
+    "ocr_total_tasks": 28,
+    "ocr_test_linked_tasks": 8,
+    "ocr_historical_archive_tasks": 20,
+    "platform_attachments": 12,
+    "platform_finance_attachments_test": 8,
+    "platform_meeting_attachments_candidates": 4,
+    "platform_messages_deferred": 13,
+    "platform_audit_items_archive_pending_mapping": 24
+  },
+  "dry_run_v2_actions": {
+    "finance": {
+      "action": "ARCHIVE_AS_TEST_AUDIT_ONLY",
+      "would_create_real_expense_claims": 0,
+      "candidate_rows": [
+        {
+          "legacyClaimId": "EX-MQBHZYOV-IM808",
+          "disposition": "TEST_AUDIT_EVIDENCE",
+          "proposedDataScope": "TEST",
+          "proposedTarget": "ExpenseClaimAuditArchive or TestBatch payload archive; not REAL ExpenseClaim",
+          "title": "Phase2 COS CORS 修复实票测试 20260613-0620",
+          "amount": 37.6,
+          "status": "pending_review",
+          "submittedAt": "2026-06-12T22:28:30.175Z",
+          "attachmentIds": [
+            "attachment-mqbi01nk-rbxkg4",
+            "attachment-mqbi029j-00xqvj"
+          ],
+          "ocrTaskIds": [
+            "ocr-mqbi02ef-fj1hqn",
+            "ocr-mqbi02ei-h4nnio"
+          ],
+          "idempotencyKey": "finance.json:EX-MQBHZYOV-IM808:TEST_AUDIT_ONLY",
+          "blockRealMigrationReason": "business confirmed Phase2 real-receipt test claim is TEST/audit evidence only"
+        },
+        {
+          "legacyClaimId": "EX-MQBGMQ6B-1TVDK",
+          "disposition": "TEST_AUDIT_EVIDENCE",
+          "proposedDataScope": "TEST",
+          "proposedTarget": "ExpenseClaimAuditArchive or TestBatch payload archive; not REAL ExpenseClaim",
+          "title": "Phase2 COS/OCR v1 路由修复实票测试 20260613-0544",
+          "amount": 37.6,
+          "status": "pending_review",
+          "submittedAt": "2026-06-12T21:50:12.995Z",
+          "attachmentIds": [
+            "attachment-mqbgmsbo-f4j4vj",
+            "attachment-mqbgmscf-b8xf87"
+          ],
+          "ocrTaskIds": [
+            "ocr-mqbgmt13-w1ih9d",
+            "ocr-mqbgmt27-yja64d"
+          ],
+          "idempotencyKey": "finance.json:EX-MQBGMQ6B-1TVDK:TEST_AUDIT_ONLY",
+          "blockRealMigrationReason": "business confirmed Phase2 real-receipt test claim is TEST/audit evidence only"
+        },
+        {
+          "legacyClaimId": "EX-MQBG4UCE-J375P",
+          "disposition": "TEST_AUDIT_EVIDENCE",
+          "proposedDataScope": "TEST",
+          "proposedTarget": "ExpenseClaimAuditArchive or TestBatch payload archive; not REAL ExpenseClaim",
+          "title": "Phase2 COS/OCR 修复实票测试 20260613-0524",
+          "amount": 37.6,
+          "status": "pending_review",
+          "submittedAt": "2026-06-12T21:36:18.590Z",
+          "attachmentIds": [
+            "attachment-mqbg4vl4-kv4m5q",
+            "attachment-mqbg4vl5-ei479c"
+          ],
+          "ocrTaskIds": [
+            "ocr-mqbg4wal-uat6iq",
+            "ocr-mqbg4wf2-xt01p2"
+          ],
+          "idempotencyKey": "finance.json:EX-MQBG4UCE-J375P:TEST_AUDIT_ONLY",
+          "blockRealMigrationReason": "business confirmed Phase2 real-receipt test claim is TEST/audit evidence only"
+        },
+        {
+          "legacyClaimId": "EX-MQAXBSDG-WRNXA",
+          "disposition": "TEST_AUDIT_EVIDENCE",
+          "proposedDataScope": "TEST",
+          "proposedTarget": "ExpenseClaimAuditArchive or TestBatch payload archive; not REAL ExpenseClaim",
+          "title": "Phase2 实票测试 20260612-2031",
+          "amount": 37.6,
+          "status": "pending_review",
+          "submittedAt": "2026-06-12T12:49:49.924Z",
+          "attachmentIds": [
+            "attachment-mqaxbvah-k2n0u3",
+            "attachment-mqaxbvah-4yj32z"
+          ],
+          "ocrTaskIds": [
+            "ocr-mqaxbwxr-3kw78u",
+            "ocr-mqaxbwyy-n6qhio"
+          ],
+          "idempotencyKey": "finance.json:EX-MQAXBSDG-WRNXA:TEST_AUDIT_ONLY",
+          "blockRealMigrationReason": "business confirmed Phase2 real-receipt test claim is TEST/audit evidence only"
+        }
+      ]
+    },
+    "ocr": {
+      "action": "SPLIT_TEST_LINKED_AND_HISTORICAL_ARCHIVE",
+      "status_counts": {
+        "confirmed": 16,
+        "succeeded": 10,
+        "failed": 2
+      },
+      "missing_finance_referenced_ocr_tasks": [],
+      "test_linked_rows": [
+        {
+          "legacyTaskId": "ocr-mqaxbwxr-3kw78u",
+          "disposition": "TEST_AUDIT_EVIDENCE_WITH_PHASE2_CLAIM",
+          "proposedDataScope": "TEST",
+          "claimId": "EX-MQAXBSDG-WRNXA",
+          "attachmentId": "attachment-mqaxbvah-k2n0u3",
+          "fileName": "02-xiangdao-invoice.pdf",
+          "status": "succeeded",
+          "engine": null,
+          "totalAmount": 368,
+          "hasWarnings": false,
+          "idempotencyKey": "ocr-tasks.json:ocr-mqaxbwxr-3kw78u:TEST_AUDIT_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mqaxbwyy-n6qhio",
+          "disposition": "TEST_AUDIT_EVIDENCE_WITH_PHASE2_CLAIM",
+          "proposedDataScope": "TEST",
+          "claimId": "EX-MQAXBSDG-WRNXA",
+          "attachmentId": "attachment-mqaxbvah-4yj32z",
+          "fileName": "01-didi-invoice.pdf",
+          "status": "succeeded",
+          "engine": null,
+          "totalAmount": 368,
+          "hasWarnings": false,
+          "idempotencyKey": "ocr-tasks.json:ocr-mqaxbwyy-n6qhio:TEST_AUDIT_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mqbg4wal-uat6iq",
+          "disposition": "TEST_AUDIT_EVIDENCE_WITH_PHASE2_CLAIM",
+          "proposedDataScope": "TEST",
+          "claimId": "EX-MQBG4UCE-J375P",
+          "attachmentId": "attachment-mqbg4vl4-kv4m5q",
+          "fileName": "01-didi-invoice.pdf",
+          "status": "succeeded",
+          "engine": "tencent-cloud-ocr:RecognizeGeneralInvoice",
+          "totalAmount": 26.08,
+          "amount": 25.32,
+          "hasWarnings": true,
+          "idempotencyKey": "ocr-tasks.json:ocr-mqbg4wal-uat6iq:TEST_AUDIT_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mqbg4wf2-xt01p2",
+          "disposition": "TEST_AUDIT_EVIDENCE_WITH_PHASE2_CLAIM",
+          "proposedDataScope": "TEST",
+          "claimId": "EX-MQBG4UCE-J375P",
+          "attachmentId": "attachment-mqbg4vl5-ei479c",
+          "fileName": "02-xiangdao-invoice.pdf",
+          "status": "succeeded",
+          "engine": "tencent-cloud-ocr:RecognizeGeneralInvoice",
+          "totalAmount": 11.52,
+          "amount": 11.18,
+          "hasWarnings": true,
+          "idempotencyKey": "ocr-tasks.json:ocr-mqbg4wf2-xt01p2:TEST_AUDIT_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mqbgmt27-yja64d",
+          "disposition": "TEST_AUDIT_EVIDENCE_WITH_PHASE2_CLAIM",
+          "proposedDataScope": "TEST",
+          "claimId": "EX-MQBGMQ6B-1TVDK",
+          "attachmentId": "attachment-mqbgmscf-b8xf87",
+          "fileName": "02-xiangdao-invoice.pdf",
+          "status": "succeeded",
+          "engine": "tencent-cloud-ocr:RecognizeGeneralInvoice",
+          "totalAmount": 11.52,
+          "amount": 11.18,
+          "hasWarnings": true,
+          "idempotencyKey": "ocr-tasks.json:ocr-mqbgmt27-yja64d:TEST_AUDIT_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mqbgmt13-w1ih9d",
+          "disposition": "TEST_AUDIT_EVIDENCE_WITH_PHASE2_CLAIM",
+          "proposedDataScope": "TEST",
+          "claimId": "EX-MQBGMQ6B-1TVDK",
+          "attachmentId": "attachment-mqbgmsbo-f4j4vj",
+          "fileName": "01-didi-invoice.pdf",
+          "status": "succeeded",
+          "engine": "tencent-cloud-ocr:RecognizeGeneralInvoice",
+          "totalAmount": 26.08,
+          "amount": 25.32,
+          "hasWarnings": true,
+          "idempotencyKey": "ocr-tasks.json:ocr-mqbgmt13-w1ih9d:TEST_AUDIT_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mqbi02ef-fj1hqn",
+          "disposition": "TEST_AUDIT_EVIDENCE_WITH_PHASE2_CLAIM",
+          "proposedDataScope": "TEST",
+          "claimId": "EX-MQBHZYOV-IM808",
+          "attachmentId": "attachment-mqbi01nk-rbxkg4",
+          "fileName": "01-didi-invoice.pdf",
+          "status": "succeeded",
+          "engine": "tencent-cloud-ocr:RecognizeGeneralInvoice",
+          "totalAmount": 26.08,
+          "amount": 25.32,
+          "hasWarnings": true,
+          "idempotencyKey": "ocr-tasks.json:ocr-mqbi02ef-fj1hqn:TEST_AUDIT_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mqbi02ei-h4nnio",
+          "disposition": "TEST_AUDIT_EVIDENCE_WITH_PHASE2_CLAIM",
+          "proposedDataScope": "TEST",
+          "claimId": "EX-MQBHZYOV-IM808",
+          "attachmentId": "attachment-mqbi029j-00xqvj",
+          "fileName": "02-xiangdao-invoice.pdf",
+          "status": "succeeded",
+          "engine": "tencent-cloud-ocr:RecognizeGeneralInvoice",
+          "totalAmount": 11.52,
+          "amount": 11.18,
+          "hasWarnings": true,
+          "idempotencyKey": "ocr-tasks.json:ocr-mqbi02ei-h4nnio:TEST_AUDIT_ONLY"
+        }
+      ],
+      "historical_archive_rows": [
+        {
+          "legacyTaskId": "ocr-mprqtsig-capt08",
+          "disposition": "OCR_HISTORICAL_AUDIT_ARCHIVE",
+          "proposedDataScope": "ARCHIVE_ONLY_SCOPE_UNCONFIRMED",
+          "claimId": "expense-ocr-contract",
+          "attachmentId": "attachment-ocr-contract-invoice",
+          "fileName": "ocr-contract-invoice.jpg",
+          "status": "confirmed",
+          "reason": "claimId not present in current finance expenseClaims",
+          "idempotencyKey": "ocr-tasks.json:ocr-mprqtsig-capt08:ARCHIVE_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mprr6ibg-gg22ue",
+          "disposition": "OCR_HISTORICAL_AUDIT_ARCHIVE",
+          "proposedDataScope": "ARCHIVE_ONLY_SCOPE_UNCONFIRMED",
+          "claimId": "expense-ocr-contract",
+          "attachmentId": "attachment-ocr-contract-invoice",
+          "fileName": "ocr-contract-invoice.jpg",
+          "status": "confirmed",
+          "reason": "claimId not present in current finance expenseClaims",
+          "idempotencyKey": "ocr-tasks.json:ocr-mprr6ibg-gg22ue:ARCHIVE_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mprrc5dp-pw8g81",
+          "disposition": "OCR_HISTORICAL_AUDIT_ARCHIVE",
+          "proposedDataScope": "ARCHIVE_ONLY_SCOPE_UNCONFIRMED",
+          "claimId": "expense-ocr-contract",
+          "attachmentId": "attachment-ocr-contract-invoice",
+          "fileName": "ocr-contract-invoice.jpg",
+          "status": "confirmed",
+          "reason": "claimId not present in current finance expenseClaims",
+          "idempotencyKey": "ocr-tasks.json:ocr-mprrc5dp-pw8g81:ARCHIVE_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mprroxsg-bay6gg",
+          "disposition": "OCR_HISTORICAL_AUDIT_ARCHIVE",
+          "proposedDataScope": "ARCHIVE_ONLY_SCOPE_UNCONFIRMED",
+          "claimId": "expense-ocr-contract",
+          "attachmentId": "attachment-ocr-contract-invoice",
+          "fileName": "ocr-contract-invoice.jpg",
+          "status": "confirmed",
+          "reason": "claimId not present in current finance expenseClaims",
+          "idempotencyKey": "ocr-tasks.json:ocr-mprroxsg-bay6gg:ARCHIVE_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mprstxv8-lbnp8j",
+          "disposition": "OCR_HISTORICAL_AUDIT_ARCHIVE",
+          "proposedDataScope": "ARCHIVE_ONLY_SCOPE_UNCONFIRMED",
+          "claimId": "EX-MPRSTXN9-WW5I9",
+          "attachmentId": "attachment-mprstxnt-pve6d2",
+          "fileName": "acceptance-invoice.jpg",
+          "status": "succeeded",
+          "reason": "claimId not present in current finance expenseClaims",
+          "idempotencyKey": "ocr-tasks.json:ocr-mprstxv8-lbnp8j:ARCHIVE_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mprsz6au-6j0f5a",
+          "disposition": "OCR_HISTORICAL_AUDIT_ARCHIVE",
+          "proposedDataScope": "ARCHIVE_ONLY_SCOPE_UNCONFIRMED",
+          "claimId": "EX-MPRSZ609-VCQJ9",
+          "attachmentId": "attachment-mprsz60t-zu2krt",
+          "fileName": "acceptance-invoice.jpg",
+          "status": "succeeded",
+          "reason": "claimId not present in current finance expenseClaims",
+          "idempotencyKey": "ocr-tasks.json:ocr-mprsz6au-6j0f5a:ARCHIVE_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mprt3cc8-2fo1fr",
+          "disposition": "OCR_HISTORICAL_AUDIT_ARCHIVE",
+          "proposedDataScope": "ARCHIVE_ONLY_SCOPE_UNCONFIRMED",
+          "claimId": "EX-MPRT3C18-F90IV",
+          "attachmentId": "attachment-mprt3c1p-7m66pr",
+          "fileName": "acceptance-invoice.jpg",
+          "status": "confirmed",
+          "reason": "claimId not present in current finance expenseClaims",
+          "idempotencyKey": "ocr-tasks.json:ocr-mprt3cc8-2fo1fr:ARCHIVE_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mprt6fpb-gd3pnw",
+          "disposition": "OCR_HISTORICAL_AUDIT_ARCHIVE",
+          "proposedDataScope": "ARCHIVE_ONLY_SCOPE_UNCONFIRMED",
+          "claimId": "EX-MPRT6FFN-HIR67",
+          "attachmentId": "attachment-mprt6fga-rmsnq3",
+          "fileName": "acceptance-invoice.jpg",
+          "status": "confirmed",
+          "reason": "claimId not present in current finance expenseClaims",
+          "idempotencyKey": "ocr-tasks.json:ocr-mprt6fpb-gd3pnw:ARCHIVE_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mprtdtkt-69wlyi",
+          "disposition": "OCR_HISTORICAL_AUDIT_ARCHIVE",
+          "proposedDataScope": "ARCHIVE_ONLY_SCOPE_UNCONFIRMED",
+          "claimId": "EX-MPRTDSAK-ZDUQW",
+          "attachmentId": "attachment-mprtdsb5-4wsfbx",
+          "fileName": "acceptance-invoice.jpg",
+          "status": "confirmed",
+          "reason": "claimId not present in current finance expenseClaims",
+          "idempotencyKey": "ocr-tasks.json:ocr-mprtdtkt-69wlyi:ARCHIVE_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mprtiv2f-poei0n",
+          "disposition": "OCR_HISTORICAL_AUDIT_ARCHIVE",
+          "proposedDataScope": "ARCHIVE_ONLY_SCOPE_UNCONFIRMED",
+          "claimId": "EX-MPRTIUDP-VAMME",
+          "attachmentId": "attachment-mprtiueb-m30sdx",
+          "fileName": "acceptance-invoice.jpg",
+          "status": "confirmed",
+          "reason": "claimId not present in current finance expenseClaims",
+          "idempotencyKey": "ocr-tasks.json:ocr-mprtiv2f-poei0n:ARCHIVE_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mprtorjt-ne63jt",
+          "disposition": "OCR_HISTORICAL_AUDIT_ARCHIVE",
+          "proposedDataScope": "ARCHIVE_ONLY_SCOPE_UNCONFIRMED",
+          "claimId": "EX-MPRTORBH-WUPQK",
+          "attachmentId": "attachment-mprtorc2-er8gsl",
+          "fileName": "acceptance-invoice.jpg",
+          "status": "confirmed",
+          "reason": "claimId not present in current finance expenseClaims",
+          "idempotencyKey": "ocr-tasks.json:ocr-mprtorjt-ne63jt:ARCHIVE_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mprtu64u-xtg1gb",
+          "disposition": "OCR_HISTORICAL_AUDIT_ARCHIVE",
+          "proposedDataScope": "ARCHIVE_ONLY_SCOPE_UNCONFIRMED",
+          "claimId": "EX-MPRTU5GU-R5FT3",
+          "attachmentId": "attachment-mprtu5hh-8ubvvr",
+          "fileName": "acceptance-invoice.jpg",
+          "status": "confirmed",
+          "reason": "claimId not present in current finance expenseClaims",
+          "idempotencyKey": "ocr-tasks.json:ocr-mprtu64u-xtg1gb:ARCHIVE_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mprtzdxy-fou1qi",
+          "disposition": "OCR_HISTORICAL_AUDIT_ARCHIVE",
+          "proposedDataScope": "ARCHIVE_ONLY_SCOPE_UNCONFIRMED",
+          "claimId": "EX-MPRTZDKM-ES8MT",
+          "attachmentId": "attachment-mprtzdlb-39deas",
+          "fileName": "acceptance-invoice.jpg",
+          "status": "confirmed",
+          "reason": "claimId not present in current finance expenseClaims",
+          "idempotencyKey": "ocr-tasks.json:ocr-mprtzdxy-fou1qi:ARCHIVE_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mpru53eq-nr2299",
+          "disposition": "OCR_HISTORICAL_AUDIT_ARCHIVE",
+          "proposedDataScope": "ARCHIVE_ONLY_SCOPE_UNCONFIRMED",
+          "claimId": "EX-MPRU52Z2-P755A",
+          "attachmentId": "attachment-mpru52zq-cbkhig",
+          "fileName": "acceptance-invoice.jpg",
+          "status": "confirmed",
+          "reason": "claimId not present in current finance expenseClaims",
+          "idempotencyKey": "ocr-tasks.json:ocr-mpru53eq-nr2299:ARCHIVE_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mpruddr9-uq78dg",
+          "disposition": "OCR_HISTORICAL_AUDIT_ARCHIVE",
+          "proposedDataScope": "ARCHIVE_ONLY_SCOPE_UNCONFIRMED",
+          "claimId": "EX-MPRUDDGG-DGLM8",
+          "attachmentId": "attachment-mpruddgx-f6btrp",
+          "fileName": "acceptance-invoice.jpg",
+          "status": "confirmed",
+          "reason": "claimId not present in current finance expenseClaims",
+          "idempotencyKey": "ocr-tasks.json:ocr-mpruddr9-uq78dg:ARCHIVE_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mpruhbla-saieoq",
+          "disposition": "OCR_HISTORICAL_AUDIT_ARCHIVE",
+          "proposedDataScope": "ARCHIVE_ONLY_SCOPE_UNCONFIRMED",
+          "claimId": "expense-ocr-contract",
+          "attachmentId": "attachment-ocr-contract-invoice",
+          "fileName": "ocr-contract-invoice.jpg",
+          "status": "confirmed",
+          "reason": "claimId not present in current finance expenseClaims",
+          "idempotencyKey": "ocr-tasks.json:ocr-mpruhbla-saieoq:ARCHIVE_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mpruijq6-6sg3kt",
+          "disposition": "OCR_HISTORICAL_AUDIT_ARCHIVE",
+          "proposedDataScope": "ARCHIVE_ONLY_SCOPE_UNCONFIRMED",
+          "claimId": "EX-MPRUIJGJ-YIMZ0",
+          "attachmentId": "attachment-mpruijh8-4rrd67",
+          "fileName": "acceptance-invoice.jpg",
+          "status": "confirmed",
+          "reason": "claimId not present in current finance expenseClaims",
+          "idempotencyKey": "ocr-tasks.json:ocr-mpruijq6-6sg3kt:ARCHIVE_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mqbh1ufk-dgad6a",
+          "disposition": "OCR_HISTORICAL_AUDIT_ARCHIVE",
+          "proposedDataScope": "ARCHIVE_ONLY_SCOPE_UNCONFIRMED",
+          "claimId": "expense-ocr-contract",
+          "attachmentId": "attachment-ocr-contract-invoice",
+          "fileName": "ocr-contract-invoice.jpg",
+          "status": "failed",
+          "reason": "claimId not present in current finance expenseClaims",
+          "idempotencyKey": "ocr-tasks.json:ocr-mqbh1ufk-dgad6a:ARCHIVE_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mqbh2h8n-heokbb",
+          "disposition": "OCR_HISTORICAL_AUDIT_ARCHIVE",
+          "proposedDataScope": "ARCHIVE_ONLY_SCOPE_UNCONFIRMED",
+          "claimId": "expense-ocr-contract-debug",
+          "attachmentId": "attachment-ocr-contract-debug",
+          "fileName": "ocr-contract-debug.jpg",
+          "status": "failed",
+          "reason": "claimId not present in current finance expenseClaims",
+          "idempotencyKey": "ocr-tasks.json:ocr-mqbh2h8n-heokbb:ARCHIVE_ONLY"
+        },
+        {
+          "legacyTaskId": "ocr-mqbh6qfk-3p38l8",
+          "disposition": "OCR_HISTORICAL_AUDIT_ARCHIVE",
+          "proposedDataScope": "ARCHIVE_ONLY_SCOPE_UNCONFIRMED",
+          "claimId": "expense-ocr-contract",
+          "attachmentId": "attachment-ocr-contract-invoice",
+          "fileName": "100002599439-电子发票-26117000000559706018-20260415-144203.pdf.png",
+          "status": "confirmed",
+          "reason": "claimId not present in current finance expenseClaims",
+          "idempotencyKey": "ocr-tasks.json:ocr-mqbh6qfk-3p38l8:ARCHIVE_ONLY"
+        }
+      ]
+    },
+    "platform": {
+      "action": "ARCHIVE_ATTACHMENTS_WITH_TEST_OR_MEETING_CLASSIFICATION; DEFER_MESSAGES; ARCHIVE_AUDIT_AFTER_USER_MAPPING",
+      "storage_groups": {
+        "cos": 6,
+        "local": 6
+      },
+      "missing_finance_referenced_attachments": [],
+      "finance_attachment_rows": [
+        {
+          "legacyAttachmentId": "attachment-mqbi01nk-rbxkg4",
+          "disposition": "TEST_AUDIT_EVIDENCE_WITH_PHASE2_CLAIM",
+          "proposedDataScope": "TEST",
+          "module": "报销审批",
+          "category": "报销票据",
+          "name": "01-didi-invoice.pdf",
+          "storageProvider": "cos",
+          "storageKey": "uploads/报销审批/报销附件/20260612/1781303311762_15738d3af42a542d_01-didi-invoice.pdf",
+          "hasFileUrl": true,
+          "hasPreviewUrl": true,
+          "fileRecordReadiness": "CANDIDATE_WITH_SIGNED_URL_REQUIRES_STORAGEKEY_FIELD",
+          "idempotencyKey": "platform.json:attachment-mqbi01nk-rbxkg4:TEST_AUDIT_ONLY"
+        },
+        {
+          "legacyAttachmentId": "attachment-mqbi029j-00xqvj",
+          "disposition": "TEST_AUDIT_EVIDENCE_WITH_PHASE2_CLAIM",
+          "proposedDataScope": "TEST",
+          "module": "报销审批",
+          "category": "报销票据",
+          "name": "02-xiangdao-invoice.pdf",
+          "storageProvider": "cos",
+          "storageKey": "uploads/报销审批/报销附件/20260612/1781303311765_bb1fbca38345f6d1_02-xiangdao-invoice.pdf",
+          "hasFileUrl": true,
+          "hasPreviewUrl": true,
+          "fileRecordReadiness": "CANDIDATE_WITH_SIGNED_URL_REQUIRES_STORAGEKEY_FIELD",
+          "idempotencyKey": "platform.json:attachment-mqbi029j-00xqvj:TEST_AUDIT_ONLY"
+        },
+        {
+          "legacyAttachmentId": "attachment-mqbgmsbo-f4j4vj",
+          "disposition": "TEST_AUDIT_EVIDENCE_WITH_PHASE2_CLAIM",
+          "proposedDataScope": "TEST",
+          "module": "报销审批",
+          "category": "报销票据",
+          "name": "01-didi-invoice.pdf",
+          "storageProvider": "local",
+          "storageKey": "enterprise-cloud://大爱归心系统备份/报销附件/blob-mqbgmq73-7lvuh5-01-didi-invoice.pdf",
+          "hasFileUrl": false,
+          "hasPreviewUrl": false,
+          "fileRecordReadiness": "BLOCKED_NEEDS_FILE_ACCESS_MAPPING",
+          "idempotencyKey": "platform.json:attachment-mqbgmsbo-f4j4vj:TEST_AUDIT_ONLY"
+        },
+        {
+          "legacyAttachmentId": "attachment-mqbgmscf-b8xf87",
+          "disposition": "TEST_AUDIT_EVIDENCE_WITH_PHASE2_CLAIM",
+          "proposedDataScope": "TEST",
+          "module": "报销审批",
+          "category": "报销票据",
+          "name": "02-xiangdao-invoice.pdf",
+          "storageProvider": "local",
+          "storageKey": "enterprise-cloud://大爱归心系统备份/报销附件/blob-mqbgmq76-5tnxbd-02-xiangdao-invoice.pdf",
+          "hasFileUrl": false,
+          "hasPreviewUrl": false,
+          "fileRecordReadiness": "BLOCKED_NEEDS_FILE_ACCESS_MAPPING",
+          "idempotencyKey": "platform.json:attachment-mqbgmscf-b8xf87:TEST_AUDIT_ONLY"
+        },
+        {
+          "legacyAttachmentId": "attachment-mqbg4vl4-kv4m5q",
+          "disposition": "TEST_AUDIT_EVIDENCE_WITH_PHASE2_CLAIM",
+          "proposedDataScope": "TEST",
+          "module": "报销审批",
+          "category": "报销票据",
+          "name": "01-didi-invoice.pdf",
+          "storageProvider": "local",
+          "storageKey": "enterprise-cloud://大爱归心系统备份/报销附件/blob-mqbg4udb-q53l8o-01-didi-invoice.pdf",
+          "hasFileUrl": false,
+          "hasPreviewUrl": false,
+          "fileRecordReadiness": "BLOCKED_NEEDS_FILE_ACCESS_MAPPING",
+          "idempotencyKey": "platform.json:attachment-mqbg4vl4-kv4m5q:TEST_AUDIT_ONLY"
+        },
+        {
+          "legacyAttachmentId": "attachment-mqbg4vl5-ei479c",
+          "disposition": "TEST_AUDIT_EVIDENCE_WITH_PHASE2_CLAIM",
+          "proposedDataScope": "TEST",
+          "module": "报销审批",
+          "category": "报销票据",
+          "name": "02-xiangdao-invoice.pdf",
+          "storageProvider": "local",
+          "storageKey": "enterprise-cloud://大爱归心系统备份/报销附件/blob-mqbg4udm-dfyvj0-02-xiangdao-invoice.pdf",
+          "hasFileUrl": false,
+          "hasPreviewUrl": false,
+          "fileRecordReadiness": "BLOCKED_NEEDS_FILE_ACCESS_MAPPING",
+          "idempotencyKey": "platform.json:attachment-mqbg4vl5-ei479c:TEST_AUDIT_ONLY"
+        },
+        {
+          "legacyAttachmentId": "attachment-mqaxbvah-k2n0u3",
+          "disposition": "TEST_AUDIT_EVIDENCE_WITH_PHASE2_CLAIM",
+          "proposedDataScope": "TEST",
+          "module": "报销审批",
+          "category": "报销票据",
+          "name": "02-xiangdao-invoice.pdf",
+          "storageProvider": "local",
+          "storageKey": "enterprise-cloud://大爱归心系统备份/报销附件/blob-mqaxbse4-79zrgu-02-xiangdao-invoice.pdf",
+          "hasFileUrl": false,
+          "hasPreviewUrl": false,
+          "fileRecordReadiness": "BLOCKED_NEEDS_FILE_ACCESS_MAPPING",
+          "idempotencyKey": "platform.json:attachment-mqaxbvah-k2n0u3:TEST_AUDIT_ONLY"
+        },
+        {
+          "legacyAttachmentId": "attachment-mqaxbvah-4yj32z",
+          "disposition": "TEST_AUDIT_EVIDENCE_WITH_PHASE2_CLAIM",
+          "proposedDataScope": "TEST",
+          "module": "报销审批",
+          "category": "报销票据",
+          "name": "01-didi-invoice.pdf",
+          "storageProvider": "local",
+          "storageKey": "enterprise-cloud://大爱归心系统备份/报销附件/blob-mqaxbse6-1x93mq-01-didi-invoice.pdf",
+          "hasFileUrl": false,
+          "hasPreviewUrl": false,
+          "fileRecordReadiness": "BLOCKED_NEEDS_FILE_ACCESS_MAPPING",
+          "idempotencyKey": "platform.json:attachment-mqaxbvah-4yj32z:TEST_AUDIT_ONLY"
+        }
+      ],
+      "meeting_attachment_rows": [
+        {
+          "legacyAttachmentId": "attachment-mqbr6yc0-ufxl79",
+          "disposition": "MEETING_FILE_ARCHIVE_CANDIDATE",
+          "proposedDataScope": "REAL_ARCHIVE_CANDIDATE_AFTER_FILE_CHECK",
+          "module": "会议纪要",
+          "category": "会议录音",
+          "name": "hui-meeting-test.m4a",
+          "storageProvider": "cos",
+          "storageKey": "uploads/会议纪要/general/20260613/1781318561593_bcc7a7f51e928166_hui-meeting-test.m4a",
+          "hasFileUrl": true,
+          "hasPreviewUrl": true,
+          "idempotencyKey": "platform.json:attachment-mqbr6yc0-ufxl79:MEETING_ARCHIVE"
+        },
+        {
+          "legacyAttachmentId": "attachment-mqbn5oac-rxbzou",
+          "disposition": "MEETING_FILE_ARCHIVE_CANDIDATE",
+          "proposedDataScope": "REAL_ARCHIVE_CANDIDATE_AFTER_FILE_CHECK",
+          "module": "会议纪要",
+          "category": "会议录音",
+          "name": "微信克明 清洁 江总_20260606_110234.m4a",
+          "storageProvider": "cos",
+          "storageKey": "uploads/会议纪要/general/20260613/1781311969759_1fdf10ae1a827d78_微信克明-清洁-江总_20260606_110234.m4a",
+          "hasFileUrl": true,
+          "hasPreviewUrl": true,
+          "idempotencyKey": "platform.json:attachment-mqbn5oac-rxbzou:MEETING_ARCHIVE"
+        },
+        {
+          "legacyAttachmentId": "attachment-mqbl7bif-i69nq1",
+          "disposition": "MEETING_FILE_ARCHIVE_CANDIDATE",
+          "proposedDataScope": "REAL_ARCHIVE_CANDIDATE_AFTER_FILE_CHECK",
+          "module": "会议纪要",
+          "category": "会议录音",
+          "name": "微信克明 清洁 江总_20260606_110234.m4a",
+          "storageProvider": "cos",
+          "storageKey": "uploads/会议纪要/general/20260612/1781308688065_a1e125dca0a1cba6_微信克明-清洁-江总_20260606_110234.m4a",
+          "hasFileUrl": true,
+          "hasPreviewUrl": true,
+          "idempotencyKey": "platform.json:attachment-mqbl7bif-i69nq1:MEETING_ARCHIVE"
+        },
+        {
+          "legacyAttachmentId": "attachment-mqbl6hfa-k064dk",
+          "disposition": "MEETING_FILE_ARCHIVE_CANDIDATE",
+          "proposedDataScope": "REAL_ARCHIVE_CANDIDATE_AFTER_FILE_CHECK",
+          "module": "会议纪要",
+          "category": "会议录音",
+          "name": "微信克明 清洁 江总_20260606_110234.m4a",
+          "storageProvider": "cos",
+          "storageKey": "uploads/会议纪要/general/20260612/1781308646687_6726bdb2d4cbc147_微信克明-清洁-江总_20260606_110234.m4a",
+          "hasFileUrl": true,
+          "hasPreviewUrl": true,
+          "idempotencyKey": "platform.json:attachment-mqbl6hfa-k064dk:MEETING_ARCHIVE"
+        }
+      ],
+      "message_disposition": "DEFER_DEDUPE_WITH_WEEKLY_NOTIFICATION_CHAIN",
+      "message_counts": {
+        "category": {
+          "周报": 13
+        },
+        "status": {
+          "unread": 13
+        }
+      },
+      "audit_disposition": "ARCHIVE_ONLY_UNTIL_USER_MAPPING_EXISTS",
+      "audit_counts": {
+        "module": {
+          "消息中心": 11,
+          "附件中心": 8,
+          "报销审批": 4,
+          "财务导入": 1
+        }
+      }
+    }
+  },
+  "blockers": [
+    "6 local/enterprise-cloud finance attachments have no fileUrl or previewUrl and were not found by exact blob-key search under /opt/huigui-crm/storage.",
+    "FileRecord currently requires fileUrl and uploaderUserId and lacks storageKey/source fields, so this dry-run does not mark attachment rows as executable imports.",
+    "20 OCR tasks are historical/orphan relative to current finance claims and remain archive-only until legacy claim ownership is resolved.",
+    "13 platform weekly messages may duplicate weekly notification/report chains and are deferred."
+  ],
+  "next_step_options": [
+    "If user wants DB-backed archive later, design a TEST/audit evidence schema or metadata extension first; do not use REAL ExpenseClaim for these four claims.",
+    "If user wants no DB work, freeze JSON plus fingerprints as audit evidence and mark Phase2 reimbursement records closed as TEST.",
+    "If user wants attachment import later, first resolve storageKey/fileUrl/uploaderUserId mapping and rerun a non-SQL dry-run."
+  ],
+  "stop_point": "dry-run v2 plan complete; no production SQL generated; no database writes; wait for explicit next instruction."
+}
