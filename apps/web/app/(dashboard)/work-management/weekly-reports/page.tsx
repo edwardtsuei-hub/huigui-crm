@@ -120,9 +120,18 @@ function normalizeArchiveMonthKey(value: string | null) {
 
 export default function WeeklyReportsPage() {
   const searchParams = useSearchParams();
+  const currentUser = getCurrentUser();
+  const canReviewTeamReports = hasPermission(
+    currentUser,
+    "action.work_management.review",
+  );
   const targetReportId = searchParams.get("reportId") ?? undefined;
   const archiveMonthParam = normalizeArchiveMonthKey(searchParams.get("archiveMonth"));
-  const archiveViewParam = searchParams.get("archiveView") === "team" ? "team" : "mine";
+  const explicitArchiveView = searchParams.get("archiveView");
+  const archiveViewParam =
+    explicitArchiveView === "team" || (!explicitArchiveView && canReviewTeamReports)
+      ? "team"
+      : "mine";
   const shouldOpenArchive =
     searchParams.get("archive") === "1" || Boolean(archiveMonthParam);
 
@@ -178,12 +187,6 @@ export default function WeeklyReportsPage() {
   const lastSavedSnapshotRef = useRef("");
   const hydratedRef = useRef(false);
   const [dirty, setDirty] = useState(false);
-  const currentUser = getCurrentUser();
-  const canReviewTeamReports = hasPermission(
-    currentUser,
-    "action.work_management.review",
-  );
-
   useEffect(() => {
     void bootstrap(targetReportId);
   }, [targetReportId]);
