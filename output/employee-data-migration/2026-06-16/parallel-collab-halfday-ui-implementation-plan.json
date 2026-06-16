@@ -1,0 +1,169 @@
+{
+  "report": "parallel-collab-halfday-ui-implementation-plan-2026-06-16",
+  "date": "2026-06-16",
+  "executedAt": "2026-06-16 19:31:31 +0800",
+  "line": "B",
+  "task": "halfDay UI 最小修复准备",
+  "status": "blocked_by_missing_unminified_source",
+  "patchReadiness": "ready_for_source_repo",
+  "constraints": {
+    "businessCodeModified": false,
+    "databaseWritten": false,
+    "deployed": false,
+    "serviceRestarted": false,
+    "minifiedBundleModified": false,
+    "readonlyTraceOnly": true
+  },
+  "inputsRead": [
+    "docs/parallel-collab-halfday-ui-fix-plan-2026-06-16.md",
+    "docs/parallel-collab-shift-roster-halfday-ui-trace-2026-06-16.md",
+    "docs/parallel-collab-a-line-verification-2026-06-16.md",
+    "docs/parallel-collab-shift-roster-halfday-auth-pagecheck-2026-06-16.md",
+    "output/employee-data-migration/2026-06-16/parallel-collab-halfday-ui-fix-plan.json",
+    "output/employee-data-migration/2026-06-16/parallel-collab-shift-roster-halfday-ui-trace.json"
+  ],
+  "codegraph": {
+    "repoHasCodegraphDirectory": false,
+    "used": false
+  },
+  "runtimeTrace": {
+    "targetRoute": "/calendar/roster",
+    "targetUrl": "https://management.hui-health.com/calendar/roster",
+    "runtimeKind": "Vite SPA static bundle",
+    "currentRelease": "20260616090241",
+    "localReleasePointer": "apps/web/public/employee-frontend/current.release",
+    "activeJsAsset": "apps/web/public/employee-frontend/releases/20260616090241/assets/index-C20sRqov.js",
+    "activeCssAsset": "apps/web/public/employee-frontend/releases/20260616090241/assets/index-DUmE3prg.css",
+    "routeComponentSymbolInBundle": "dP",
+    "exportFunctionSymbolInBundle": "O2",
+    "sourceMapsLocated": false,
+    "viteConfigLocated": false,
+    "unminifiedCalendarRosterSourceLocated": false
+  },
+  "notPatchTarget": {
+    "oldNextRoute": "apps/web/app/(dashboard)/schedule/shifts/page.tsx",
+    "oldComponent": "apps/web/components/shift-roster/ShiftSchedulerNative.tsx",
+    "oldSharedLib": "apps/web/lib/shift-roster.ts",
+    "reason": "生产可见 /calendar/roster 是 Vite SPA 发布包；旧 ShiftSchedulerNative 的 html2canvas 导出和 early/late/full 代码结构不是当前运行页。"
+  },
+  "currentProblem": {
+    "team": "bearhug-front",
+    "halfDayTemplate": {
+      "value": "半天班",
+      "label": "半天",
+      "title": "半天班",
+      "time": "09:50-14:00",
+      "detail": "前厅兼职"
+    },
+    "rootCause": "展示层使用短 label 字段，导致桌面、窄屏、选择控件和导出图显示 半天，而不是完整 半天班。",
+    "notCausedBy": [
+      "数据库截短",
+      "早班残留",
+      "shift_local_standalone_v9"
+    ]
+  },
+  "sourceRepoSearchAnchors": [
+    "calendar/roster",
+    "bearhug-front",
+    "roster-select",
+    "班次模板",
+    "班表图片",
+    "document.createElement(\"canvas\")",
+    "fillText",
+    "toBlob"
+  ],
+  "minimalPatchPlan": {
+    "displayHelper": "getRosterShiftDisplayName(template) => template?.title || template?.value || template?.label || \"\"",
+    "compactHelper": "getRosterShiftCompactName(template) => template?.label || template?.title || template?.value || \"\"",
+    "surfaces": [
+      {
+        "surface": "desktop_table",
+        "current": "option/button text uses template.label",
+        "change": "use getRosterShiftDisplayName(template)",
+        "expectedText": "半天班",
+        "expectedTime": "09:50-14:00"
+      },
+      {
+        "surface": "narrow_mobile_select",
+        "current": "same short label behavior as desktop",
+        "change": "use full display helper and preserve time",
+        "expectedText": "半天班"
+      },
+      {
+        "surface": "shift_selector_or_popup",
+        "current": "selected option shows 半天",
+        "change": "option and selected text use full display helper",
+        "expectedText": "半天班"
+      },
+      {
+        "surface": "template_settings_panel",
+        "current": "title is 半天班; badge may still be 半天",
+        "change": "for strict acceptance, badge also uses full display helper or the short badge is hidden",
+        "expectedText": "半天班"
+      },
+      {
+        "surface": "export_image",
+        "current": "canvas renders template.label",
+        "change": "canvas renders getRosterShiftDisplayName(template)",
+        "expectedText": "半天班"
+      }
+    ],
+    "doNotChange": [
+      "不要把 value:\"半天班\" 改成 半天",
+      "不要用 localStorage 迁移修复文案",
+      "不要直接修改压缩发布包 index-C20sRqov.js",
+      "不要只修改 ShiftSchedulerNative"
+    ]
+  },
+  "exportMojibakePatchPlan": {
+    "currentPath": "manual frontend canvas rendering with fillText",
+    "currentFontStack": "\"PingFang SC\", \"Microsoft YaHei\", Inter, sans-serif",
+    "missingInActiveBundle": [
+      "document.fonts.ready",
+      "html2canvas",
+      "dom-to-image",
+      "toPng"
+    ],
+    "minimalFix": [
+      "Define ROSTER_EXPORT_FONT_STACK with PingFang SC, Hiragino Sans GB, Noto Sans SC, Microsoft YaHei, Source Han Sans SC, system-ui, sans-serif.",
+      "Before canvas drawing, await document.fonts.load(...) for normal and bold CJK samples, then await document.fonts.ready.",
+      "Use the same font stack for every ctx.font assignment.",
+      "Render halfDay via getRosterShiftDisplayName(template), not template.label."
+    ],
+    "fallbacksIfStillBroken": [
+      "Self-host a subsetted Noto Sans SC or Source Han Sans SC webfont.",
+      "Switch to hidden DOM plus html-to-image or html2canvas after fonts are ready.",
+      "Use server-side Playwright screenshot or server-side canvas with bundled CJK fonts."
+    ]
+  },
+  "layoutNotes": [
+    "半天班 is one Chinese character longer than 半天; select/button padding and canvas pill width must be rechecked.",
+    "Canvas label pill should use ctx.measureText and a minimum width such as max(64, textWidth + 20).",
+    "Time 09:50-14:00 must remain visible next to or below the shift name."
+  ],
+  "blocker": {
+    "type": "missing_source_repo_or_sourcemap",
+    "message": "当前仓库缺少 /calendar/roster 未压缩源码、Vite 构建脚本和 release sourcemap；按边界不能直接改压缩包。",
+    "neededToImplement": [
+      "Vite SPA source repository or build directory",
+      "sourcemap for release 20260616090241",
+      "or a source-owner applying this patch plan in the source repo"
+    ]
+  },
+  "acceptanceChecklist": [
+    "Production /calendar/roster points to the rebuilt Vite bundle.",
+    "The active bundle still does not depend on shift_local_standalone_v9.",
+    "前厅 迦迦 2026-06-15 displays 半天班 and 09:50-14:00.",
+    "前厅 迦迦 2026-06-16 displays 半天班 and 09:50-14:00.",
+    "前厅 迦迦 2026-06-17 displays 半天班 and 09:50-14:00.",
+    "前厅 迦迦 2026-06-20 displays 半天班 and 09:50-14:00.",
+    "前厅 迦迦 2026-06-21 displays 半天班 and 09:50-14:00.",
+    "Desktop table, narrow/mobile control, selector/popup, template settings, and export preview all show full 半天班 where acceptance requires it.",
+    "Export preview Chinese is readable.",
+    "Copied and downloaded export images match the preview."
+  ],
+  "outputs": {
+    "markdown": "docs/parallel-collab-halfday-ui-implementation-plan-2026-06-16.md",
+    "json": "output/employee-data-migration/2026-06-16/parallel-collab-halfday-ui-implementation-plan.json"
+  }
+}
