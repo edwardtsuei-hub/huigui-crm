@@ -190,6 +190,51 @@ export type ProductParseResponse = {
   }>;
 };
 
+export type ProductParseReviewStatus = "PENDING" | "CONFIRMED" | "IGNORED";
+
+export type ProductParseQueueItem = {
+  id: string;
+  sourceType: string;
+  reviewStatus: ProductParseReviewStatus;
+  reviewNote?: string | null;
+  createdAt: string;
+  reviewedAt?: string | null;
+  rawText?: string | null;
+  imageUrl?: string | null;
+  parsed: Partial<Record<ProductParseFieldKey, string>>;
+  confidence: Partial<Record<ProductParseFieldKey, ProductParseConfidence>>;
+  conflicts: Array<{
+    field: ProductParseFieldKey;
+    preferredValue?: string;
+    candidates: Array<{
+      value: string;
+      confidence: ProductParseConfidence;
+      source: ProductParseSource;
+      reason: string;
+    }>;
+  }>;
+  parsedFieldCount: number;
+  lowConfidenceCount: number;
+  mediumConfidenceCount: number;
+  conflictCount: number;
+  title: string;
+  summary: string;
+  operator: {
+    id: string;
+    name: string;
+    loginAccount?: string | null;
+  };
+  reviewer?: {
+    id: string;
+    name: string;
+    loginAccount?: string | null;
+  } | null;
+};
+
+export type ProductParseQueueDetail = ProductParseQueueItem & {
+  result: ProductParseResponse;
+};
+
 export type ProductParserMappableField =
   | "name"
   | "displayName"

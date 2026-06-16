@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
@@ -21,6 +21,17 @@ enum DataScope {
   PARTICIPATED
 }
 
+enum RecordDataScope {
+  REAL
+  TEST
+}
+
+enum TestBatchStatus {
+  ACTIVE
+  CLOSED
+  CLEARED
+}
+
 enum CustomerStatus {
   UNCONTACTED
   CONTACTED
@@ -32,6 +43,12 @@ enum CustomerStatus {
 enum ProductStatus {
   ENABLED
   DISABLED
+}
+
+enum ProductParseReviewStatus {
+  PENDING
+  CONFIRMED
+  IGNORED
 }
 
 enum OutputTemplateType {
@@ -86,6 +103,78 @@ enum TaskType {
   OTHER
 }
 
+enum InspectionOrderStatus {
+  DRAFT
+  SAMPLED
+  SUBMITTED
+  RECEIVED
+  IN_PROGRESS
+  PARTIAL_REPORTED
+  COMPLETED
+  ARCHIVED
+  CANCELED
+}
+
+enum InspectionPaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+  REFUNDED
+}
+
+enum InspectionItemStatus {
+  PENDING
+  IN_PROGRESS
+  REPORTED
+  FAILED
+  CANCELED
+}
+
+enum WeeklyReportStatus {
+  DRAFT
+  SUBMITTED
+  RETURNED
+  APPROVED
+}
+
+enum WeeklyPlanReviewStatus {
+  PENDING
+  COMPLETED
+  INCOMPLETE
+}
+
+enum RosterWeekStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum RosterPeriodMode {
+  WEEK
+  MONTH
+}
+
+enum WeeklyPayloadMigrationStatus {
+  DRY_RUN
+  IMPORTED
+  SKIPPED
+  CONFLICT
+  NEEDS_REVIEW
+}
+
+enum MonthlyGoalStatus {
+  DRAFT
+  SUBMITTED
+}
+
+enum FileRecordStatus {
+  DRAFT
+  PENDING_REVIEW
+  ACTIVE
+  ARCHIVED
+  OBSOLETE
+}
+
 enum NotificationChannel {
   SYSTEM
   WECOM
@@ -98,11 +187,20 @@ enum NotificationSendStatus {
   FAILED
 }
 
+enum WecomSyncStatus {
+  PENDING
+  SYNCED
+  FAILED
+  DELETED
+}
+
 enum ApprovalRuleType {
   DISCOUNT
   LOW_PRICE
   EXPORT_QUOTATION
   CUSTOMER_TRANSFER
+  CUSTOMER_CLAIM
+  CUSTOMER_PROTECTION_EXTENSION
 }
 
 enum ApprovalStatus {
@@ -112,47 +210,130 @@ enum ApprovalStatus {
   REJECTED
 }
 
-model User {
-  id            String         @id @default(cuid())
-  name          String
-  loginAccount  String?        @unique @db.VarChar(64)
-  mobile        String?        @db.VarChar(32)
-  email         String?        @db.VarChar(128)
-  passwordHash  String?        @db.VarChar(255)
-  wecomUserId   String?        @unique @db.VarChar(128)
-  wecomName     String?        @db.VarChar(128)
-  wecomAvatar   String?        @db.VarChar(500)
-  department    String?        @db.VarChar(128)
-  title         String?        @db.VarChar(128)
-  managerUserId String?
-  dataScope     DataScope      @default(OWNED)
-  note          String?        @db.Text
-  status        UserStatus     @default(ACTIVE)
-  roleId        String
-  lastLoginAt   DateTime?
-  createdByUserId String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+enum SalesOrderStatus {
+  DRAFT
+  CONFIRMED
+  IN_FULFILLMENT
+  COMPLETED
+  CANCELED
+}
 
-  role          Role           @relation(fields: [roleId], references: [id])
-  manager       User?          @relation("UserManager", fields: [managerUserId], references: [id])
-  subordinates  User[]         @relation("UserManager")
-  createdByUser User?          @relation("UserCreator", fields: [createdByUserId], references: [id])
-  createdMembers User[]        @relation("UserCreator")
-  customers     Customer[]     @relation("CustomerOwner")
-  followups     CustomerFollowup[]
-  quotations    Quotation[]
-  contracts     Contract[]
-  assignedTasks Task[]         @relation("TaskAssignee")
-  createdTasks  Task[]         @relation("TaskCreator")
-  comments      TaskComment[]
-  notifications Notification[]
-  files         FileRecord[]
-  productParseLogs ProductParseLog[]
-  auditLogs     AuditLog[]
-  approvalRulesUpdated ApprovalRule[] @relation("ApprovalRuleUpdatedBy")
-  requestedApprovals ApprovalRequest[] @relation("ApprovalRequester")
-  actingApprovals ApprovalRequest[] @relation("ApprovalActor")
+enum OrderPaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+  REFUNDED
+}
+
+enum OrderShipmentStatus {
+  PENDING
+  PARTIAL
+  SHIPPED
+  DELIVERED
+  RETURNED
+  CANCELED
+}
+
+enum SettlementStatus {
+  NOT_REQUIRED
+  PENDING
+  PARTIAL
+  SETTLED
+  VOIDED
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  WECHAT
+  ALIPAY
+  OTHER
+}
+
+enum PaymentRecordStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+  VOIDED
+}
+
+enum ShipmentRecordStatus {
+  PENDING
+  SHIPPED
+  DELIVERED
+  RETURNED
+  CANCELED
+}
+
+enum SettlementType {
+  DIRECT_SUPPLY
+  CHANNEL_RESALE
+  CHANNEL_REBATE
+  OTHER
+}
+
+model User {
+  id              String     @id @default(cuid())
+  name            String
+  loginAccount    String?    @unique @db.VarChar(64)
+  mobile          String?    @db.VarChar(32)
+  email           String?    @db.VarChar(128)
+  passwordHash    String?    @db.VarChar(255)
+  wecomUserId     String?    @unique @db.VarChar(128)
+  wecomName       String?    @db.VarChar(128)
+  wecomAvatar     String?    @db.VarChar(500)
+  department      String?    @db.VarChar(128)
+  title           String?    @db.VarChar(128)
+  managerUserId   String?
+  dataScope       DataScope  @default(OWNED)
+  note            String?    @db.Text
+  status          UserStatus @default(ACTIVE)
+  roleId          String
+  lastLoginAt     DateTime?
+  createdByUserId String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  role                         Role                 @relation(fields: [roleId], references: [id])
+  manager                      User?                @relation("UserManager", fields: [managerUserId], references: [id])
+  subordinates                 User[]               @relation("UserManager")
+  createdByUser                User?                @relation("UserCreator", fields: [createdByUserId], references: [id])
+  createdMembers               User[]               @relation("UserCreator")
+  customers                    Customer[]           @relation("CustomerOwner")
+  followups                    CustomerFollowup[]
+  quotations                   Quotation[]
+  contracts                    Contract[]
+  assignedTasks                Task[]               @relation("TaskAssignee")
+  createdTasks                 Task[]               @relation("TaskCreator")
+  comments                     TaskComment[]
+  discussionComments           DiscussionComment[]
+  notifications                Notification[]
+  weeklyReports                WeeklyReport[]       @relation("WeeklyReportOwner")
+  reviewedWeeklyReports        WeeklyReport[]       @relation("WeeklyReportManagerReviewer")
+  publishedWeeklyPublicDigests WeeklyPublicDigest[] @relation("WeeklyPublicDigestPublisher")
+  monthlyGoals                 MonthlyGoal[]
+  fileFoldersCreated           FileFolder[]
+  files                        FileRecord[]
+  deletedFiles                 FileRecord[]         @relation("FileRecordDeletedBy")
+  productParseLogs             ProductParseLog[]
+  reviewedProductParseLogs     ProductParseLog[]    @relation("ProductParseLogReviewer")
+  auditLogs                    AuditLog[]
+  approvalRulesUpdated         ApprovalRule[]       @relation("ApprovalRuleUpdatedBy")
+  systemSettingsUpdated        SystemSetting[]      @relation("SystemSettingUpdatedBy")
+  requestedApprovals           ApprovalRequest[]    @relation("ApprovalRequester")
+  actingApprovals              ApprovalRequest[]    @relation("ApprovalActor")
+  salesOrdersOwned             SalesOrder[]         @relation("SalesOrderOwner")
+  salesOrdersCreated           SalesOrder[]         @relation("SalesOrderCreator")
+  channelPartnersOwned         ChannelPartner[]     @relation("ChannelPartnerOwner")
+  paymentRecordsCreated        PaymentRecord[]      @relation("PaymentRecordCreator")
+  shipmentRecordsOperated      ShipmentRecord[]     @relation("ShipmentRecordOperator")
+  channelSettlementsCreated    ChannelSettlement[]  @relation("ChannelSettlementCreator")
+  createdInspectionOrders      InspectionOrder[]    @relation("InspectionOrderCreator")
+  createdTestBatches           TestBatch[]          @relation("TestBatchCreator")
+  rosterWeeksActed             RosterWeek[]         @relation("RosterWeekActor")
+  rosterShifts                 RosterShift[]        @relation("RosterShiftPerson")
+  rosterAuditLogs              RosterAuditLog[]     @relation("RosterAuditActor")
+  weeklyReportPayloads         WeeklyReportPayload[] @relation("WeeklyReportPayloadUser")
 
   @@index([roleId])
   @@index([status])
@@ -164,40 +345,77 @@ model User {
 }
 
 model Role {
-  id              String           @id @default(cuid())
-  name            String
-  code            String           @unique @db.VarChar(64)
-  description     String?          @db.VarChar(255)
-  isSystem        Boolean          @default(true)
-  defaultDataScope DataScope       @default(OWNED)
-  sortOrder       Int              @default(0)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id               String    @id @default(cuid())
+  name             String
+  code             String    @unique @db.VarChar(64)
+  description      String?   @db.VarChar(255)
+  isSystem         Boolean   @default(true)
+  defaultDataScope DataScope @default(OWNED)
+  sortOrder        Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   users           User[]
   rolePermissions RolePermission[]
 }
 
+model TestBatch {
+  id              String          @id @default(cuid())
+  name            String          @db.VarChar(128)
+  code            String          @unique @db.VarChar(64)
+  description     String?         @db.Text
+  status          TestBatchStatus @default(ACTIVE)
+  startedAt       DateTime        @default(now())
+  closedAt        DateTime?
+  clearedAt       DateTime?
+  createdByUserId String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  creator            User                @relation("TestBatchCreator", fields: [createdByUserId], references: [id])
+  customers          Customer[]
+  quotations         Quotation[]
+  agriculturePlans   AgriculturePlan[]
+  contracts          Contract[]
+  inspectionOrders   InspectionOrder[]
+  salesOrders        SalesOrder[]
+  paymentRecords     PaymentRecord[]
+  shipmentRecords    ShipmentRecord[]
+  channelPartners    ChannelPartner[]
+  channelSettlements ChannelSettlement[]
+  tasks              Task[]
+  weeklyReports      WeeklyReport[]
+  monthlyGoals       MonthlyGoal[]
+  fileFolders        FileFolder[]
+  fileRecords        FileRecord[]
+  rosterWeeks        RosterWeek[]
+  attendancePeriods  AttendancePeriod[]
+
+  @@index([status])
+  @@index([createdByUserId])
+  @@index([startedAt])
+}
+
 model Permission {
-  id              String           @id @default(cuid())
-  code            String           @unique @db.VarChar(64)
-  name            String
-  module          String           @db.VarChar(64)
-  category        String           @db.VarChar(32)
-  description     String?          @db.VarChar(255)
-  sortOrder       Int              @default(0)
-  createdAt       DateTime         @default(now())
+  id          String   @id @default(cuid())
+  code        String   @unique @db.VarChar(64)
+  name        String
+  module      String   @db.VarChar(64)
+  category    String   @db.VarChar(32)
+  description String?  @db.VarChar(255)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
 
   rolePermissions RolePermission[]
 }
 
 model RolePermission {
-  id            String      @id @default(cuid())
-  roleId        String
-  permissionId  String
+  id           String @id @default(cuid())
+  roleId       String
+  permissionId String
 
-  role          Role        @relation(fields: [roleId], references: [id])
-  permission    Permission  @relation(fields: [permissionId], references: [id])
+  role       Role       @relation(fields: [roleId], references: [id])
+  permission Permission @relation(fields: [permissionId], references: [id])
 
   @@unique([roleId, permissionId])
   @@index([roleId])
@@ -205,90 +423,102 @@ model RolePermission {
 }
 
 model IndustryGroup {
-  id            String             @id @default(cuid())
-  name          String             @unique
-  sortOrder     Int                @default(0)
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  id        String   @id @default(cuid())
+  name      String   @unique
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  subgroups     IndustrySubgroup[]
-  customers     Customer[]
-  products      Product[]
-  quotations    Quotation[]
+  subgroups  IndustrySubgroup[]
+  customers  Customer[]
+  products   Product[]
+  quotations Quotation[]
 }
 
 model IndustrySubgroup {
-  id            String         @id @default(cuid())
-  groupId       String
-  name          String
-  sortOrder     Int            @default(0)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id        String   @id @default(cuid())
+  groupId   String
+  name      String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  group         IndustryGroup  @relation(fields: [groupId], references: [id])
-  customers     Customer[]
-  products      Product[]
+  group     IndustryGroup @relation(fields: [groupId], references: [id])
+  customers Customer[]
+  products  Product[]
 
   @@unique([groupId, name])
   @@index([groupId])
 }
 
 model Customer {
-  id                   String             @id @default(cuid())
-  customerName         String
-  companyName          String?            @db.VarChar(255)
-  contactName          String?            @db.VarChar(128)
-  mobile               String?            @db.VarChar(32)
-  wechatId             String?            @db.VarChar(128)
-  email                String?            @db.VarChar(128)
-  province             String?            @db.VarChar(64)
-  city                 String?            @db.VarChar(64)
-  district             String?            @db.VarChar(64)
-  address              String?            @db.VarChar(255)
-  source               String?            @db.VarChar(128)
-  industryGroupId      String?
-  industrySubgroupId   String?
-  status               CustomerStatus     @default(UNCONTACTED)
-  ownerUserId          String
-  cooperationDirection String?            @db.Text
-  cooperationContent   String?            @db.Text
-  estimatedAmount      Decimal?           @db.Decimal(12, 2)
-  dealProbability      Int?
-  remark               String?            @db.Text
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+  id                    String          @id @default(cuid())
+  customerName          String
+  companyName           String?         @db.VarChar(255)
+  contactName           String?         @db.VarChar(128)
+  mobile                String?         @db.VarChar(32)
+  wechatId              String?         @db.VarChar(128)
+  email                 String?         @db.VarChar(128)
+  province              String?         @db.VarChar(64)
+  city                  String?         @db.VarChar(64)
+  district              String?         @db.VarChar(64)
+  address               String?         @db.VarChar(255)
+  source                String?         @db.VarChar(128)
+  industryGroupId       String?
+  industrySubgroupId    String?
+  status                CustomerStatus  @default(UNCONTACTED)
+  ownerUserId           String
+  ownerAssignedAt       DateTime
+  ownerProtectionMonths Int             @default(3)
+  ownerProtectedUntil   DateTime
+  cooperationDirection  String?         @db.Text
+  cooperationContent    String?         @db.Text
+  estimatedAmount       Decimal?        @db.Decimal(12, 2)
+  dealProbability       Int?
+  remark                String?         @db.Text
+  dataScope             RecordDataScope @default(REAL)
+  partitionKey          String          @default("REAL") @db.VarChar(64)
+  testBatchId           String?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
 
-  owner                User               @relation("CustomerOwner", fields: [ownerUserId], references: [id])
-  industryGroup        IndustryGroup?     @relation(fields: [industryGroupId], references: [id])
-  industrySubgroup     IndustrySubgroup?  @relation(fields: [industrySubgroupId], references: [id])
-  followups            CustomerFollowup[]
-  quotations           Quotation[]
-  contracts            Contract[]
-  tasks                Task[]
-  agriculturePlans     AgriculturePlan[]
+  owner            User               @relation("CustomerOwner", fields: [ownerUserId], references: [id])
+  industryGroup    IndustryGroup?     @relation(fields: [industryGroupId], references: [id])
+  industrySubgroup IndustrySubgroup?  @relation(fields: [industrySubgroupId], references: [id])
+  testBatch        TestBatch?         @relation(fields: [testBatchId], references: [id])
+  followups        CustomerFollowup[]
+  quotations       Quotation[]
+  contracts        Contract[]
+  tasks            Task[]
+  agriculturePlans AgriculturePlan[]
+  salesOrders      SalesOrder[]
+  inspectionOrders InspectionOrder[]
 
   @@index([ownerUserId])
+  @@index([ownerProtectedUntil])
   @@index([status])
   @@index([industryGroupId])
   @@index([industrySubgroupId])
   @@index([province, city])
+  @@index([partitionKey])
+  @@index([testBatchId])
 }
 
 model CustomerFollowup {
-  id             String      @id @default(cuid())
-  customerId     String
-  followupDate   DateTime
-  followupType   String      @db.VarChar(64)
-  content        String      @db.Text
-  keyPoints      String?     @db.Text
-  nextAction     String?     @db.Text
-  nextContactAt  DateTime?
-  needReminder   Boolean     @default(false)
-  creatorUserId  String
-  createdAt      DateTime    @default(now())
+  id            String    @id @default(cuid())
+  customerId    String
+  followupDate  DateTime
+  followupType  String    @db.VarChar(64)
+  content       String    @db.Text
+  keyPoints     String?   @db.Text
+  nextAction    String?   @db.Text
+  nextContactAt DateTime?
+  needReminder  Boolean   @default(false)
+  creatorUserId String
+  createdAt     DateTime  @default(now())
 
-  customer       Customer    @relation(fields: [customerId], references: [id])
-  creator        User        @relation(fields: [creatorUserId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+  creator  User     @relation(fields: [creatorUserId], references: [id])
 
   @@index([customerId])
   @@index([creatorUserId])
@@ -297,34 +527,39 @@ model CustomerFollowup {
 }
 
 model Product {
-  id                   String              @id @default(cuid())
+  id                   String             @id @default(cuid())
   name                 String
   displayName          String
   industryGroupId      String?
   industrySubgroupId   String?
-  sku                  String?             @db.VarChar(64)
-  spec                 String?             @db.VarChar(128)
-  unit                 String?             @db.VarChar(32)
-  costPrice            Decimal?            @db.Decimal(12, 2)
-  salePrice            Decimal?            @db.Decimal(12, 2)
-  enterpriseStandardNo String?             @db.VarChar(128)
-  intro                String?             @db.Text
-  scenarios            String?             @db.Text
-  labelText            String?             @db.Text
-  labelImageUrl        String?             @db.VarChar(500)
-  productImageUrl      String?             @db.VarChar(500)
-  quoteEnabled         Boolean             @default(true)
-  employeeVisible      Boolean             @default(true)
-  customerVisible      Boolean             @default(true)
+  sku                  String?            @db.VarChar(64)
+  spec                 String?            @db.VarChar(128)
+  unit                 String?            @db.VarChar(32)
+  costPrice            Decimal?           @db.Decimal(12, 2)
+  salePrice            Decimal?           @db.Decimal(12, 2)
+  enterpriseStandardNo String?            @db.VarChar(128)
+  intro                String?            @db.Text
+  scenarios            String?            @db.Text
+  labelText            String?            @db.Text
+  labelImageUrl        String?            @db.VarChar(500)
+  productImageUrl      String?            @db.VarChar(500)
+  quoteEnabled         Boolean            @default(true)
+  employeeVisible      Boolean            @default(true)
+  customerVisible      Boolean            @default(true)
   outputTemplateType   OutputTemplateType
-  remark               String?             @db.Text
-  status               ProductStatus       @default(ENABLED)
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
+  remark               String?            @db.Text
+  status               ProductStatus      @default(ENABLED)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
 
-  industryGroup        IndustryGroup?      @relation(fields: [industryGroupId], references: [id])
-  industrySubgroup     IndustrySubgroup?   @relation(fields: [industrySubgroupId], references: [id])
-  quotationItems       QuotationItem[]
+  industryGroup    IndustryGroup?          @relation(fields: [industryGroupId], references: [id])
+  industrySubgroup IndustrySubgroup?       @relation(fields: [industrySubgroupId], references: [id])
+  quotationItems   QuotationItem[]
+  orderItems       SalesOrderItem[]
+  shipmentItems    ShipmentItem[]
+  settlementItems  ChannelSettlementItem[]
+  inspectionOrders InspectionOrder[]
+  reviewedParseLogs ProductParseLog[] @relation("ProductParseLogResolvedProduct")
 
   @@index([industryGroupId])
   @@index([industrySubgroupId])
@@ -332,35 +567,175 @@ model Product {
   @@index([quoteEnabled])
 }
 
+model InspectionOrder {
+  id                String                  @id @default(cuid())
+  inspectionNo      String                  @unique @db.VarChar(64)
+  title             String                  @db.VarChar(255)
+  customerId        String?
+  productId         String?
+  projectType       String?                 @db.VarChar(64)
+  inspectionTarget  String                  @db.Text
+  labName           String                  @db.VarChar(255)
+  labCity           String?                 @db.VarChar(64)
+  labAddress        String?                 @db.Text
+  contactName       String?                 @db.VarChar(128)
+  contactPhone      String?                 @db.VarChar(32)
+  expectedCycleText String?                 @db.VarChar(128)
+  bankInfo          String?                 @db.Text
+  summary           String?                 @db.Text
+  remark            String?                 @db.Text
+  submittedAt       DateTime?
+  receivedAt        DateTime?
+  status            InspectionOrderStatus   @default(DRAFT)
+  paymentStatus     InspectionPaymentStatus @default(UNPAID)
+  createdByUserId   String
+  dataScope         RecordDataScope         @default(REAL)
+  partitionKey      String                  @default("REAL") @db.VarChar(64)
+  testBatchId       String?
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  customer  Customer?            @relation(fields: [customerId], references: [id])
+  product   Product?             @relation(fields: [productId], references: [id])
+  creator   User                 @relation("InspectionOrderCreator", fields: [createdByUserId], references: [id])
+  testBatch TestBatch?           @relation(fields: [testBatchId], references: [id])
+  samples   InspectionSample[]
+  payments  InspectionPayment[]
+  timelines InspectionTimeline[]
+
+  @@index([customerId])
+  @@index([productId])
+  @@index([createdByUserId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([submittedAt])
+  @@index([updatedAt])
+  @@index([partitionKey])
+  @@index([testBatchId])
+}
+
+model InspectionSample {
+  id                 String    @id @default(cuid())
+  orderId            String
+  sampleName         String    @db.VarChar(255)
+  sampleType         String?   @db.VarChar(64)
+  sampleTarget       String?   @db.Text
+  sampleQuantityText String?   @db.VarChar(128)
+  sampledAt          DateTime?
+  submittedAt        DateTime?
+  plannedTestScope   String?   @db.Text
+  note               String?   @db.Text
+  sortOrder          Int       @default(0)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  order InspectionOrder        @relation(fields: [orderId], references: [id])
+  items InspectionSampleItem[]
+
+  @@index([orderId])
+  @@index([sampleType])
+  @@index([sampledAt])
+}
+
+model InspectionSampleItem {
+  id            String               @id @default(cuid())
+  sampleId      String
+  itemName      String               @db.VarChar(255)
+  itemCategory  String?              @db.VarChar(64)
+  feeText       String?              @db.VarChar(128)
+  feeAmount     Decimal?             @db.Decimal(12, 2)
+  status        InspectionItemStatus @default(PENDING)
+  resultSummary String?              @db.Text
+  progressNote  String?              @db.Text
+  completedAt   DateTime?
+  sortOrder     Int                  @default(0)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  sample InspectionSample @relation(fields: [sampleId], references: [id])
+
+  @@index([sampleId])
+  @@index([itemCategory])
+  @@index([status])
+  @@index([completedAt])
+}
+
+model InspectionPayment {
+  id              String    @id @default(cuid())
+  orderId         String
+  paidAt          DateTime?
+  amount          Decimal?  @db.Decimal(12, 2)
+  amountText      String?   @db.VarChar(128)
+  method          String?   @db.VarChar(64)
+  payerName       String?   @db.VarChar(128)
+  voucherFileId   String?   @db.VarChar(128)
+  invoiceFileId   String?   @db.VarChar(128)
+  note            String?   @db.Text
+  createdByUserId String
+  createdAt       DateTime  @default(now())
+
+  order InspectionOrder @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([paidAt])
+  @@index([createdByUserId])
+}
+
+model InspectionTimeline {
+  id              String    @id @default(cuid())
+  orderId         String
+  sampleId        String?   @db.VarChar(128)
+  itemId          String?   @db.VarChar(128)
+  eventType       String    @db.VarChar(64)
+  eventAt         DateTime?
+  content         String    @db.Text
+  createdByUserId String
+  createdAt       DateTime  @default(now())
+
+  order InspectionOrder @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([sampleId])
+  @@index([itemId])
+  @@index([eventType])
+  @@index([eventAt])
+  @@index([createdByUserId])
+}
+
 model Quotation {
-  id                    String           @id @default(cuid())
-  quotationNo           String           @unique @db.VarChar(64)
+  id                    String          @id @default(cuid())
+  quotationNo           String          @unique @db.VarChar(64)
   customerId            String
   industryGroupId       String?
   quotationType         QuotationType
-  totalOriginalAmount   Decimal          @db.Decimal(12, 2)
-  totalDiscountedAmount Decimal          @db.Decimal(12, 2)
-  discountType          String?          @db.VarChar(32)
-  discountValue         Decimal?         @db.Decimal(12, 2)
-  discountReason        String?          @db.Text
-  remark                String?          @db.Text
-  pdfUrl                String?          @db.VarChar(500)
-  shareToken            String?          @unique @db.VarChar(128)
+  totalOriginalAmount   Decimal         @db.Decimal(12, 2)
+  totalDiscountedAmount Decimal         @db.Decimal(12, 2)
+  discountType          String?         @db.VarChar(32)
+  discountValue         Decimal?        @db.Decimal(12, 2)
+  discountReason        String?         @db.Text
+  remark                String?         @db.Text
+  pdfUrl                String?         @db.VarChar(500)
+  shareToken            String?         @unique @db.VarChar(128)
   creatorUserId         String
-  approvalStatus        ApprovalStatus   @default(NOT_REQUIRED)
-  exportApprovalStatus  ApprovalStatus   @default(NOT_REQUIRED)
+  approvalStatus        ApprovalStatus  @default(NOT_REQUIRED)
+  exportApprovalStatus  ApprovalStatus  @default(NOT_REQUIRED)
   exportedAt            DateTime?
-  status                QuotationStatus  @default(DRAFT)
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
+  status                QuotationStatus @default(DRAFT)
+  dataScope             RecordDataScope @default(REAL)
+  partitionKey          String          @default("REAL") @db.VarChar(64)
+  testBatchId           String?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
 
-  customer              Customer         @relation(fields: [customerId], references: [id])
-  industryGroup         IndustryGroup?   @relation(fields: [industryGroupId], references: [id])
-  creator               User             @relation(fields: [creatorUserId], references: [id])
-  items                 QuotationItem[]
-  agriculturePlan       AgriculturePlan?
-  tasks                 Task[]
-  approvalRequests      ApprovalRequest[]
+  customer         Customer          @relation(fields: [customerId], references: [id])
+  industryGroup    IndustryGroup?    @relation(fields: [industryGroupId], references: [id])
+  creator          User              @relation(fields: [creatorUserId], references: [id])
+  testBatch        TestBatch?        @relation(fields: [testBatchId], references: [id])
+  items            QuotationItem[]
+  agriculturePlan  AgriculturePlan?
+  tasks            Task[]
+  approvalRequests ApprovalRequest[]
+  salesOrders      SalesOrder[]
 
   @@index([customerId])
   @@index([creatorUserId])
@@ -370,128 +745,468 @@ model Quotation {
   @@index([createdAt])
   @@index([approvalStatus])
   @@index([exportApprovalStatus])
+  @@index([partitionKey])
+  @@index([testBatchId])
 }
 
 model QuotationItem {
-  id               String    @id @default(cuid())
+  id               String  @id @default(cuid())
   quotationId      String
   productId        String?
   itemName         String
-  quantity         Decimal   @db.Decimal(12, 2)
-  unitPrice        Decimal   @db.Decimal(12, 2)
-  originalAmount   Decimal   @db.Decimal(12, 2)
-  discountedAmount Decimal   @db.Decimal(12, 2)
+  quantity         Decimal @db.Decimal(12, 2)
+  unitPrice        Decimal @db.Decimal(12, 2)
+  originalAmount   Decimal @db.Decimal(12, 2)
+  discountedAmount Decimal @db.Decimal(12, 2)
   detailJson       Json?
 
-  quotation        Quotation @relation(fields: [quotationId], references: [id])
-  product          Product?  @relation(fields: [productId], references: [id])
+  quotation Quotation @relation(fields: [quotationId], references: [id])
+  product   Product?  @relation(fields: [productId], references: [id])
 
   @@index([quotationId])
   @@index([productId])
 }
 
 model AgriculturePlan {
-  id                    String      @id @default(cuid())
-  quotationId           String      @unique
+  id                    String          @id @default(cuid())
+  quotationId           String          @unique
   customerId            String
-  totalOriginalAmount   Decimal     @db.Decimal(12, 2)
-  totalDiscountedAmount Decimal     @db.Decimal(12, 2)
+  totalOriginalAmount   Decimal         @db.Decimal(12, 2)
+  totalDiscountedAmount Decimal         @db.Decimal(12, 2)
   detailJson            Json
-  createdAt             DateTime    @default(now())
-  updatedAt             DateTime    @updatedAt
+  dataScope             RecordDataScope @default(REAL)
+  partitionKey          String          @default("REAL") @db.VarChar(64)
+  testBatchId           String?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
 
-  quotation             Quotation   @relation(fields: [quotationId], references: [id])
-  customer              Customer    @relation(fields: [customerId], references: [id])
+  quotation Quotation  @relation(fields: [quotationId], references: [id])
+  customer  Customer   @relation(fields: [customerId], references: [id])
+  testBatch TestBatch? @relation(fields: [testBatchId], references: [id])
+  tasks     Task[]
 
   @@index([customerId])
+  @@index([partitionKey])
+  @@index([testBatchId])
 }
 
 model Contract {
-  id              String           @id @default(cuid())
+  id              String          @id @default(cuid())
   customerId      String
   contractName    String
-  contractNo      String?          @db.VarChar(128)
-  contractType    String?          @db.VarChar(64)
+  contractNo      String?         @db.VarChar(128)
+  contractType    String?         @db.VarChar(64)
   signedAt        DateTime?
   effectiveAt     DateTime?
   expiredAt       DateTime?
-  amount          Decimal?         @db.Decimal(12, 2)
-  status          ContractStatus   @default(DRAFT)
+  amount          Decimal?        @db.Decimal(12, 2)
+  status          ContractStatus  @default(DRAFT)
   permissionLevel PermissionLevel
-  fileUrl         String?          @db.VarChar(500)
-  remark          String?          @db.Text
+  fileUrl         String?         @db.VarChar(500)
+  remark          String?         @db.Text
   creatorUserId   String
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  dataScope       RecordDataScope @default(REAL)
+  partitionKey    String          @default("REAL") @db.VarChar(64)
+  testBatchId     String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
-  customer        Customer         @relation(fields: [customerId], references: [id])
-  creator         User             @relation(fields: [creatorUserId], references: [id])
+  customer    Customer     @relation(fields: [customerId], references: [id])
+  creator     User         @relation(fields: [creatorUserId], references: [id])
+  testBatch   TestBatch?   @relation(fields: [testBatchId], references: [id])
+  salesOrders SalesOrder[]
 
   @@index([customerId])
   @@index([creatorUserId])
   @@index([status])
   @@index([expiredAt])
+  @@index([partitionKey])
+  @@index([testBatchId])
 }
 
-model Task {
-  id              String       @id @default(cuid())
-  title           String
-  type            TaskType
-  customerId      String?
-  quotationId     String?
-  assigneeUserId  String
-  startAt         DateTime
-  endAt           DateTime?
-  reminderAt      DateTime?
-  content         String?      @db.Text
-  status          TaskStatus   @default(TODO)
-  createdBy       String
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+model SalesOrder {
+  id                 String              @id @default(cuid())
+  orderNo            String              @unique @db.VarChar(64)
+  customerId         String
+  quotationId        String?
+  contractId         String?
+  channelPartnerId   String?
+  orderDate          DateTime
+  orderType          String?             @db.VarChar(32)
+  recipientName      String?             @db.VarChar(128)
+  recipientPhone     String?             @db.VarChar(32)
+  recipientProvince  String?             @db.VarChar(64)
+  recipientCity      String?             @db.VarChar(64)
+  recipientDistrict  String?             @db.VarChar(64)
+  recipientAddress   String?             @db.VarChar(255)
+  usagePurpose       String?             @db.Text
+  warehouseName      String?             @db.VarChar(128)
+  totalProductAmount Decimal?            @db.Decimal(12, 2)
+  discountAmount     Decimal?            @db.Decimal(12, 2)
+  shippingFee        Decimal?            @db.Decimal(12, 2)
+  receivableAmount   Decimal?            @db.Decimal(12, 2)
+  receivedAmount     Decimal?            @db.Decimal(12, 2)
+  paymentStatus      OrderPaymentStatus  @default(UNPAID)
+  shipmentStatus     OrderShipmentStatus @default(PENDING)
+  settlementStatus   SettlementStatus    @default(NOT_REQUIRED)
+  status             SalesOrderStatus    @default(DRAFT)
+  remark             String?             @db.Text
+  ownerUserId        String
+  creatorUserId      String
+  dataScope          RecordDataScope     @default(REAL)
+  partitionKey       String              @default("REAL") @db.VarChar(64)
+  testBatchId        String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
-  customer        Customer?    @relation(fields: [customerId], references: [id])
-  quotation       Quotation?   @relation(fields: [quotationId], references: [id])
-  assignee        User         @relation("TaskAssignee", fields: [assigneeUserId], references: [id])
-  creator         User         @relation("TaskCreator", fields: [createdBy], references: [id])
-  comments        TaskComment[]
+  customer        Customer                @relation(fields: [customerId], references: [id])
+  quotation       Quotation?              @relation(fields: [quotationId], references: [id])
+  contract        Contract?               @relation(fields: [contractId], references: [id])
+  channelPartner  ChannelPartner?         @relation(fields: [channelPartnerId], references: [id])
+  owner           User                    @relation("SalesOrderOwner", fields: [ownerUserId], references: [id])
+  creator         User                    @relation("SalesOrderCreator", fields: [creatorUserId], references: [id])
+  testBatch       TestBatch?              @relation(fields: [testBatchId], references: [id])
+  items           SalesOrderItem[]
+  payments        PaymentRecord[]
+  shipments       ShipmentRecord[]
+  settlementItems ChannelSettlementItem[]
 
   @@index([customerId])
   @@index([quotationId])
+  @@index([contractId])
+  @@index([channelPartnerId])
+  @@index([ownerUserId])
+  @@index([creatorUserId])
+  @@index([orderDate])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([shipmentStatus])
+  @@index([settlementStatus])
+  @@index([partitionKey])
+  @@index([testBatchId])
+}
+
+model SalesOrderItem {
+  id           String   @id @default(cuid())
+  orderId      String
+  productId    String?
+  lineNo       Int
+  itemName     String
+  sku          String?  @db.VarChar(64)
+  spec         String?  @db.VarChar(128)
+  unit         String?  @db.VarChar(32)
+  quantity     Decimal  @db.Decimal(12, 2)
+  unitPrice    Decimal? @db.Decimal(12, 2)
+  lineAmount   Decimal? @db.Decimal(12, 2)
+  usagePurpose String?  @db.Text
+  remark       String?  @db.Text
+  detailJson   Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  order           SalesOrder              @relation(fields: [orderId], references: [id])
+  product         Product?                @relation(fields: [productId], references: [id])
+  shipmentItems   ShipmentItem[]
+  settlementItems ChannelSettlementItem[]
+
+  @@unique([orderId, lineNo])
+  @@index([orderId])
+  @@index([productId])
+}
+
+model PaymentRecord {
+  id               String              @id @default(cuid())
+  paymentNo        String?             @unique @db.VarChar(64)
+  orderId          String
+  financeAccountId String?
+  payerName        String?             @db.VarChar(128)
+  paymentMethod    PaymentMethod
+  amount           Decimal             @db.Decimal(12, 2)
+  paidAt           DateTime
+  status           PaymentRecordStatus @default(CONFIRMED)
+  referenceNo      String?             @db.VarChar(128)
+  remark           String?             @db.Text
+  creatorUserId    String
+  dataScope        RecordDataScope     @default(REAL)
+  partitionKey     String              @default("REAL") @db.VarChar(64)
+  testBatchId      String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  order          SalesOrder      @relation(fields: [orderId], references: [id])
+  financeAccount FinanceAccount? @relation(fields: [financeAccountId], references: [id])
+  creator        User            @relation("PaymentRecordCreator", fields: [creatorUserId], references: [id])
+  testBatch      TestBatch?      @relation(fields: [testBatchId], references: [id])
+
+  @@index([orderId])
+  @@index([financeAccountId])
+  @@index([creatorUserId])
+  @@index([paidAt])
+  @@index([status])
+  @@index([paymentMethod])
+  @@index([partitionKey])
+  @@index([testBatchId])
+}
+
+model ShipmentRecord {
+  id               String               @id @default(cuid())
+  shipmentNo       String?              @unique @db.VarChar(64)
+  orderId          String
+  warehouseName    String?              @db.VarChar(128)
+  courierCompany   String?              @db.VarChar(128)
+  trackingNo       String?              @db.VarChar(128)
+  shippedAt        DateTime?
+  deliveredAt      DateTime?
+  status           ShipmentRecordStatus @default(PENDING)
+  recipientName    String?              @db.VarChar(128)
+  recipientPhone   String?              @db.VarChar(32)
+  recipientAddress String?              @db.VarChar(255)
+  remark           String?              @db.Text
+  operatorUserId   String
+  dataScope        RecordDataScope      @default(REAL)
+  partitionKey     String               @default("REAL") @db.VarChar(64)
+  testBatchId      String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  order     SalesOrder     @relation(fields: [orderId], references: [id])
+  operator  User           @relation("ShipmentRecordOperator", fields: [operatorUserId], references: [id])
+  testBatch TestBatch?     @relation(fields: [testBatchId], references: [id])
+  items     ShipmentItem[]
+
+  @@index([orderId])
+  @@index([operatorUserId])
+  @@index([status])
+  @@index([shippedAt])
+  @@index([deliveredAt])
+  @@index([trackingNo])
+  @@index([partitionKey])
+  @@index([testBatchId])
+}
+
+model ShipmentItem {
+  id          String   @id @default(cuid())
+  shipmentId  String
+  orderItemId String
+  productId   String?
+  itemName    String
+  quantity    Decimal  @db.Decimal(12, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  shipment  ShipmentRecord @relation(fields: [shipmentId], references: [id])
+  orderItem SalesOrderItem @relation(fields: [orderItemId], references: [id])
+  product   Product?       @relation(fields: [productId], references: [id])
+
+  @@index([shipmentId])
+  @@index([orderItemId])
+  @@index([productId])
+}
+
+model ChannelPartner {
+  id                 String          @id @default(cuid())
+  partnerName        String
+  contactName        String?         @db.VarChar(128)
+  mobile             String?         @db.VarChar(32)
+  wechatId           String?         @db.VarChar(128)
+  province           String?         @db.VarChar(64)
+  city               String?         @db.VarChar(64)
+  district           String?         @db.VarChar(64)
+  address            String?         @db.VarChar(255)
+  settlementType     SettlementType?
+  settlementRuleText String?         @db.Text
+  remark             String?         @db.Text
+  ownerUserId        String
+  dataScope          RecordDataScope @default(REAL)
+  partitionKey       String          @default("REAL") @db.VarChar(64)
+  testBatchId        String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  owner       User                @relation("ChannelPartnerOwner", fields: [ownerUserId], references: [id])
+  testBatch   TestBatch?          @relation(fields: [testBatchId], references: [id])
+  salesOrders SalesOrder[]
+  settlements ChannelSettlement[]
+
+  @@index([ownerUserId])
+  @@index([partnerName])
+  @@index([city])
+  @@index([settlementType])
+  @@index([partitionKey])
+  @@index([testBatchId])
+}
+
+model ChannelSettlement {
+  id                String           @id @default(cuid())
+  settlementNo      String           @unique @db.VarChar(64)
+  channelPartnerId  String
+  periodStart       DateTime?
+  periodEnd         DateTime?
+  totalSupplyAmount Decimal?         @db.Decimal(12, 2)
+  totalCostAmount   Decimal?         @db.Decimal(12, 2)
+  totalProfitAmount Decimal?         @db.Decimal(12, 2)
+  totalPaidAmount   Decimal?         @db.Decimal(12, 2)
+  status            SettlementStatus @default(PENDING)
+  remark            String?          @db.Text
+  creatorUserId     String
+  dataScope         RecordDataScope  @default(REAL)
+  partitionKey      String           @default("REAL") @db.VarChar(64)
+  testBatchId       String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  channelPartner ChannelPartner          @relation(fields: [channelPartnerId], references: [id])
+  creator        User                    @relation("ChannelSettlementCreator", fields: [creatorUserId], references: [id])
+  testBatch      TestBatch?              @relation(fields: [testBatchId], references: [id])
+  items          ChannelSettlementItem[]
+
+  @@index([channelPartnerId])
+  @@index([creatorUserId])
+  @@index([status])
+  @@index([periodStart, periodEnd])
+  @@index([partitionKey])
+  @@index([testBatchId])
+}
+
+model ChannelSettlementItem {
+  id                String    @id @default(cuid())
+  settlementId      String
+  orderId           String?
+  orderItemId       String?
+  productId         String?
+  orderDate         DateTime?
+  itemName          String
+  quantity          Decimal?  @db.Decimal(12, 2)
+  supplyUnitPrice   Decimal?  @db.Decimal(12, 2)
+  supplyAmount      Decimal?  @db.Decimal(12, 2)
+  cashPaymentAmount Decimal?  @db.Decimal(12, 2)
+  paymentNote       String?   @db.VarChar(64)
+  costUnitPrice     Decimal?  @db.Decimal(12, 2)
+  costAmount        Decimal?  @db.Decimal(12, 2)
+  profitAmount      Decimal?  @db.Decimal(12, 2)
+  remark            String?   @db.Text
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  settlement ChannelSettlement @relation(fields: [settlementId], references: [id])
+  order      SalesOrder?       @relation(fields: [orderId], references: [id])
+  orderItem  SalesOrderItem?   @relation(fields: [orderItemId], references: [id])
+  product    Product?          @relation(fields: [productId], references: [id])
+
+  @@index([settlementId])
+  @@index([orderId])
+  @@index([orderItemId])
+  @@index([productId])
+  @@index([orderDate])
+}
+
+model FinanceAccount {
+  id          String   @id @default(cuid())
+  companyName String   @db.VarChar(255)
+  accountName String?  @db.VarChar(128)
+  accountNo   String   @db.VarChar(128)
+  bankName    String?  @db.VarChar(255)
+  accountType String?  @db.VarChar(64)
+  usageScene  String?  @db.VarChar(128)
+  isDefault   Boolean  @default(false)
+  enabled     Boolean  @default(true)
+  remark      String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  payments PaymentRecord[]
+
+  @@index([companyName])
+  @@index([accountNo])
+  @@index([enabled])
+  @@index([isDefault])
+}
+
+model Task {
+  id                String          @id @default(cuid())
+  title             String
+  type              TaskType
+  customerId        String?
+  quotationId       String?
+  agriculturePlanId String?
+  assigneeUserId    String
+  startAt           DateTime
+  endAt             DateTime?
+  reminderAt        DateTime?
+  content           String?         @db.Text
+  status            TaskStatus      @default(TODO)
+  createdBy         String
+  dataScope         RecordDataScope @default(REAL)
+  partitionKey      String          @default("REAL") @db.VarChar(64)
+  testBatchId       String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  customer              Customer?              @relation(fields: [customerId], references: [id])
+  quotation             Quotation?             @relation(fields: [quotationId], references: [id])
+  agriculturePlan       AgriculturePlan?       @relation(fields: [agriculturePlanId], references: [id])
+  assignee              User                   @relation("TaskAssignee", fields: [assigneeUserId], references: [id])
+  creator               User                   @relation("TaskCreator", fields: [createdBy], references: [id])
+  testBatch             TestBatch?             @relation(fields: [testBatchId], references: [id])
+  comments              TaskComment[]
+  wecomCalendarSync     WecomCalendarSync?
+  weeklyReportPlanItems WeeklyReportPlanItem[]
+
+  @@index([customerId])
+  @@index([quotationId])
+  @@index([agriculturePlanId])
   @@index([assigneeUserId])
   @@index([status])
   @@index([reminderAt])
   @@index([startAt])
+  @@index([partitionKey])
+  @@index([testBatchId])
 }
 
 model TaskComment {
-  id          String    @id @default(cuid())
-  taskId      String
-  userId      String
-  content     String    @db.Text
-  createdAt   DateTime  @default(now())
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
 
-  task        Task      @relation(fields: [taskId], references: [id])
-  user        User      @relation(fields: [userId], references: [id])
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
 
   @@index([taskId])
   @@index([userId])
 }
 
-model Notification {
-  id            String                  @id @default(cuid())
-  userId        String
-  type          String                  @db.VarChar(64)
-  title         String
-  content       String                  @db.Text
-  relatedType   String?                 @db.VarChar(64)
-  relatedId     String?                 @db.VarChar(128)
-  sendChannel   NotificationChannel
-  sendStatus    NotificationSendStatus  @default(PENDING)
-  sentAt        DateTime?
-  readAt        DateTime?
-  createdAt     DateTime                @default(now())
+model DiscussionComment {
+  id          String   @id @default(cuid())
+  userId      String
+  relatedType String   @db.VarChar(64)
+  relatedId   String   @db.VarChar(128)
+  content     String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  user          User                    @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([relatedType, relatedId, createdAt])
+}
+
+model Notification {
+  id          String                 @id @default(cuid())
+  userId      String
+  type        String                 @db.VarChar(64)
+  title       String
+  content     String                 @db.Text
+  relatedType String?                @db.VarChar(64)
+  relatedId   String?                @db.VarChar(128)
+  sendChannel NotificationChannel
+  sendStatus  NotificationSendStatus @default(PENDING)
+  sentAt      DateTime?
+  readAt      DateTime?
+  createdAt   DateTime               @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([userId, readAt])
@@ -499,56 +1214,539 @@ model Notification {
   @@index([createdAt])
 }
 
-model FileRecord {
-  id              String    @id @default(cuid())
-  fileName        String
-  fileUrl         String    @db.VarChar(500)
-  fileType        String?   @db.VarChar(64)
-  businessType    String?   @db.VarChar(64)
-  businessId      String?   @db.VarChar(128)
-  uploaderUserId  String
-  createdAt       DateTime  @default(now())
+model WecomCallbackLog {
+  id         String   @id @default(cuid())
+  event      String?  @db.VarChar(64)
+  changeType String?  @db.VarChar(64)
+  fromUserId String?  @db.VarChar(128)
+  agentId    String?  @db.VarChar(64)
+  rawXml     String   @db.Text
+  status     String   @default("RECEIVED") @db.VarChar(32)
+  error      String?  @db.Text
+  createdAt  DateTime @default(now())
 
-  uploader        User      @relation(fields: [uploaderUserId], references: [id])
-
-  @@index([uploaderUserId])
-  @@index([businessType, businessId])
-}
-
-model ProductParseLog {
-  id             String   @id @default(cuid())
-  rawText        String?  @db.Text
-  imageUrl       String?  @db.VarChar(500)
-  parsedJson     Json
-  sourceType     String   @db.VarChar(32)
-  operatorUserId String
-  createdAt      DateTime @default(now())
-
-  operator       User     @relation(fields: [operatorUserId], references: [id])
-
-  @@index([operatorUserId])
-  @@index([sourceType])
+  @@index([event])
+  @@index([changeType])
+  @@index([status])
   @@index([createdAt])
 }
 
-model AuditLog {
-  id          String    @id @default(cuid())
-  userId      String
-  action      String    @db.VarChar(64)
-  module      String    @db.VarChar(64)
-  targetType  String?   @db.VarChar(64)
-  targetId    String?   @db.VarChar(128)
-  targetName  String?   @db.VarChar(255)
-  result      String?   @db.VarChar(32)
-  content     String?   @db.Text
-  beforeSummary String? @db.Text
-  afterSummary String?  @db.Text
-  source      String?   @db.VarChar(32)
-  ipAddress   String?   @db.VarChar(64)
-  deviceInfo  String?   @db.VarChar(255)
-  createdAt   DateTime  @default(now())
+model WecomCalendarSync {
+  id            String          @id @default(cuid())
+  taskId        String?         @unique
+  calendarId    String?         @db.VarChar(128)
+  scheduleId    String?         @db.VarChar(128)
+  syncStatus    WecomSyncStatus @default(PENDING)
+  lastSyncError String?         @db.Text
+  retryCount    Int             @default(0)
+  lastSyncedAt  DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
-  user        User      @relation(fields: [userId], references: [id])
+  task Task? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([syncStatus])
+  @@index([scheduleId])
+}
+
+model WeeklyReport {
+  id                   String             @id @default(cuid())
+  userId               String
+  weekStartDate        DateTime
+  weekEndDate          DateTime
+  year                 Int?
+  month                Int?
+  weekNumber           Int?
+  status               WeeklyReportStatus @default(DRAFT)
+  completedSummary     String?            @db.Text
+  focusSummary         String?            @db.Text
+  submittedAt          DateTime?
+  managerReviewedAt    DateTime?
+  managerReviewedById  String?
+  managerReviewComment String?            @db.Text
+  dataScope            RecordDataScope    @default(REAL)
+  partitionKey         String             @default("REAL") @db.VarChar(64)
+  testBatchId          String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user            User                     @relation("WeeklyReportOwner", fields: [userId], references: [id])
+  managerReviewer User?                    @relation("WeeklyReportManagerReviewer", fields: [managerReviewedById], references: [id])
+  testBatch       TestBatch?               @relation(fields: [testBatchId], references: [id])
+  reviewItems     WeeklyReportReviewItem[]
+  planItems       WeeklyReportPlanItem[]
+  payloads        WeeklyReportPayload[]    @relation("WeeklyReportPayloadReport")
+
+  @@unique([userId, weekStartDate, partitionKey])
+  @@index([userId, status])
+  @@index([weekStartDate])
+  @@index([year, month, weekNumber])
+  @@index([managerReviewedById])
+  @@index([partitionKey])
+  @@index([testBatchId])
+}
+
+model WeeklyReportReviewItem {
+  id               String                 @id @default(cuid())
+  reportId         String
+  sourcePlanItemId String?
+  title            String                 @db.VarChar(255)
+  description      String?                @db.Text
+  plannedAt        DateTime?
+  status           WeeklyPlanReviewStatus @default(PENDING)
+  incompleteReason String?                @db.Text
+  sortOrder        Int                    @default(0)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  report         WeeklyReport           @relation(fields: [reportId], references: [id])
+  sourcePlanItem WeeklyReportPlanItem?  @relation("WeeklyReportReviewSource", fields: [sourcePlanItemId], references: [id])
+  carryPlanItems WeeklyReportPlanItem[] @relation("WeeklyReportPlanSourceReview")
+
+  @@index([reportId])
+  @@index([sourcePlanItemId])
+  @@index([status])
+}
+
+model WeeklyReportPlanItem {
+  id                 String    @id @default(cuid())
+  reportId           String
+  sourceReviewItemId String?
+  taskId             String?   @unique
+  title              String    @db.VarChar(255)
+  description        String?   @db.Text
+  plannedAt          DateTime?
+  sortOrder          Int       @default(0)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  report           WeeklyReport             @relation(fields: [reportId], references: [id])
+  sourceReviewItem WeeklyReportReviewItem?  @relation("WeeklyReportPlanSourceReview", fields: [sourceReviewItemId], references: [id])
+  reviewSources    WeeklyReportReviewItem[] @relation("WeeklyReportReviewSource")
+  task             Task?                    @relation(fields: [taskId], references: [id])
+
+  @@index([reportId])
+  @@index([sourceReviewItemId])
+  @@index([plannedAt])
+}
+
+model RosterWeek {
+  id              String           @id @default(cuid())
+  teamKey         String           @db.VarChar(80)
+  teamLabel       String           @db.VarChar(120)
+  weekKey         String           @db.VarChar(40)
+  weekLabel       String?          @db.VarChar(80)
+  periodMode      RosterPeriodMode @default(WEEK)
+  periodLabel     String?          @db.VarChar(80)
+  status          RosterWeekStatus @default(DRAFT)
+  source          String           @default("legacy_roster_json") @db.VarChar(64)
+  sourceSha16     String?          @db.VarChar(32)
+  sourceUpdatedAt DateTime?
+  actorName       String?          @db.VarChar(120)
+  actorUserId     String?
+  publishedAt     DateTime?
+  version         Int              @default(1)
+  rawSnapshot     Json?
+  dataScope       RecordDataScope  @default(REAL)
+  partitionKey    String           @default("REAL") @db.VarChar(64)
+  testBatchId     String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  actor     User?            @relation("RosterWeekActor", fields: [actorUserId], references: [id])
+  testBatch TestBatch?       @relation(fields: [testBatchId], references: [id])
+  shifts    RosterShift[]
+  auditLogs RosterAuditLog[]
+
+  @@unique([teamKey, weekKey, status, partitionKey])
+  @@index([teamKey, weekKey])
+  @@index([status])
+  @@index([publishedAt])
+  @@index([partitionKey])
+  @@index([testBatchId])
+  @@index([actorUserId])
+}
+
+model RosterShift {
+  id               String   @id @default(cuid())
+  rosterWeekId     String
+  personExternalId String   @db.VarChar(160)
+  personUserId     String?
+  personName       String   @db.VarChar(120)
+  role             String?  @db.VarChar(120)
+  department       String?  @db.VarChar(120)
+  teamKey          String   @db.VarChar(80)
+  dayName          String   @db.VarChar(16)
+  dateLabel        String   @db.VarChar(20)
+  shiftLabel       String   @db.VarChar(40)
+  startTime        String?  @db.VarChar(16)
+  endTime          String?  @db.VarChar(16)
+  isRest           Boolean  @default(false)
+  notesJson        Json?
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  rosterWeek RosterWeek @relation(fields: [rosterWeekId], references: [id], onDelete: Cascade)
+  personUser User?      @relation("RosterShiftPerson", fields: [personUserId], references: [id])
+
+  @@unique([rosterWeekId, personExternalId, dayName])
+  @@index([rosterWeekId])
+  @@index([personExternalId])
+  @@index([personUserId])
+  @@index([teamKey])
+}
+
+model RosterAuditLog {
+  id           String   @id @default(cuid())
+  rosterWeekId String?
+  action       String   @db.VarChar(80)
+  actorUserId  String?
+  actorName    String?  @db.VarChar(120)
+  beforeJson   Json?
+  afterJson    Json?
+  note         String?  @db.Text
+  createdAt    DateTime @default(now())
+
+  rosterWeek RosterWeek? @relation(fields: [rosterWeekId], references: [id], onDelete: SetNull)
+  actor      User?       @relation("RosterAuditActor", fields: [actorUserId], references: [id])
+
+  @@index([rosterWeekId])
+  @@index([actorUserId])
+  @@index([createdAt])
+}
+
+model AttendancePeriod {
+  id                String          @id @default(cuid())
+  periodKey         String          @db.VarChar(40)
+  status            String          @db.VarChar(40)
+  reviewState       String          @db.VarChar(40)
+  makeupConfirmed   Boolean         @default(false)
+  attendanceLocked  Boolean         @default(false)
+  totalOpenItems    Int             @default(0)
+  source            String          @default("legacy_schedule_json") @db.VarChar(64)
+  sourceSha16       String?         @db.VarChar(32)
+  rawSnapshot       Json?
+  dataScope         RecordDataScope @default(REAL)
+  partitionKey      String          @default("REAL") @db.VarChar(64)
+  testBatchId       String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  testBatch TestBatch? @relation(fields: [testBatchId], references: [id])
+
+  @@unique([periodKey, partitionKey])
+  @@index([reviewState])
+  @@index([attendanceLocked])
+  @@index([partitionKey])
+  @@index([testBatchId])
+}
+
+model WeeklyReportPayload {
+  id              String                       @id @default(cuid())
+  weeklyReportId  String?
+  userId          String?
+  source          String                       @default("legacy_weekly_workspace") @db.VarChar(80)
+  sourceUserKey   String                       @db.VarChar(200)
+  canonicalUserKey String?                     @db.VarChar(160)
+  sourceFileName  String                       @db.VarChar(255)
+  sourceSha16     String                       @db.VarChar(32)
+  reportState     String?                      @db.VarChar(40)
+  savedAt         DateTime?
+  payloadJson     Json
+  migrationStatus WeeklyPayloadMigrationStatus @default(DRY_RUN)
+  migrationNote   String?                      @db.Text
+  createdAt       DateTime                     @default(now())
+  updatedAt       DateTime                     @updatedAt
+
+  weeklyReport WeeklyReport? @relation("WeeklyReportPayloadReport", fields: [weeklyReportId], references: [id], onDelete: SetNull)
+  user         User?         @relation("WeeklyReportPayloadUser", fields: [userId], references: [id])
+
+  @@unique([sourceFileName, sourceSha16])
+  @@index([weeklyReportId])
+  @@index([userId])
+  @@index([sourceUserKey])
+  @@index([canonicalUserKey])
+  @@index([migrationStatus])
+}
+
+model WeeklyPublicDigest {
+  id                        String          @id @default(cuid())
+  weekStartDate             DateTime
+  weekEndDate               DateTime
+  department                String          @default("") @db.VarChar(128)
+  provider                  String          @default("heuristic") @db.VarChar(64)
+  generatedSummary          String?         @db.Text
+  publishedSummary          String?         @db.Text
+  generatedAt               DateTime?
+  publishedAt               DateTime?
+  publishedById             String?
+  sourceTotalReportCount    Int             @default(0)
+  sourceIncludedReportCount Int             @default(0)
+  sourceApprovedReportCount Int             @default(0)
+  dataScope                 RecordDataScope @default(REAL)
+  partitionKey              String          @default("REAL") @db.VarChar(64)
+  testBatchId               String?
+  createdAt                 DateTime        @default(now())
+  updatedAt                 DateTime        @updatedAt
+
+  publishedBy User? @relation("WeeklyPublicDigestPublisher", fields: [publishedById], references: [id])
+
+  @@unique([weekStartDate, department, partitionKey])
+  @@index([weekStartDate])
+  @@index([department])
+  @@index([publishedById])
+  @@index([partitionKey])
+  @@index([testBatchId])
+}
+
+model MonthlyGoal {
+  id           String            @id @default(cuid())
+  userId       String
+  targetYear   Int
+  targetMonth  Int
+  status       MonthlyGoalStatus @default(DRAFT)
+  summary      String?           @db.Text
+  submittedAt  DateTime?
+  dataScope    RecordDataScope   @default(REAL)
+  partitionKey String            @default("REAL") @db.VarChar(64)
+  testBatchId  String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  user        User                           @relation(fields: [userId], references: [id])
+  testBatch   TestBatch?                     @relation(fields: [testBatchId], references: [id])
+  items       MonthlyGoalItem[]
+  aiSummaries MonthlyGoalAiSummarySnapshot[]
+
+  @@unique([userId, targetYear, targetMonth, partitionKey])
+  @@index([userId, status])
+  @@index([targetYear, targetMonth])
+  @@index([partitionKey])
+  @@index([testBatchId])
+}
+
+model MonthlyGoalAiSummarySnapshot {
+  id                         String   @id @default(cuid())
+  monthlyGoalId              String
+  sourceYear                 Int
+  sourceMonth                Int
+  provider                   String   @db.VarChar(64)
+  generatedAt                DateTime @default(now())
+  weeklyReportCount          Int      @default(0)
+  submittedWeeklyReportCount Int      @default(0)
+  goalItemCount              Int      @default(0)
+  sectionsJson               Json
+  weeklyReportsJson          Json
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+
+  monthlyGoal MonthlyGoal @relation(fields: [monthlyGoalId], references: [id])
+
+  @@unique([monthlyGoalId, sourceYear, sourceMonth], map: "MonthlyGoalAiSummarySnapshot_goal_period_key")
+  @@index([monthlyGoalId, updatedAt], map: "MonthlyGoalAiSummarySnapshot_goal_updated_idx")
+}
+
+model MonthlyGoalItem {
+  id            String    @id @default(cuid())
+  monthlyGoalId String
+  title         String    @db.VarChar(255)
+  metric        String?   @db.Text
+  dueAt         DateTime?
+  progressNote  String?   @db.Text
+  riskNote      String?   @db.Text
+  sortOrder     Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  monthlyGoal MonthlyGoal @relation(fields: [monthlyGoalId], references: [id])
+
+  @@index([monthlyGoalId])
+  @@index([dueAt])
+}
+
+model FileFolder {
+  id              String          @id @default(cuid())
+  name            String          @db.VarChar(120)
+  parentId        String?
+  category        String?         @db.VarChar(64)
+  tagText         String?         @db.Text
+  permissionScope String?         @db.VarChar(128)
+  note            String?         @db.Text
+  createdByUserId String
+  dataScope       RecordDataScope @default(REAL)
+  partitionKey    String          @default("REAL") @db.VarChar(64)
+  testBatchId     String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  parent    FileFolder?  @relation("FileFolderTree", fields: [parentId], references: [id])
+  children  FileFolder[] @relation("FileFolderTree")
+  createdBy User         @relation(fields: [createdByUserId], references: [id])
+  testBatch TestBatch?   @relation(fields: [testBatchId], references: [id])
+  files     FileRecord[]
+
+  @@unique([parentId, name, partitionKey])
+  @@index([parentId])
+  @@index([updatedAt])
+  @@index([createdByUserId])
+  @@index([partitionKey])
+  @@index([testBatchId])
+}
+
+model FileRecord {
+  id              String           @id @default(cuid())
+  fileName        String
+  fileUrl         String           @db.VarChar(500)
+  fileType        String?          @db.VarChar(64)
+  fileSizeBytes   Int?
+  category        String?          @db.VarChar(64)
+  tagText         String?          @db.Text
+  note            String?          @db.Text
+  businessType    String?          @db.VarChar(64)
+  businessId      String?          @db.VarChar(128)
+  relatedType     String?          @db.VarChar(64)
+  relatedId       String?          @db.VarChar(128)
+  folderId        String?
+  status          FileRecordStatus @default(ACTIVE)
+  isImportant     Boolean          @default(false)
+  isArchived      Boolean          @default(false)
+  permissionScope String?          @db.VarChar(128)
+  versionGroupId  String?          @db.VarChar(191)
+  versionNumber   Int              @default(1)
+  versionNote     String?          @db.Text
+  deletedAt       DateTime?
+  deletedByUserId String?          @db.VarChar(191)
+  deletedReason   String?          @db.VarChar(255)
+  uploaderUserId  String
+  dataScope       RecordDataScope  @default(REAL)
+  partitionKey    String           @default("REAL") @db.VarChar(64)
+  testBatchId     String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  folder    FileFolder? @relation(fields: [folderId], references: [id])
+  deletedBy User?       @relation("FileRecordDeletedBy", fields: [deletedByUserId], references: [id], onDelete: SetNull)
+  uploader  User        @relation(fields: [uploaderUserId], references: [id])
+  testBatch TestBatch?  @relation(fields: [testBatchId], references: [id])
+
+  @@index([folderId])
+  @@index([uploaderUserId])
+  @@index([businessType, businessId])
+  @@index([relatedType, relatedId])
+  @@index([category])
+  @@index([status])
+  @@index([isImportant])
+  @@index([isArchived])
+  @@index([versionGroupId])
+  @@index([deletedAt])
+  @@index([deletedByUserId])
+  @@index([createdAt])
+  @@index([partitionKey])
+  @@index([testBatchId])
+}
+
+model ProductParseLog {
+  id               String                   @id @default(cuid())
+  rawText          String?                  @db.Text
+  imageUrl         String?                  @db.VarChar(500)
+  parsedJson       Json
+  sourceType       String                   @db.VarChar(32)
+  reviewStatus     ProductParseReviewStatus @default(PENDING)
+  reviewNote       String?                  @db.Text
+  operatorUserId   String
+  reviewedByUserId String?
+  resolvedProductId String?
+  reviewedAt       DateTime?
+  createdAt        DateTime                 @default(now())
+
+  operator        User     @relation(fields: [operatorUserId], references: [id])
+  reviewer        User?    @relation("ProductParseLogReviewer", fields: [reviewedByUserId], references: [id])
+  resolvedProduct Product? @relation("ProductParseLogResolvedProduct", fields: [resolvedProductId], references: [id])
+
+  @@index([operatorUserId])
+  @@index([reviewedByUserId])
+  @@index([resolvedProductId])
+  @@index([sourceType])
+  @@index([reviewStatus])
+  @@index([createdAt])
+}
+
+model MeetingMinutesAudioAnalysisTask {
+  id               String    @id @db.VarChar(80)
+  status           String    @db.VarChar(32)
+  title            String    @db.VarChar(255)
+  folderLabel      String    @db.VarChar(255)
+  folderShortLabel String    @db.VarChar(128)
+  meetingAt        DateTime?
+  fileNamesJson    Json
+  inputJson        Json
+  resultJson       Json?
+  errorMessage     String?   @db.Text
+  createdBy        String?   @db.VarChar(128)
+  createdByUserId  String?   @db.VarChar(191)
+  startedAt        DateTime?
+  completedAt      DateTime?
+  audioClearedAt   DateTime?
+  expiresAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([status, createdAt])
+  @@index([createdAt])
+  @@index([expiresAt])
+  @@index([createdByUserId])
+  @@index([folderShortLabel])
+}
+
+model MeetingMinutesRecord {
+  id              String   @id @db.VarChar(80)
+  folderId        String   @db.VarChar(80)
+  title           String   @db.VarChar(255)
+  meetingAt       DateTime
+  sourceType      String   @db.VarChar(32)
+  recordJson      Json
+  createdBy       String?  @db.VarChar(128)
+  createdByUserId String?  @db.VarChar(191)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([folderId, meetingAt])
+  @@index([meetingAt])
+  @@index([sourceType])
+  @@index([createdByUserId])
+}
+
+model MeetingMinutesFolderPermission {
+  folderId                  String   @id @db.VarChar(80)
+  allowedIdentityIdsJson    Json
+  allowedParticipantIdsJson Json
+  managerIdentityIdsJson    Json
+  updatedByUserId           String?  @db.VarChar(191)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  @@index([updatedByUserId])
+}
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  userId        String
+  action        String   @db.VarChar(64)
+  module        String   @db.VarChar(64)
+  targetType    String?  @db.VarChar(64)
+  targetId      String?  @db.VarChar(128)
+  targetName    String?  @db.VarChar(255)
+  result        String?  @db.VarChar(32)
+  content       String?  @db.Text
+  beforeSummary String?  @db.Text
+  afterSummary  String?  @db.Text
+  source        String?  @db.VarChar(32)
+  ipAddress     String?  @db.VarChar(64)
+  deviceInfo    String?  @db.VarChar(255)
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([module])
@@ -557,44 +1755,44 @@ model AuditLog {
 }
 
 model ApprovalRule {
-  id              String            @id @default(cuid())
-  code            ApprovalRuleType  @unique
+  id              String           @id @default(cuid())
+  code            ApprovalRuleType @unique
   name            String
-  description     String?           @db.VarChar(255)
-  enabled         Boolean           @default(true)
+  description     String?          @db.VarChar(255)
+  enabled         Boolean          @default(true)
   configJson      Json
-  sortOrder       Int               @default(0)
+  sortOrder       Int              @default(0)
   updatedByUserId String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
-  updatedBy       User?             @relation("ApprovalRuleUpdatedBy", fields: [updatedByUserId], references: [id])
+  updatedBy User? @relation("ApprovalRuleUpdatedBy", fields: [updatedByUserId], references: [id])
 
   @@index([enabled])
   @@index([sortOrder])
 }
 
 model ApprovalRequest {
-  id              String            @id @default(cuid())
-  type            ApprovalRuleType
-  targetType      String            @db.VarChar(64)
-  targetId        String            @db.VarChar(128)
-  quotationId     String?
-  status          ApprovalStatus    @default(PENDING)
-  requesterUserId String
+  id               String           @id @default(cuid())
+  type             ApprovalRuleType
+  targetType       String           @db.VarChar(64)
+  targetId         String           @db.VarChar(128)
+  quotationId      String?
+  status           ApprovalStatus   @default(PENDING)
+  requesterUserId  String
   requiredRoleCode String?          @db.VarChar(64)
-  actorUserId     String?
-  title           String            @db.VarChar(255)
-  summary         String?           @db.Text
-  payloadJson     Json?
-  decisionRemark  String?           @db.Text
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  decidedAt       DateTime?
+  actorUserId      String?
+  title            String           @db.VarChar(255)
+  summary          String?          @db.Text
+  payloadJson      Json?
+  decisionRemark   String?          @db.Text
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  decidedAt        DateTime?
 
-  quotation       Quotation?        @relation(fields: [quotationId], references: [id])
-  requester       User              @relation("ApprovalRequester", fields: [requesterUserId], references: [id])
-  actor           User?             @relation("ApprovalActor", fields: [actorUserId], references: [id])
+  quotation Quotation? @relation(fields: [quotationId], references: [id])
+  requester User       @relation("ApprovalRequester", fields: [requesterUserId], references: [id])
+  actor     User?      @relation("ApprovalActor", fields: [actorUserId], references: [id])
 
   @@index([type])
   @@index([status])
@@ -603,4 +1801,237 @@ model ApprovalRequest {
   @@index([requesterUserId])
   @@index([requiredRoleCode])
   @@index([actorUserId])
+}
+
+model SystemSetting {
+  id              String   @id @default(cuid())
+  settingKey      String   @unique @db.VarChar(128)
+  name            String   @db.VarChar(191)
+  category        String   @db.VarChar(64)
+  configJson      Json
+  updatedByUserId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  updatedBy User? @relation("SystemSettingUpdatedBy", fields: [updatedByUserId], references: [id])
+
+  @@index([category])
+}
+
+model EcotechCustomerRecord {
+  id             String   @id @db.VarChar(128)
+  department     String   @default("洄归生态科技") @db.VarChar(128)
+  customerName   String?  @db.VarChar(255)
+  ownerName      String?  @db.VarChar(128)
+  status         String?  @db.VarChar(64)
+  industry       String?  @db.VarChar(64)
+  nextFollowupAt DateTime?
+  recordJson     Json
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([department])
+  @@index([customerName])
+  @@index([ownerName])
+  @@index([status])
+  @@index([industry])
+  @@index([nextFollowupAt])
+  @@index([updatedAt])
+}
+
+model EcotechQuotationRecord {
+  id           String   @id @db.VarChar(128)
+  department   String   @default("洄归生态科技") @db.VarChar(128)
+  code         String?  @db.VarChar(128)
+  title        String?  @db.VarChar(255)
+  customerName String?  @db.VarChar(255)
+  status       String?  @db.VarChar(64)
+  industry     String?  @db.VarChar(64)
+  source       String?  @db.VarChar(64)
+  totalAmount  Decimal? @db.Decimal(12, 2)
+  recordJson   Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([department])
+  @@index([code])
+  @@index([customerName])
+  @@index([status])
+  @@index([industry])
+  @@index([updatedAt])
+}
+
+model EcotechProductRecord {
+  id          String   @id @db.VarChar(128)
+  department  String   @default("洄归生态科技") @db.VarChar(128)
+  sku         String?  @db.VarChar(128)
+  name        String?  @db.VarChar(255)
+  brand       String?  @db.VarChar(64)
+  category    String?  @db.VarChar(128)
+  status      String?  @db.VarChar(64)
+  recordJson  Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([department])
+  @@index([sku])
+  @@index([name])
+  @@index([brand])
+  @@index([category])
+  @@index([status])
+  @@index([updatedAt])
+}
+
+model EcotechOrderRecord {
+  id             String   @id @db.VarChar(128)
+  department     String   @default("洄归生态科技") @db.VarChar(128)
+  code           String?  @db.VarChar(128)
+  customerName   String?  @db.VarChar(255)
+  status         String?  @db.VarChar(64)
+  totalAmount    Decimal? @db.Decimal(12, 2)
+  financeAccount String?  @db.VarChar(128)
+  recordJson     Json
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([department])
+  @@index([code])
+  @@index([customerName])
+  @@index([status])
+  @@index([financeAccount])
+  @@index([updatedAt])
+}
+
+model EcotechFinanceAccountRecord {
+  id          String   @id @db.VarChar(128)
+  department  String   @default("洄归生态科技") @db.VarChar(128)
+  entity      String?  @db.VarChar(255)
+  accountName String?  @db.VarChar(255)
+  bank        String?  @db.VarChar(255)
+  active      Boolean  @default(true)
+  recordJson  Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([department])
+  @@index([entity])
+  @@index([accountName])
+  @@index([active])
+  @@index([updatedAt])
+}
+
+model EcotechChannelPartnerRecord {
+  id          String   @id @db.VarChar(128)
+  department  String   @default("洄归生态科技") @db.VarChar(128)
+  name        String?  @db.VarChar(255)
+  contact     String?  @db.VarChar(128)
+  phone       String?  @db.VarChar(64)
+  active      Boolean  @default(true)
+  recordJson  Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([department])
+  @@index([name])
+  @@index([contact])
+  @@index([active])
+  @@index([updatedAt])
+}
+
+model EcotechContractRecord {
+  id           String   @id @db.VarChar(128)
+  department   String   @default("洄归生态科技") @db.VarChar(128)
+  code         String?  @db.VarChar(128)
+  title        String?  @db.VarChar(255)
+  customerName String?  @db.VarChar(255)
+  status       String?  @db.VarChar(64)
+  endAt        DateTime?
+  recordJson   Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([department])
+  @@index([code])
+  @@index([customerName])
+  @@index([status])
+  @@index([endAt])
+  @@index([updatedAt])
+}
+
+model EcotechInspectionRecord {
+  id           String   @id @db.VarChar(128)
+  department   String   @default("洄归生态科技") @db.VarChar(128)
+  code         String?  @db.VarChar(128)
+  customerName String?  @db.VarChar(255)
+  currentStage String?  @db.VarChar(64)
+  paymentStatus String? @db.VarChar(64)
+  expectedReportAt DateTime?
+  recordJson   Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([department])
+  @@index([code])
+  @@index([customerName])
+  @@index([currentStage])
+  @@index([paymentStatus])
+  @@index([expectedReportAt])
+  @@index([updatedAt])
+}
+
+model SalarySlip {
+  id                  String   @id @db.VarChar(120)
+  month               String   @db.VarChar(7)
+  teacherId           String   @db.VarChar(120)
+  teacherName         String   @db.VarChar(120)
+  grossAmount         Decimal  @db.Decimal(12, 2)
+  commissionAmount    Decimal? @db.Decimal(12, 2)
+  profitSharingAmount Decimal? @db.Decimal(12, 2)
+  deductionAmount     Decimal  @db.Decimal(12, 2)
+  netAmount           Decimal  @db.Decimal(12, 2)
+  source              String   @db.VarChar(32)
+  sourceLabel         String?  @db.VarChar(255)
+  settlementId        String?  @db.VarChar(120)
+  syncedBy            String   @db.VarChar(120)
+  syncedAt            DateTime
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([month, teacherId])
+  @@index([month])
+  @@index([teacherId])
+  @@index([teacherName])
+  @@index([syncedAt])
+}
+
+model SalaryNotifyLog {
+  id          String   @id @db.VarChar(160)
+  month       String   @db.VarChar(7)
+  at          DateTime
+  actionLabel String   @db.VarChar(80)
+  modeLabel   String   @db.VarChar(80)
+  status      String   @db.VarChar(32)
+  tone        String?  @db.VarChar(32)
+  message     String   @db.Text
+  delivered   Json
+  skipped     Json
+  failed      Json
+  notifyUrl   String?  @db.VarChar(500)
+  createdBy   String   @db.VarChar(120)
+  createdAt   DateTime @default(now())
+
+  @@index([month, at])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model PayrollDraftBatch {
+  month           String    @id @db.VarChar(7)
+  drafts          Json
+  publishedAt     DateTime?
+  notifyStatus    String?   @db.VarChar(32)
+  excelReviewedAt DateTime?
+  updatedBy       String    @db.VarChar(120)
+  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime  @default(now())
 }

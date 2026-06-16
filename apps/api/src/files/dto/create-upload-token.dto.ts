@@ -19,4 +19,19 @@ export class CreateUploadTokenDto {
   @IsString()
   @MaxLength(128)
   businessId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(191)
+  folderId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  category?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  relatedType?: string;
 }

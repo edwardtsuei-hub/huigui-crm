@@ -50,7 +50,7 @@ export default function CustomerNewPage() {
         setForm((prev) =>
           prev.ownerUserId
             ? prev
-            : createCustomerForm(userResponse[0]?.id ?? currentUser?.id ?? ""),
+            : createCustomerForm(currentUser?.id ?? userResponse[0]?.id ?? ""),
         );
       } catch (requestError) {
         if (!cancelled) {
@@ -155,7 +155,7 @@ export default function CustomerNewPage() {
                   className="button secondary"
                   onClick={() =>
                     setForm(
-                      createCustomerForm(users[0]?.id ?? currentUser?.id ?? ""),
+                      createCustomerForm(currentUser?.id ?? users[0]?.id ?? ""),
                     )
                   }
                 >

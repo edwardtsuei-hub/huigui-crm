@@ -5,6 +5,7 @@ import { previewAgriculturePlan, PRICE_PER_BUCKET } from "../agriculture-engine"
 import { AccessControlService } from "../common/services/access-control.service";
 import { ApprovalService } from "../common/services/approval.service";
 import { AuditService } from "../common/services/audit.service";
+import { RecordPartitionService } from "../common/services/record-partition.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { CalculateAgriculturePlanDto, CreateAgriculturePlanDto } from "./dto/agriculture-plan.dto";
 
@@ -20,7 +21,8 @@ export class AgriculturePlansService {
     private readonly prisma: PrismaService,
     private readonly accessControl: AccessControlService,
     private readonly approvalService: ApprovalService,
-    private readonly auditService: AuditService
+    private readonly auditService: AuditService,
+    private readonly recordPartition: RecordPartitionService,
   ) {}
 
   private async ensureCustomerAccessible(customerId: string, user: AuthenticatedUser) {
@@ -60,6 +62,7 @@ export class AgriculturePlansService {
     this.accessControl.assertPermission(user, "action.solution.create", "当前账号无权新建方案");
     const customer = await this.ensureCustomerAccessible(dto.customerId, user);
     const preview = this.calculate(dto);
+    const partition = await this.recordPartition.getWritableCreateData(user);
 
     if (preview.unresolvedCount > 0) {
       throw new ForbiddenException("存在未识别作物，请先手动修正类别");
@@ -81,7 +84,10 @@ export class AgriculturePlansService {
           discountReason: dto.discountReason,
           remark: dto.remark,
           creatorUserId: user.id,
-          status: QuotationStatus.GENERATED
+          status: QuotationStatus.GENERATED,
+          dataScope: partition.dataScope,
+          partitionKey: partition.partitionKey,
+          testBatchId: partition.testBatchId,
         }
       });
 
@@ -103,6 +109,9 @@ export class AgriculturePlansService {
           customerId: customer.id,
           totalOriginalAmount: preview.totals.totalOriginal,
           totalDiscountedAmount: preview.totals.totalDiscounted,
+          dataScope: partition.dataScope,
+          partitionKey: partition.partitionKey,
+          testBatchId: partition.testBatchId,
           detailJson: {
             ...preview,
             input: dto

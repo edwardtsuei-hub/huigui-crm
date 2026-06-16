@@ -1,9 +1,12 @@
 import { Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
+import { getJwtSecret } from "../../common/config/security";
+import { AuditService } from "../../common/services/audit.service";
 import { PrismaService } from "../../prisma/prisma.service";
 import { WecomController } from "./wecom.controller";
 import { WecomAuthService } from "./wecom-auth.service";
+import { WecomCalendarRetryService } from "./wecom-calendar-retry.service";
 import { WecomCalendarService } from "./wecom-calendar.service";
 import { WecomMessageService } from "./wecom-message.service";
 import { WecomService } from "./wecom.service";
@@ -14,7 +17,7 @@ import { WecomTokenService } from "./wecom-token.service";
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>("JWT_SECRET") ?? "dev-secret",
+        secret: getJwtSecret(configService),
         signOptions: {
           expiresIn: "7d"
         }
@@ -24,11 +27,13 @@ import { WecomTokenService } from "./wecom-token.service";
   controllers: [WecomController],
   providers: [
     PrismaService,
+    AuditService,
     WecomTokenService,
     WecomService,
     WecomAuthService,
     WecomMessageService,
-    WecomCalendarService
+    WecomCalendarService,
+    WecomCalendarRetryService
   ],
   exports: [WecomAuthService, WecomCalendarService, WecomMessageService, WecomService]
 })

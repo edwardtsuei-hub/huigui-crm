@@ -1,5 +1,7 @@
 "use client";
 
+import type { SiteBrandKey } from "./site-brand";
+
 export type WorkspaceNotification = {
   id: string;
   title: string;
@@ -8,6 +10,8 @@ export type WorkspaceNotification = {
   createdAt: string;
   createdAtLabel: string;
   readAt: string | null;
+  relatedType?: string | null;
+  relatedId?: string | null;
 };
 
 export const WORKSPACE_ITEMS_CHANGED_EVENT = "huigui:workspace-items-changed";
@@ -86,18 +90,100 @@ export function formatTimeLabel(value: string | Date) {
   }).format(new Date(value));
 }
 
-export function notificationTypeLabel(type: string) {
+export function notificationTypeLabel(
+  type: string,
+  brandKey: SiteBrandKey = "public",
+) {
+  if (brandKey === "management") {
+    switch (type) {
+      case "FOLLOW_UP_REMINDER":
+        return "跟进提醒";
+      case "TASK_REMINDER":
+        return "计划提醒";
+      case "CONTRACT_EXPIRY_REMINDER":
+        return "到期提醒";
+      case "TASK_ASSIGNED":
+      case "TASK_REASSIGNED":
+        return "计划指派";
+      case "APPROVAL_REQUEST_CREATED":
+      case "CUSTOMER_APPROVAL_REQUEST_CREATED":
+        return "待办审批";
+      case "APPROVAL_REQUEST_DECIDED":
+      case "CUSTOMER_APPROVAL_REQUEST_DECIDED":
+        return "审批结果";
+      case "WEEKLY_REPORT_SUBMITTED":
+        return "周报待审";
+      case "WEEKLY_REPORT_REVIEWED":
+        return "周报审阅";
+      case "MONTHLY_GOAL_SUBMITTED":
+        return "月目标";
+      case "QUOTATION_REMINDER":
+        return "系统提醒";
+      case "DISCUSSION_COMMENT":
+        return "协作留言";
+      default:
+        return "系统通知";
+    }
+  }
+
   switch (type) {
     case "FOLLOW_UP_REMINDER":
-      return "跟进提醒";
+      return "客户跟进提醒";
     case "TASK_REMINDER":
-      return "计划提醒";
+      return "工作计划提醒";
     case "CONTRACT_EXPIRY_REMINDER":
       return "合同到期";
+    case "TASK_ASSIGNED":
+    case "TASK_REASSIGNED":
+      return "工作计划指派";
+    case "APPROVAL_REQUEST_CREATED":
+    case "CUSTOMER_APPROVAL_REQUEST_CREATED":
+      return "待审批";
+    case "APPROVAL_REQUEST_DECIDED":
+    case "CUSTOMER_APPROVAL_REQUEST_DECIDED":
+      return "审批结果";
+    case "WEEKLY_REPORT_SUBMITTED":
+      return "周报待审阅";
+    case "WEEKLY_REPORT_REVIEWED":
+      return "周报审阅结果";
+    case "MONTHLY_GOAL_SUBMITTED":
+      return "月目标提交";
     case "QUOTATION_REMINDER":
       return "报价通知";
+    case "DISCUSSION_COMMENT":
+      return "协作留言";
     default:
       return "系统通知";
+  }
+}
+
+export function buildNotificationHref(notification: {
+  relatedType?: string | null;
+  relatedId?: string | null;
+}) {
+  switch (notification.relatedType) {
+    case "TASK":
+      return notification.relatedId
+        ? `/schedule?taskId=${notification.relatedId}#discussion`
+        : "/schedule";
+    case "WEEKLY_REPORT":
+      return notification.relatedId
+        ? `/work-management/weekly-reports?reportId=${notification.relatedId}#discussion`
+        : "/work-management/weekly-reports";
+    case "MONTHLY_GOAL":
+      return notification.relatedId
+        ? `/work-management/monthly-goals?goalId=${notification.relatedId}#discussion`
+        : "/work-management/monthly-goals";
+    case "QUOTATION":
+      return notification.relatedId
+        ? `/quotations/${notification.relatedId}`
+        : "/quotations";
+    case "CUSTOMER":
+      return notification.relatedId
+        ? `/customers/${notification.relatedId}`
+        : "/customers";
+    default:
+      return "/notifications";
   }
 }
 
@@ -128,7 +214,7 @@ export function workspaceKindLabel(kind: WorkspaceItemKind) {
     case "reminder":
       return "提醒";
     case "schedule":
-      return "日程";
+      return "临时日程";
     case "todo":
       return "待办";
     case "member":
@@ -150,6 +236,8 @@ export function normalizeNotifications(
     type: string;
     createdAt: string;
     readAt: string | null;
+    relatedType?: string | null;
+    relatedId?: string | null;
   }>,
 ) {
   return items.map((item) => ({
@@ -232,6 +320,11 @@ export function updateLocalWorkspaceItemStatus(
   saveWorkspaceItems(nextItems);
 }
 
+export function removeLocalWorkspaceItem(id: string) {
+  const nextItems = listLocalWorkspaceItems().filter((item) => item.id !== id);
+  saveWorkspaceItems(nextItems);
+}
+
 export function filterVisibleWorkspaceItems(items: LocalWorkspaceItem[]) {
   const now = Date.now();
 
@@ -287,48 +380,76 @@ function isToday(value: string) {
   );
 }
 
-export const notificationCategoryMeta = [
-  {
-    key: "today",
-    label: "今日提醒",
-    description: "今天新增或需要优先处理的提醒。",
-    emptyText: "今天暂时没有新增提醒。",
-    match: (item: WorkspaceNotification) => isToday(item.createdAt),
-  },
-  {
-    key: "expiry",
-    label: "即将到期",
-    description: "合同、有效期与时间敏感事项。",
-    emptyText: "当前没有临近到期事项。",
-    match: (item: WorkspaceNotification) =>
-      item.type === "CONTRACT_EXPIRY_REMINDER" ||
-      /到期|有效期/i.test(`${item.title} ${item.content}`),
-  },
-  {
-    key: "followup",
-    label: "跟进提醒",
-    description: "客户下一步动作与回访提醒。",
-    emptyText: "当前没有待跟进提醒。",
-    match: (item: WorkspaceNotification) => item.type === "FOLLOW_UP_REMINDER",
-  },
-  {
-    key: "quotation",
-    label: "报价通知",
-    description: "与报价、方案确认相关的动态。",
-    emptyText: "当前没有报价相关提醒。",
-    match: (item: WorkspaceNotification) =>
-      item.type === "QUOTATION_REMINDER" ||
-      /报价|方案/i.test(`${item.title} ${item.content}`),
-  },
-] as const;
+export function getNotificationCategoryMeta(
+  brandKey: SiteBrandKey = "public",
+) {
+  return [
+    {
+      key: "today",
+      label: "今日提醒",
+      description: "今天新增或需要优先处理的提醒。",
+      emptyText: "今天暂时没有新增提醒。",
+      match: (item: WorkspaceNotification) => isToday(item.createdAt),
+    },
+    {
+      key: "expiry",
+      label: brandKey === "management" ? "时间提醒" : "即将到期",
+      description:
+        brandKey === "management"
+          ? "临近时间节点、到期日与其他时间敏感事项。"
+          : "合同、有效期与时间敏感事项。",
+      emptyText:
+        brandKey === "management"
+          ? "当前没有临近时间节点的提醒。"
+          : "当前没有临近到期事项。",
+      match: (item: WorkspaceNotification) =>
+        item.type === "CONTRACT_EXPIRY_REMINDER" ||
+        /到期|有效期/i.test(`${item.title} ${item.content}`),
+    },
+    {
+      key: "followup",
+      label: "跟进提醒",
+      description:
+        brandKey === "management"
+          ? "需要继续推进的协作动作与后续安排。"
+          : "客户下一步动作与回访提醒。",
+      emptyText:
+        brandKey === "management"
+          ? "当前没有待继续推进的提醒。"
+          : "当前没有待跟进提醒。",
+      match: (item: WorkspaceNotification) => item.type === "FOLLOW_UP_REMINDER",
+    },
+    {
+      key: "special",
+      label: brandKey === "management" ? "系统提醒" : "报价通知",
+      description:
+        brandKey === "management"
+          ? "系统同步、留言互动与其他需要额外留意的动态。"
+          : "与报价、方案确认相关的动态。",
+      emptyText:
+        brandKey === "management"
+          ? "当前没有额外系统提醒。"
+          : "当前没有报价相关提醒。",
+      match: (item: WorkspaceNotification) =>
+        brandKey === "management"
+          ? item.type === "QUOTATION_REMINDER" || item.type === "DISCUSSION_COMMENT"
+          : item.type === "QUOTATION_REMINDER" ||
+            /报价|方案/i.test(`${item.title} ${item.content}`),
+    },
+  ] as const;
+}
 
 export function buildMonthMatrix(baseDate = new Date()) {
   const firstDay = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
   const startOffset = (firstDay.getDay() + 6) % 7;
   const startDate = new Date(firstDay);
   startDate.setDate(firstDay.getDate() - startOffset);
+  const lastDay = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0);
+  const endOffset = (7 - ((lastDay.getDay() + 6) % 7) - 1 + 7) % 7;
+  const totalDays = startOffset + lastDay.getDate() + endOffset;
+  const cellCount = totalDays <= 35 ? 35 : 42;
 
-  return Array.from({ length: 35 }, (_, index) => {
+  return Array.from({ length: cellCount }, (_, index) => {
     const date = new Date(startDate);
     date.setDate(startDate.getDate() + index);
 

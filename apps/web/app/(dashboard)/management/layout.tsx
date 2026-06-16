@@ -4,8 +4,10 @@ import { ManagementSubnav } from "../../../components/management/ManagementSubna
 
 export default function ManagementLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="workspace-stack">
-      <ManagementSubnav />
+    <div className="workspace-stack management-shell">
+      <section className="management-shell__nav">
+        <ManagementSubnav />
+      </section>
       {children}
     </div>
   );

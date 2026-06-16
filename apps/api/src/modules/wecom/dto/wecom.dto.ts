@@ -6,6 +6,12 @@ export class WecomLoginDto {
   code!: string;
 }
 
+export class WecomOAuthCallbackDto extends WecomLoginDto {
+  @IsOptional()
+  @IsString()
+  state?: string;
+}
+
 export class WecomSendMessageDto {
   @IsString()
   @MinLength(1)

@@ -1,0 +1,538 @@
+.workbench {
+  display: grid;
+  gap: 24px;
+}
+
+.commandDeck,
+.signalBoard,
+.metricCard,
+.queuePanel,
+.inspectorPanel,
+.quickPanel {
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 30px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.96),
+      rgba(249, 251, 246, 0.9)
+    );
+  box-shadow: 0 20px 46px rgba(31, 47, 34, 0.05);
+}
+
+.commandDeck {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(320px, 0.82fr);
+  gap: 24px;
+  padding: 30px 32px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 191, 214, 0.12), transparent 28%),
+    radial-gradient(circle at top right, rgba(255, 215, 124, 0.12), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 246, 0.94));
+}
+
+.commandCopy {
+  display: grid;
+  gap: 12px;
+  max-width: 760px;
+}
+
+.eyebrow,
+.sectionEyebrow,
+.liveCard span,
+.metricCard span,
+.signalCard span,
+.queueItemTop span,
+.queueMeta span,
+.selectedCard span,
+.selectedGrid span,
+.quickCard span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.eyebrow,
+.sectionEyebrow {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 208, 156, 0.3);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 243, 247, 0.98),
+      rgba(238, 248, 241, 0.98)
+    );
+  color: var(--brand-strong);
+}
+
+.commandCopy h1 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: clamp(34px, 4vw, 48px);
+  line-height: 0.98;
+  letter-spacing: -0.06em;
+}
+
+.commandCopy p,
+.sectionHeader p,
+.signalCard p,
+.metricCard p,
+.queueItem p,
+.selectedCard p,
+.quickCard p,
+.liveCard small {
+  margin: 0;
+  color: var(--muted-strong);
+  font-size: 14px;
+  line-height: 1.72;
+}
+
+.commandMeta {
+  display: grid;
+  align-content: space-between;
+  gap: 16px;
+}
+
+.liveCard {
+  display: grid;
+  gap: 8px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.88),
+      rgba(249, 251, 246, 0.82)
+    );
+}
+
+.liveCard strong {
+  color: var(--text-strong);
+  font-size: 24px;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.commandActions,
+.inspectorActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.primaryAction,
+.secondaryAction {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 700;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.primaryAction {
+  background: var(--brand-gradient);
+  color: #fffef8;
+  box-shadow: 0 18px 30px rgba(255, 142, 180, 0.24);
+}
+
+.secondaryAction {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.94),
+      rgba(249, 251, 246, 0.9)
+    );
+  border-color: rgba(255, 255, 255, 0.76);
+  color: var(--brand-strong);
+}
+
+.primaryAction:hover,
+.secondaryAction:hover,
+.tabButton:hover,
+.queueItem:hover,
+.quickCard:hover {
+  transform: translateY(-1px);
+}
+
+.signalBoard,
+.queuePanel,
+.inspectorPanel,
+.quickPanel {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.sectionHeader strong {
+  display: block;
+  margin-top: 10px;
+  color: var(--text-strong);
+  font-size: clamp(22px, 2.4vw, 28px);
+  line-height: 1.08;
+  letter-spacing: -0.05em;
+}
+
+.signalGrid,
+.metricRibbon,
+.workspace,
+.tabRow,
+.queueList,
+.queueMeta,
+.selectedGrid,
+.quickList {
+  display: grid;
+}
+
+.signalGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.signalCard {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.9),
+      rgba(248, 250, 246, 0.84)
+    );
+  box-shadow: 0 16px 32px rgba(31, 47, 34, 0.04);
+  animation: management-card-rise 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.signalCard strong {
+  color: var(--text-strong);
+  font-size: 38px;
+  line-height: 1;
+  letter-spacing: -0.07em;
+}
+
+.signalCard h2 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 20px;
+  line-height: 1.3;
+  letter-spacing: -0.04em;
+}
+
+.signalWarning {
+  background: linear-gradient(180deg, rgba(251, 243, 231, 0.98), rgba(248, 237, 221, 0.98));
+}
+
+.signalDanger {
+  background: linear-gradient(180deg, rgba(252, 239, 237, 0.98), rgba(248, 231, 228, 0.98));
+}
+
+.signalSuccess {
+  background: linear-gradient(180deg, rgba(242, 246, 241, 0.98), rgba(236, 242, 234, 0.98));
+}
+
+.metricRibbon {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.metricCard {
+  display: grid;
+  gap: 8px;
+  padding: 20px;
+}
+
+.metricCard strong {
+  color: var(--text-strong);
+  font-size: 34px;
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+
+.workspace {
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 18px;
+  align-items: start;
+}
+
+.mainColumn,
+.sideColumn {
+  display: grid;
+  gap: 18px;
+}
+
+.tabRow {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.tabButton {
+  display: grid;
+  gap: 6px;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 22px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.9),
+      rgba(248, 250, 246, 0.84)
+    );
+  text-align: left;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.tabButton strong,
+.selectedCard strong,
+.selectedGrid strong,
+.quickCard strong {
+  color: var(--text-strong);
+  font-size: 17px;
+  line-height: 1.4;
+  letter-spacing: -0.03em;
+}
+
+.tabButton span {
+  color: var(--muted-strong);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.tabButtonActive {
+  border-color: rgba(255, 208, 156, 0.32);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 243, 247, 0.98),
+      rgba(236, 247, 239, 0.96)
+    );
+  box-shadow: 0 16px 30px rgba(31, 47, 34, 0.05);
+}
+
+.queueList,
+.quickList {
+  gap: 12px;
+}
+
+.queueItem {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 191, 214, 0.1), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 246, 0.88));
+  text-align: left;
+  animation: management-card-rise 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.queueItemActive {
+  border-color: rgba(255, 208, 156, 0.34);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 243, 247, 0.98),
+      rgba(236, 247, 239, 0.96)
+    );
+  box-shadow:
+    inset 3px 0 0 rgba(61, 151, 96, 0.56),
+    0 18px 32px rgba(31, 47, 34, 0.06);
+}
+
+.queueItemTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.queueItemTop strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-strong);
+  font-size: 22px;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.badgeNeutral {
+  background: rgba(236, 242, 239, 0.98);
+  color: #4e5f54;
+}
+
+.badgeSuccess {
+  background: rgba(232, 244, 236, 0.96);
+  color: #28583d;
+}
+
+.badgeWarning {
+  background: rgba(255, 247, 232, 0.96);
+  color: #8b6211;
+}
+
+.badgeDanger {
+  background: rgba(252, 236, 233, 0.96);
+  color: #a14741;
+}
+
+.queueMeta,
+.selectedGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.queueMeta div,
+.selectedGrid div,
+.quickCard {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.88),
+      rgba(248, 250, 246, 0.82)
+    );
+}
+
+.queueFoot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.queueFoot small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.inspectorBody {
+  display: grid;
+  gap: 14px;
+}
+
+.selectedCard {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  background:
+    radial-gradient(circle at top left, rgba(255, 191, 214, 0.12), transparent 28%),
+    radial-gradient(circle at top right, rgba(255, 215, 124, 0.1), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 251, 246, 0.88));
+}
+
+.quickCard {
+  text-align: left;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+@keyframes management-card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1280px) {
+  .commandDeck,
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .signalGrid,
+  .metricRibbon {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 960px) {
+  .tabRow,
+  .signalGrid,
+  .metricRibbon,
+  .queueMeta,
+  .selectedGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionHeader,
+  .queueItemTop {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 720px) {
+  .commandDeck,
+  .signalBoard,
+  .queuePanel,
+  .inspectorPanel,
+  .quickPanel {
+    padding: 20px;
+    border-radius: 24px;
+  }
+
+  .commandCopy h1 {
+    font-size: 34px;
+  }
+
+  .metricCard strong,
+  .signalCard strong {
+    font-size: 28px;
+  }
+}

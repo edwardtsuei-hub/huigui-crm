@@ -144,11 +144,11 @@ curl http://127.0.0.1:3001/api/health
 - 通用报价
 - 报价记录与 PDF 导出
 
-## 11. 后续扩展
+## 11. 企业微信与后续扩展
 
 - COS 上传接口：`/api/files/upload-token`、`/api/files/callback`
-- 企业微信登录：Sprint 2 接入
-- 企业微信消息提醒：Sprint 3 接入
+- 企业微信登录、账号绑定、消息提醒、回调日志、日历同步、失败重试与管理端监控已完成代码接入。
+- 企业微信生产配置、验收与排错步骤见 [`docs/wecom-integration-runbook.md`](../docs/wecom-integration-runbook.md)。
 
 ## 12. HTTPS 回归检查
 
@@ -165,24 +165,100 @@ CRM_DOMAIN=crm.hui-health.com ./scripts/ops/check-crm-https.sh
 CRM_DOMAIN=crm.hui-health.com CRM_USERNAME=admin CRM_PASSWORD='Huigui@123' ./scripts/ops/check-crm-https.sh
 ```
 
+脚本会默认校验企业微信公开配置接口 `/api/wecom/config` 是否可访问。企业微信环境变量全部填好后，可开启严格模式：
+
+```bash
+CRM_DOMAIN=crm.hui-health.com CRM_EXPECT_WECOM_ENABLED=true ./scripts/ops/check-crm-https.sh
+```
+
+如果 `management.hui-health.com` 的 DNS 已经指向正式机，并且正式机的 `deploy/nginx.conf` 已包含该域名，可以直接运行下面这条脚本完成证书扩展与双域名回归：
+
+```bash
+EXPECTED_IP=49.232.57.98 ./scripts/ops/enable-management-domain.sh
+```
+
+这条脚本会先验证公网 DNS，再临时停止 Docker Nginx，用 `certbot standalone` 把 `management.hui-health.com` 加进现有 `crm.hui-health.com` 证书，最后恢复 Nginx 并检查两个域名的 HTTPS 可用性。
+
+如果是在正式机本机执行，把 `DEPLOY_HOST=local` 一起带上即可：
+
+```bash
+DEPLOY_HOST=local EXPECTED_IP=49.232.57.98 ./scripts/ops/enable-management-domain.sh
+```
+
+如果后续希望把 `crm.hui-health.com` 和 `management.hui-health.com` 的证书续期切到 DNSPod 自动加删 TXT，可以使用仓库内这组脚本：
+
+```bash
+cp ./scripts/ops/dnspod-certbot.env.example /root/.config/huigui/dnspod-certbot.env
+vim /root/.config/huigui/dnspod-certbot.env
+bash ./scripts/ops/configure-dnspod-certbot-renewal.sh
+```
+
+说明：
+
+- `scripts/ops/certbot-dnspod-auth.sh` / `scripts/ops/certbot-dnspod-cleanup.sh` 会读取 `/root/.config/huigui/dnspod-certbot.env`
+- 其中 `DNSPOD_ROOT_DOMAIN` 当前应设置为 `hui-health.com`
+- `scripts/ops/configure-dnspod-certbot-renewal.sh` 会把 `/etc/letsencrypt/renewal/crm.hui-health.com.conf` 改成使用 DNSPod hook，并在续期后自动执行 `docker exec huigui-nginx nginx -s reload`
+- 这一步不会主动签发新证书，只是把后续 `certbot renew` 的方式切成可自动续期
+
+如果要立即把当前证书从“手动 TXT”切到“可自动续期”的签发方式，建议在凭据文件就绪后手动执行一次：
+
+```bash
+source /root/.config/huigui/dnspod-certbot.env
+certbot certonly \
+  --manual \
+  --preferred-challenges dns \
+  --manual-auth-hook /opt/huigui-crm/scripts/ops/certbot-dnspod-auth.sh \
+  --manual-cleanup-hook /opt/huigui-crm/scripts/ops/certbot-dnspod-cleanup.sh \
+  --deploy-hook /opt/huigui-crm/scripts/ops/huigui-nginx-certbot-deploy-hook.sh \
+  --force-renewal \
+  --expand \
+  --cert-name crm.hui-health.com \
+  -d crm.hui-health.com \
+  -d management.hui-health.com
+```
+
+建议在执行这条命令前，先确认：
+
+- 腾讯云子账号或主账号已经具备 DNSPod 记录新增 / 查询 / 删除权限
+- `management.hui-health.com` 和 `crm.hui-health.com` 仍由 `hui-health.com` 这组 DNSPod 解析托管
+- 生产机上可以直接访问 `dnspod.tencentcloudapi.com`
+
 ## 13. 本地工作区直推生产
 
 如果当前修改还没有整理成 Git 提交，但需要把“本地当前状态”完整同步到生产服务器，优先使用：
 
 ```bash
-./scripts/ops/deploy-local-to-production.sh
+bash ./scripts/ops/deploy-local-to-production.sh
 ```
 
 这条脚本会自动执行：
 
 - 备份服务器当前源代码到 `/opt/huigui-backups/`
+- 备份本地当前源代码到 `./backups/`
 - 用 `rsync` 将本地工作区同步到 `/opt/huigui-crm`
-- 重建并重启 `api / app / nginx`
+- 启动远端 `mysql` 容器并等待健康检查（可跳过）
+- 重建 `api / app` 镜像
+- 执行 `npx prisma migrate deploy`
+- 按需执行 `npm run db:seed`
+- 重启 `api / app / nginx`
 - 等待 API 健康检查恢复
-- 执行 `npm run db:seed`
 - 运行 HTTPS 回归脚本
+- 自动写入 `docs/deployment-log.md` 和 `docs/deployments/`
 
-每次执行完成后，记得同步更新：
+常用参数：
 
-- `docs/deployment-log.md`
-- `docs/deployments/`
+```bash
+bash ./scripts/ops/deploy-local-to-production.sh --dry-run --skip-local-build
+bash ./scripts/ops/deploy-local-to-production.sh --note "管理中心与审批流上线"
+bash ./scripts/ops/deploy-local-to-production.sh --skip-seed --skip-mysql
+bash ./scripts/ops/deploy-local-to-production.sh --skip-local-backup
+```
+
+说明：
+
+- `--dry-run` 只做远端连通性检查和 `rsync` 预演，不会改动服务器
+- `--skip-local-build` 适合你已经手动跑过本地构建时使用
+- `--skip-mysql` 用于生产数据库不走本机容器的场景
+- `--skip-seed` 用于本次明确不需要刷新系统初始化数据的场景
+- `--skip-local-backup` 用于你明确不需要额外保留本地源码压缩包的场景
+- `--note` 会进入本地部署记录，建议每次都写清本次上线范围

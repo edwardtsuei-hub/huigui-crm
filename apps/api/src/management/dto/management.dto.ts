@@ -5,10 +5,12 @@ import {
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsIn,
   IsNotEmpty,
   IsObject,
   IsOptional,
   IsString,
+  Matches,
   MinLength
 } from "class-validator";
 
@@ -32,6 +34,20 @@ export class MemberQueryDto {
   @IsOptional()
   @IsEnum(DataScope)
   dataScope?: DataScope;
+
+  @IsOptional()
+  @IsIn(["bound", "unbound"])
+  wecomBinding?: "bound" | "unbound";
+}
+
+export class WecomMonitorQueryDto {
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @IsOptional()
+  @IsString()
+  keyword?: string;
 }
 
 export class CreateMemberDto {
@@ -52,7 +68,10 @@ export class CreateMemberDto {
   loginAccount!: string;
 
   @IsString()
-  @MinLength(6)
+  @MinLength(8)
+  @Matches(/^(?=.*[A-Za-z])(?=.*\d).+$/, {
+    message: "password must contain both letters and numbers"
+  })
   password!: string;
 
   @IsOptional()
@@ -131,8 +150,33 @@ export class UpdateMemberDto {
 
 export class ResetPasswordDto {
   @IsString()
-  @MinLength(6)
+  @MinLength(8)
+  @Matches(/^(?=.*[A-Za-z])(?=.*\d).+$/, {
+    message: "password must contain both letters and numbers"
+  })
   password!: string;
+}
+
+export class WecomMemberQueryDto {
+  @IsOptional()
+  @IsString()
+  keyword?: string;
+}
+
+export class BindMemberWecomDto {
+  @IsString()
+  @IsNotEmpty()
+  userid!: string;
+}
+
+export class SendMemberWecomTestMessageDto {
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  content?: string;
 }
 
 export class UpdateMemberStatusDto {
@@ -190,6 +234,11 @@ export class UpdateApprovalRuleDto {
   configJson!: Record<string, unknown>;
 }
 
+export class UpdateCrmRulesDto {
+  @IsObject()
+  configJson!: Record<string, unknown>;
+}
+
 export class AuditLogQueryDto {
   @IsOptional()
   @IsString()
@@ -210,6 +259,10 @@ export class AuditLogQueryDto {
   @IsOptional()
   @IsString()
   result?: string;
+
+  @IsOptional()
+  @IsString()
+  source?: string;
 
   @IsOptional()
   @IsDateString()

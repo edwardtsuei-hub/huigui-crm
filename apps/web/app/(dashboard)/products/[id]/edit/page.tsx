@@ -1,18 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { WorkspacePageHeader } from "../../../../../components/dashboard/WorkspacePageHeader";
 import { ProductFormFields } from "../../../../../components/products/ProductFormFields";
 import { ProductSmartParser } from "../../../../../components/products/ProductSmartParser";
 import {
   defaultProductForm,
   formatProductMoney,
   outputTemplateLabelMap,
+  productStatusOptions,
   productToFormValues,
   toProductPayload,
   type IndustryGroupOption,
   type ProductFormValues,
+  type ProductParseQueueDetail,
   type ProductRecord,
 } from "../../../../../components/products/types";
 import {
@@ -24,6 +27,8 @@ import {
 export default function ProductEditPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const parseLogId = searchParams.get("parseLogId")?.trim() || "";
   const currentUser = getCurrentUser();
   const canEdit = hasAnyPermission(currentUser, [
     "action.product.create",
@@ -36,6 +41,8 @@ export default function ProductEditPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [importedQueueItem, setImportedQueueItem] =
+    useState<ProductParseQueueDetail | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,6 +83,41 @@ export default function ProductEditPage() {
     };
   }, [params.id]);
 
+  useEffect(() => {
+    if (!parseLogId || !canEdit) {
+      setImportedQueueItem(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadQueueItem() {
+      try {
+        const response = await apiFetch<ProductParseQueueDetail>(
+          `/products/parse-queue/${parseLogId}`,
+        );
+
+        if (!cancelled) {
+          setImportedQueueItem(response);
+        }
+      } catch (requestError) {
+        if (!cancelled) {
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "加载解析记录失败",
+          );
+        }
+      }
+    }
+
+    void loadQueueItem();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canEdit, parseLogId]);
+
   const selectedIndustryName = useMemo(
     () =>
       industries.find((industry) => industry.id === form.industryGroupId)
@@ -83,6 +125,14 @@ export default function ProductEditPage() {
       product?.industryGroup?.name ??
       "未设置",
     [form.industryGroupId, industries, product?.industryGroup?.name],
+  );
+  const statusLabel = useMemo(
+    () => productStatusOptions.find((option) => option.value === form.status)?.label ?? "未设置",
+    [form.status],
+  );
+  const filledCount = useMemo(
+    () => Object.values(form).filter((value) => String(value ?? "").trim()).length,
+    [form],
   );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -142,18 +192,20 @@ export default function ProductEditPage() {
 
   return (
     <div className="workspace-stack">
-      <section className="hero-surface">
-        <div className="hero-grid">
-          <div className="hero-copy">
-            <div className="hero-kicker">Product Maintenance</div>
-            <h3 className="hero-title">{product.displayName}</h3>
-            <div className="hero-description">
-              编辑页重点是修正价格、模板类型和产品说明，让后续报价与对外展示保持一致，不会出现产品资料和报价口径脱节。
-            </div>
-          </div>
-          <div className="hero-actions">
+      <WorkspacePageHeader
+        actions={
+          <>
+            <Link className="button ghost inline" href="/products/ai-import">
+              待确认队列
+            </Link>
+            <Link className="button secondary inline" href="#smart-parser">
+              定位解析辅助
+            </Link>
+            <Link className="button ghost inline" href="/products-edit-preview">
+              公开预览
+            </Link>
             <Link
-              className="button secondary inline"
+              className="button ghost inline"
               href={`/products/${product.id}`}
             >
               返回产品详情
@@ -161,25 +213,43 @@ export default function ProductEditPage() {
             <Link className="button ghost inline" href="/products">
               返回产品列表
             </Link>
-          </div>
-        </div>
-      </section>
+          </>
+        }
+        description="编辑页重点是修正价格、模板类型、文案与图片资料，让历史产品也能回到统一的报价口径和展示标准。"
+        eyebrow="产品维护"
+        meta={[
+          { label: "所属行业", value: selectedIndustryName },
+          { label: "建议售价", value: formatProductMoney(form.salePrice) },
+          {
+            label: "输出模板",
+            value:
+              outputTemplateLabelMap[form.outputTemplateType] ??
+              form.outputTemplateType,
+          },
+          { label: "当前状态", value: statusLabel },
+          { label: "已填字段", value: `${filledCount}/17` },
+        ]}
+        title={`编辑 ${product.displayName}`}
+      />
 
       <section className="editor-shell">
         <div className="editor-main">
-          <ProductSmartParser
-            form={form}
-            industries={industries}
-            onApplyParsedData={(patch) =>
-              setForm((prev) => ({ ...prev, ...patch }))
-            }
-          />
+          <div id="smart-parser">
+            <ProductSmartParser
+              form={form}
+              importedQueueItem={importedQueueItem}
+              industries={industries}
+              onApplyParsedData={(patch) =>
+                setForm((prev) => ({ ...prev, ...patch }))
+              }
+            />
+          </div>
 
           <section className="panel stack">
             <div className="section-heading">
-              <h3>编辑产品</h3>
+              <h3>正式编辑表单</h3>
               <p>
-                如要更新标签文字或图片，可先在上方解析区比对，再决定是否覆盖当前内容。
+                先用上方解析区吸收新标签或新图片，再在这里确认价格、模板和最终展示文案。
               </p>
             </div>
 
@@ -204,35 +274,66 @@ export default function ProductEditPage() {
                 >
                   恢复原值
                 </button>
+                <Link className="button ghost inline" href="#smart-parser">
+                  回到解析辅助
+                </Link>
               </div>
             </form>
           </section>
         </div>
 
         <aside className="editor-side sticky-side">
-          <section className="panel stack">
+          <section className="summary-card stack summary-card--shell">
             <div className="section-heading">
               <h3>当前快照</h3>
-              <p>正式保存前，建议再确认一遍价格、行业和模板类型。</p>
+              <p>正式保存前，先确认这次改动有没有把行业、售价和模板带偏。</p>
             </div>
 
-            <div className="summary-card">
-              <div className="summary-list">
-                <div className="summary-row">
-                  <span>所属行业</span>
-                  <strong>{selectedIndustryName}</strong>
-                </div>
-                <div className="summary-row">
-                  <span>建议售价</span>
-                  <strong>{formatProductMoney(form.salePrice)}</strong>
-                </div>
-                <div className="summary-row">
-                  <span>输出模板</span>
-                  <strong>
-                    {outputTemplateLabelMap[form.outputTemplateType] ??
-                      form.outputTemplateType}
-                  </strong>
-                </div>
+            <div className="summary-list">
+              <div className="summary-row">
+                <span>所属行业</span>
+                <strong>{selectedIndustryName}</strong>
+              </div>
+              <div className="summary-row">
+                <span>建议售价</span>
+                <strong>{formatProductMoney(form.salePrice)}</strong>
+              </div>
+              <div className="summary-row">
+                <span>输出模板</span>
+                <strong>
+                  {outputTemplateLabelMap[form.outputTemplateType] ??
+                    form.outputTemplateType}
+                </strong>
+              </div>
+              <div className="summary-row">
+                <span>当前状态</span>
+                <strong>{statusLabel}</strong>
+              </div>
+              <div className="summary-row">
+                <span>已填字段</span>
+                <strong>{filledCount}/17</strong>
+              </div>
+            </div>
+          </section>
+
+          <section className="panel stack">
+            <div className="section-heading">
+              <h3>编辑提醒</h3>
+              <p>这页适合修正老产品信息，不建议一次性大改所有字段。</p>
+            </div>
+
+            <div className="summary-list">
+              <div className="summary-row">
+                <span>推荐顺序</span>
+                <strong>先解析，再确认，再保存</strong>
+              </div>
+              <div className="summary-row">
+                <span>高风险字段</span>
+                <strong>售价 / 模板 / 标签文案</strong>
+              </div>
+              <div className="summary-row">
+                <span>恢复方式</span>
+                <strong>可随时恢复原值</strong>
               </div>
             </div>
           </section>

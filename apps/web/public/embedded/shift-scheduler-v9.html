@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>班表管理系统 v9</title>
+<style>
+html,body{height:100%;overscroll-behavior:none}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",PingFang SC,"Microsoft YaHei",sans-serif;background:#f5f6fa;min-height:100vh;color:#333;-webkit-overflow-scrolling:touch}
+#loginScreen{min-height:100vh;background:linear-gradient(135deg,#667eea,#764ba2)}
+.login-outer{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:16px}
+.login-card{background:#fff;border-radius:20px;padding:38px 30px;width:92%;max-width:380px;box-shadow:0 24px 64px rgba(0,0,0,.28)}
+.login-logo{text-align:center;font-size:46px;margin-bottom:8px}
+.login-title{text-align:center;font-size:21px;font-weight:700;margin-bottom:4px}
+.login-sub{text-align:center;font-size:13px;color:#999;margin-bottom:22px}
+.fg{margin-bottom:13px}
+.fg label{display:block;font-size:13px;color:#555;font-weight:500;margin-bottom:5px}
+.fg input,.fg select,.fg textarea{width:100%;padding:11px 13px;border:1.5px solid #ddd;border-radius:9px;font-size:14px;outline:none;background:#fff}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:#667eea}
+.fg textarea{min-height:88px;resize:vertical;line-height:1.6}
+.btn-login,.btn-main{width:100%;padding:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer}
+.login-err{color:#e53e3e;font-size:13px;text-align:center;margin-top:10px;min-height:18px}
+.login-hint{font-size:11px;color:#ccc;text-align:center;margin-top:8px;line-height:1.7}
+#appScreen{display:none;flex-direction:column;min-height:100vh}
+.app-header{background:#fff;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.09);position:sticky;top:0;z-index:200}
+.header-left{display:flex;align-items:center;gap:8px;min-width:0}
+.header-title{font-size:16px;font-weight:700;white-space:nowrap}
+.header-badge{font-size:11px;padding:3px 8px;border-radius:10px;background:#f0f4ff;color:#667eea;font-weight:600;white-space:nowrap}
+.header-note{font-size:11px;color:#999;white-space:nowrap}
+.btn-logout{padding:6px 13px;background:#f5f5f5;border:1px solid #ddd;border-radius:7px;font-size:13px;cursor:pointer;color:#666;white-space:nowrap;flex-shrink:0}
+.tab-nav{background:#fff;display:flex;overflow-x:auto;border-bottom:2px solid #f0f0f0;scrollbar-width:none}
+.tab-nav::-webkit-scrollbar{display:none}
+.tab-btn{padding:12px 16px;border:none;background:transparent;font-size:14px;color:#999;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;font-weight:500}
+.tab-btn.active{color:#667eea;border-bottom-color:#667eea;font-weight:700}
+.app-content{flex:1;padding:12px;max-width:1440px;margin:0 auto;width:100%}
+.month-nav{display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:13px;padding:11px 14px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);gap:12px}
+.month-title{font-size:17px;font-weight:700}
+.month-btn{padding:7px 14px;background:#f0f0f0;border:none;border-radius:8px;cursor:pointer;font-size:17px;color:#555;line-height:1}
+.month-r{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.btn-gen,.btn-copy,.btn-info{padding:8px 12px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600;white-space:nowrap}
+.btn-copy{background:linear-gradient(135deg,#0f766e,#14b8a6)}
+.btn-info{background:linear-gradient(135deg,#8b5cf6,#6366f1)}
+.sw{background:#fff;border-radius:13px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.st{width:100%;border-collapse:collapse;min-width:720px}
+.st th{background:#f8f9fa;padding:8px 4px;font-size:12px;color:#666;border:1px solid #eee;text-align:center;white-space:nowrap}
+.st th.cn{min-width:108px;text-align:left;padding-left:10px}
+.st td{padding:5px 3px;border:1px solid #eee;text-align:center;font-size:12px;vertical-align:middle}
+.st td.cn{text-align:left;padding:7px 10px;position:sticky;left:0;background:#fff;z-index:3;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis}
+.ce{cursor:pointer}.ce:hover{opacity:.88}
+.ea{background:#e3f2fd!important}.la{background:#fff3e0!important}.oa{background:#fce4ec!important}.fa{background:#e8f5e9!important}
+.bd{display:inline-block;padding:2px 6px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.5}
+.be{background:#c8e6fd;color:#0d47a1}.bl{background:#ffe0b2;color:#bf360c}.bo{background:#fce4ec;color:#b71c1c}.bf{background:#c8e6c9;color:#1b5e20}
+.day-meta{margin-top:5px;display:flex;gap:4px;justify-content:center;flex-wrap:wrap}
+.mini{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:999px;font-size:10px;font-weight:700;color:#fff}
+.mini.a{background:#8b5cf6}.mini.n{background:#0ea5e9}.mini.r{background:#22c55e}
+.gr td{background:linear-gradient(90deg,#667eea,#764ba2)!important;color:#fff!important;font-weight:600;font-size:12px;cursor:default!important;padding:6px 10px!important}
+.legend{display:flex;gap:12px;padding:9px 12px;font-size:12px;color:#777;flex-wrap:wrap;align-items:center}
+.li{display:flex;align-items:center;gap:4px}
+.ld{width:12px;height:12px;border-radius:3px;border:1px solid rgba(0,0,0,.1)}
+.panel{background:#fff;border-radius:13px;padding:15px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:12px}
+.ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px;gap:10px}
+.pt{font-size:15px;font-weight:700}
+.ba{padding:8px 14px;background:#667eea;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600}
+.dtabs{display:flex;gap:8px;margin-bottom:13px;flex-wrap:wrap}
+.dt{padding:6px 13px;border:2px solid #ddd;border-radius:18px;font-size:13px;cursor:pointer;color:#888;background:#fff;transition:all .2s}
+.dt.active{border-color:#667eea;color:#667eea;background:#f0f4ff;font-weight:600}
+.sc{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;border:1px solid #eee;border-radius:9px;background:#fafafa;margin-bottom:8px;gap:10px}
+.sn{font-size:14px;font-weight:600}
+.sm{font-size:12px;color:#999;margin-top:2px}
+.be2{padding:5px 11px;background:#e8f0fe;color:#1a73e8;border:none;border-radius:6px;font-size:12px;cursor:pointer}
+.bdd{padding:5px 11px;background:#fce8e6;color:#c5221f;border:none;border-radius:6px;font-size:12px;cursor:pointer}
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.sk{border:1px solid #eee;border-radius:9px;padding:11px}
+.sl{font-size:13px;font-weight:600;color:#555;margin-bottom:7px}
+.tr{display:flex;align-items:center;gap:7px}
+.tr input[type=time]{flex:1;padding:7px 9px;border:1px solid #ddd;border-radius:7px;font-size:13px;outline:none}
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:500;align-items:center;justify-content:center;padding:14px}
+.ov.open{display:flex}
+.modal{background:#fff;border-radius:17px;padding:22px 18px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.3)}
+.mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.mt2{font-size:16px;font-weight:700}
+.mx{background:none;border:none;font-size:25px;cursor:pointer;color:#aaa;line-height:1;padding:0}
+.mf{display:flex;gap:9px;margin-top:18px;justify-content:flex-end;flex-wrap:wrap}
+.bc{padding:10px 18px;background:#f5f5f5;border:none;border-radius:8px;font-size:14px;cursor:pointer;color:#666}
+.bok{padding:10px 20px;background:#667eea;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600}
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:#222;color:#fff;padding:11px 20px;border-radius:10px;font-size:14px;z-index:9999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.pimg{max-width:100%;border-radius:8px;display:block;margin:12px auto}
+.bsave{display:block;width:100%;padding:13px;background:#34a853;color:#fff;border:none;border-radius:10px;font-size:15px;cursor:pointer;margin-top:12px;text-align:center;font-weight:600;text-decoration:none}
+.hint2{font-size:12px;color:#aaa;text-align:center;margin-top:8px}
+.empty{text-align:center;padding:38px 18px;color:#bbb;font-size:15px}
+.tipbox{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:12px;padding:12px 14px;font-size:12px;line-height:1.8;margin-bottom:12px}
+.info-grid{display:grid;grid-template-columns:repeat(7,minmax(180px,1fr));gap:12px;margin-top:14px}
+.info-card{background:#fff;border:1px solid #ece7de;border-radius:16px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.04);min-height:220px}
+.info-card.today{border-color:#8b5cf6;box-shadow:0 4px 16px rgba(139,92,246,.12)}
+.info-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px}
+.info-date{font-size:14px;font-weight:700;color:#2f2a24}
+.info-sub{font-size:11px;color:#8a7f73;margin-top:4px}
+.info-badges{display:flex;gap:6px;flex-wrap:wrap}
+.ib{display:inline-flex;align-items:center;justify-content:center;padding:4px 7px;border-radius:999px;font-size:10px;font-weight:700;color:#fff}
+.ib.a{background:#8b5cf6}.ib.n{background:#0ea5e9}.ib.r{background:#22c55e}
+.info-sec{margin-top:10px}
+.info-sec-title{font-size:12px;font-weight:700;color:#6a5f54;margin-bottom:6px}
+.info-item{padding:8px 9px;border-radius:10px;background:#faf7f3;font-size:12px;line-height:1.65;color:#4b423a;margin-bottom:6px;white-space:pre-wrap;word-break:break-word}
+.info-item.activity{background:#f5f3ff}
+.info-item.note{background:#f0f9ff}
+.info-item.reservation{background:#f0fdf4}
+.info-empty{font-size:12px;color:#bbb;padding:6px 2px}
+.info-actions{margin-top:10px;display:flex;gap:8px}
+.info-actions button{flex:1}
+@media(max-width:1200px){.info-grid{grid-template-columns:repeat(2,minmax(240px,1fr))}}
+@media(max-width:700px){.app-content{padding:9px}.month-title{font-size:15px}.modal{padding:18px 14px}.st td.cn{max-width:90px}.sg{grid-template-columns:1fr}.month-nav{align-items:flex-start;flex-direction:column}.month-r{width:100%;justify-content:flex-start}.info-grid{grid-template-columns:1fr}.info-card{min-height:auto}}
+</style>
+</head>
+<body>
+<div id="loginScreen">
+  <div class="login-outer">
+    <div class="login-card">
+      <div class="login-logo">🍽️</div>
+      <div class="login-title">班表管理系统（活动日历版）</div>
+      <div class="login-sub">前厅 · 后厨 · 道冲元气</div>
+      <div class="fg"><label>账号</label><input id="uIn" type="text" placeholder="输入账号"></div>
+      <div class="fg"><label>密码</label><input id="pIn" type="password" placeholder="输入密码"></div>
+      <button class="btn-login" onclick="doLogin()">登 录</button>
+      <div class="login-err" id="loginErr"></div>
+      <div class="login-hint">
+        默认账号：admin / 1234，manager / 1234，chef / 1234，daochong / 1234<br>
+        数据保存在当前浏览器本地，无需部署、无需服务器
+      </div>
+      <div style="text-align:center;margin-top:10px;">
+        <a href="javascript:void(0)" onclick="restoreDefaultAccounts()" style="font-size:12px;color:#cbd5e1;text-decoration:underline;">恢复默认账号</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="appScreen">
+  <div class="app-header">
+    <div class="header-left">
+      <span class="header-title">🍽️ 班表管理</span>
+      <span class="header-badge" id="roleBadge"></span>
+      <span class="header-note">本机保存</span>
+    </div>
+    <button class="btn-logout" onclick="doLogout()">登出</button>
+  </div>
+  <div class="tab-nav" id="tabNav"></div>
+  <div class="app-content" id="appContent"></div>
+</div>
+
+<div class="ov" id="staffModal">
+  <div class="modal">
+    <div class="mh"><div class="mt2" id="sMT">新增人员</div><button class="mx" onclick="cov('staffModal')">×</button></div>
+    <div class="fg"><label>姓名 *</label><input id="sf_n" type="text" placeholder="请输入姓名"></div>
+    <div class="fg"><label>部门 *</label>
+      <select id="sf_d">
+        <option value="frontHouse">🏠 前厅</option>
+        <option value="kitchen">👨‍🍳 后厨</option>
+        <option value="daochong">🌿 道冲元气</option>
+      </select>
+    </div>
+    <div class="fg"><label>职位 *</label><select id="sf_p"></select></div>
+    <div class="fg"><label>电话</label><input id="sf_ph" type="tel" placeholder="电话号码（选填）"></div>
+    <div class="mf"><button class="bc" onclick="cov('staffModal')">取消</button><button class="bok" onclick="saveStaff()">保 存</button></div>
+  </div>
+</div>
+
+<div class="ov" id="adminModal">
+  <div class="modal">
+    <div class="mh"><div class="mt2" id="aMT">新增管理员</div><button class="mx" onclick="cov('adminModal')">×</button></div>
+    <div class="fg"><label>显示名称 *</label><input id="am_n" type="text" placeholder="如：王老板"></div>
+    <div class="fg"><label>账号 *</label><input id="am_u" type="text" placeholder="登录账号"></div>
+    <div class="fg"><label>密码 *</label><input id="am_p" type="password" placeholder="登录密码"></div>
+    <div class="fg"><label>角色 *</label>
+      <select id="am_r">
+        <option value="superadmin">总管理员（全部）</option>
+        <option value="manager">店长（前厅）</option>
+        <option value="chef">主厨（后厨）</option>
+        <option value="daochong_admin">道冲元气管理员</option>
+      </select>
+    </div>
+    <div class="mf"><button class="bc" onclick="cov('adminModal')">取消</button><button class="bok" onclick="saveAdmin()">保 存</button></div>
+  </div>
+</div>
+
+<div class="ov" id="shiftModal">
+  <div class="modal">
+    <div class="mh"><div class="mt2">选择班次</div><button class="mx" onclick="cov('shiftModal')">×</button></div>
+    <div class="fg">
+      <label>班次（选择后会立即以颜色显示）</label>
+      <select id="shiftValue">
+        <option value="">未排班</option>
+        <option value="early">早班</option>
+        <option value="late">晚班</option>
+        <option value="off">休息</option>
+        <option value="leave">请假</option>
+        <option value="full">全天</option>
+      </select>
+    </div>
+    <div class="mf"><button class="bc" onclick="cov('shiftModal')">取消</button><button class="bok" onclick="saveShiftSelection()">保存</button></div>
+  </div>
+</div>
+
+<div class="ov" id="infoModal">
+  <div class="modal">
+    <div class="mh"><div class="mt2" id="infoModalTitle">编辑当天信息</div><button class="mx" onclick="cov('infoModal')">×</button></div>
+    <div class="fg">
+      <label>活动信息（可写多行）</label>
+      <textarea id="info_activity" placeholder="例如：会员日、直播日、新品试吃、培训活动"></textarea>
+    </div>
+    <div class="fg">
+      <label>备注信息（可写多行）</label>
+      <textarea id="info_note" placeholder="例如：前厅提前30分钟到岗，后厨增加备货"></textarea>
+    </div>
+    <div class="fg">
+      <label>预约信息（前厅可写预定位，道冲可写预约）</label>
+      <textarea id="info_reservation" placeholder="例如：前厅：6位预定位 19:00；道冲：王老师 15:00 李女士 头疗"></textarea>
+    </div>
+    <div class="mf">
+      <button class="bc" onclick="deleteInfoForDay()">清空当天信息</button>
+      <button class="bc" onclick="cov('infoModal')">取消</button>
+      <button class="bok" onclick="saveInfoForDay()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="imgModal">
+  <div class="modal" style="max-width:860px">
+    <div class="mh"><div class="mt2" id="imgTitle">班表图片</div><button class="mx" onclick="cov('imgModal')">×</button></div>
+    <img id="prevImg" class="pimg" src="" alt="">
+    <a id="dlLink" class="bsave" download="">💾 保存 JPG 图片</a>
+    <div class="hint2">手机用户可长按图片保存到相册</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+const STORE_KEY='shift_local_standalone_v9';
+const DEPTS={
+  frontHouse:{name:'前厅',icon:'🏠',color:'#8b7355'},
+  kitchen:{name:'后厨',icon:'👨‍🍳',color:'#8b7355'},
+  daochong:{name:'道冲元气',icon:'🌿',color:'#6a8f73'}
+};
+const ROLES={
+  superadmin:{name:'总管理员',editDepts:['frontHouse','kitchen','daochong']},
+  manager:{name:'店长',editDepts:['frontHouse']},
+  chef:{name:'主厨',editDepts:['kitchen']},
+  daochong_admin:{name:'道冲元气管理员',editDepts:['daochong']}
+};
+const POSITION_OPTIONS={
+  frontHouse:['店长','店员'],
+  kitchen:['主厨','厨师'],
+  daochong:['老师','运营']
+};
+
+function defaultDB(){
+  return {
+    users:[
+      {id:'u1',username:'admin',password:'1234',name:'总管理员',role:'superadmin'},
+      {id:'u2',username:'manager',password:'1234',name:'店长',role:'manager'},
+      {id:'u3',username:'chef',password:'1234',name:'主厨',role:'chef'},
+      {id:'u4',username:'daochong',password:'1234',name:'道冲元气管理员',role:'daochong_admin'}
+    ],
+    staff:{frontHouse:[],kitchen:[],daochong:[]},
+    shiftTimes:{
+      frontHouse:{early:{s:'10:00',e:'20:00'},late:{s:'11:00',e:'21:00'},full:{s:'10:00',e:'20:30'}},
+      kitchen:{early:{s:'10:00',e:'20:30'},late:{s:'10:30',e:'21:00'},full:{s:'10:00',e:'20:30'}},
+      daochong:{early:{s:'10:00',e:'20:00'},late:{s:'11:00',e:'21:00'},full:{s:'10:00',e:'20:30'}}
+    },
+    schedules:{weekly:{}},
+    dailyInfo:{}
+  };
+}
+
+let DB=loadDB();
+let ME=null;
+let CTab='';
+let editStaff=null, editAdmin=null, svDept='frontHouse';
+let currentShiftEdit=null;
+let currentInfoEdit=null;
+let weekStart=getMonday(new Date());
+
+function loadDB(){
+  try{
+    const raw=localStorage.getItem(STORE_KEY);
+    if(!raw) return defaultDB();
+    return mergeDB(JSON.parse(raw), defaultDB());
+  }catch(e){
+    return defaultDB();
+  }
+}
+function mergeDB(d,def){
+  const r=Object.assign({},def,d||{});
+  ['frontHouse','kitchen','daochong'].forEach(k=>{
+    if(!r.staff) r.staff=def.staff;
+    if(!Array.isArray(r.staff[k])) r.staff[k]=[];
+    if(!r.shiftTimes) r.shiftTimes=def.shiftTimes;
+    if(!r.shiftTimes[k]) r.shiftTimes[k]=def.shiftTimes[k];
+  });
+  if(!Array.isArray(r.users)) r.users=def.users;
+  if(!r.schedules) r.schedules={weekly:{}};
+  if(!r.schedules.weekly) r.schedules.weekly={};
+  if(!r.dailyInfo) r.dailyInfo={};
+  return r;
+}
+function saveDB(){ localStorage.setItem(STORE_KEY, JSON.stringify(DB)); }
+function showOnly(id){
+  document.getElementById('loginScreen').style.display=id==='loginScreen'?'block':'none';
+  const app=document.getElementById('appScreen');
+  app.style.display=id==='appScreen'?'flex':'none';
+  if(id==='appScreen') app.style.flexDirection='column';
+}
+function getMonday(date){
+  const d=new Date(date);
+  const day=d.getDay()||7;
+  d.setDate(d.getDate()-day+1);
+  d.setHours(0,0,0,0);
+  return d;
+}
+function formatDateKey(date){
+  const y=date.getFullYear(), m=String(date.getMonth()+1).padStart(2,'0'), d=String(date.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+function formatDisplayDate(date){
+  return `${date.getMonth()+1}/${date.getDate()}`;
+}
+function getWeekDates(){
+  return Array.from({length:7}, (_,i)=>{
+    const d=new Date(weekStart);
+    d.setDate(weekStart.getDate()+i);
+    return d;
+  });
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter' && document.getElementById('loginScreen').style.display!=='none') doLogin();
+});
+
+function doLogin(){
+  const u=document.getElementById('uIn').value.trim();
+  const p=document.getElementById('pIn').value;
+  const user=(DB.users||[]).find(x=>x.username===u&&x.password===p);
+  if(!user){document.getElementById('loginErr').textContent='账号或密码错误';return;}
+  ME=user;
+  document.getElementById('loginErr').textContent='';
+  document.getElementById('roleBadge').textContent=ROLES[ME.role].name+' · '+ME.name;
+  CTab='sched_'+getVisibleDepts()[0];
+  showOnly('appScreen');
+  renderTabs(); renderView();
+}
+function doLogout(){
+  ME=null;
+  document.getElementById('uIn').value='';
+  document.getElementById('pIn').value='';
+  showOnly('loginScreen');
+}
+function restoreDefaultAccounts(){
+  if(!confirm('确认恢复默认账号？只恢复管理员账号，不清空排班和备注数据。')) return;
+  DB.users = defaultDB().users;
+  saveDB();
+  document.getElementById('loginErr').textContent='默认账号已恢复，请用 admin / 1234 登录';
+  toast('默认账号已恢复');
+}
+
+function getVisibleDepts(){
+  const depts=['frontHouse','kitchen'];
+  if((DB.staff.daochong||[]).length>0) depts.push('daochong');
+  return depts;
+}
+function renderTabs(){
+  const nav=document.getElementById('tabNav'); nav.innerHTML='';
+  const tabs=[];
+  getVisibleDepts().forEach(d=>tabs.push({id:'sched_'+d,lbl:DEPTS[d].icon+' '+DEPTS[d].name}));
+  tabs.push({id:'staff',lbl:'👥 人员管理'});
+  if(ME.role==='superadmin') tabs.push({id:'settings',lbl:'⚙️ 设置'});
+  tabs.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='tab-btn'+(CTab===t.id?' active':'');
+    b.textContent=t.lbl;
+    b.onclick=()=>{CTab=t.id; renderTabs(); renderView();};
+    nav.appendChild(b);
+  });
+}
+function renderView(){
+  if(CTab.startsWith('sched_')) renderSched(CTab.slice(6));
+  else if(CTab==='staff') renderStaffView();
+  else renderSettings();
+}
+
+function dayInfoFor(dept, dateKey){
+  if(!DB.dailyInfo[dept]) DB.dailyInfo[dept]={};
+  if(!DB.dailyInfo[dept][dateKey]) DB.dailyInfo[dept][dateKey]={activity:'',note:'',reservation:''};
+  return DB.dailyInfo[dept][dateKey];
+}
+function metaCounts(dept, dateKey){
+  const info = dayInfoFor(dept, dateKey);
+  return {
+    activity: info.activity.trim() ? info.activity.trim().split('\n').filter(Boolean).length : 0,
+    note: info.note.trim() ? info.note.trim().split('\n').filter(Boolean).length : 0,
+    reservation: info.reservation.trim() ? info.reservation.trim().split('\n').filter(Boolean).length : 0
+  };
+}
+
+function renderSched(dept){
+  const todayKey=formatDateKey(new Date());
+  const staff=DB.staff[dept]||[];
+  const ds=((DB.schedules.weekly||{})[dept])||{};
+  const canEdit=ROLES[ME.role].editDepts.includes(dept);
+  const groups={};
+  staff.forEach(s=>{ (groups[s.position]||(groups[s.position]=[])).push(s); });
+  const weekDates=getWeekDates();
+  let tableHtml='';
+  if(!staff.length){
+    tableHtml=`<div class="empty">暂无 ${DEPTS[dept].name} 人员<br><span style="font-size:13px">请在「人员管理」中添加</span></div>`;
+  }else{
+    let rows='', hc=`<th class="cn">职位＋姓名</th>`;
+    weekDates.forEach((d)=>{
+      const dateKey=formatDateKey(d);
+      const wd=['日','一','二','三','四','五','六'][d.getDay()];
+      const isToday = dateKey===todayKey;
+      const counts = metaCounts(dept, dateKey);
+      const meta = `
+        <div class="day-meta">
+          ${counts.activity ? `<span class="mini a">${counts.activity}</span>` : ''}
+          ${counts.note ? `<span class="mini n">${counts.note}</span>` : ''}
+          ${counts.reservation ? `<span class="mini r">${counts.reservation}</span>` : ''}
+        </div>`;
+      hc+=`<th style="${isToday?'background:#eef2ff;color:#4338ca;font-weight:700;':''}">
+        <div>${d.getMonth()+1}/${d.getDate()}</div>
+        <div style="font-size:9px">周${wd}</div>
+        ${meta}
+      </th>`;
+    });
+    Object.entries(groups).forEach(([pos,ms])=>{
+      rows+=`<tr class="gr"><td colspan="8">${pos}</td></tr>`;
+      ms.forEach(m=>{
+        let cs=`<td class="cn" title="${m.name}">${m.position}｜${m.name}</td>`;
+        weekDates.forEach((d)=>{
+          const dayKey=formatDateKey(d);
+          const sh=(ds[m.id]||{})[dayKey];
+          let cc='', inn='';
+          if(sh==='early'){cc=' ea'; inn='<span class="bd be">早班</span>';}
+          else if(sh==='late'){cc=' la'; inn='<span class="bd bl">晚班</span>';}
+          else if(sh==='off'){cc=' oa'; inn='<span class="bd bo">休息</span>';}
+          else if(sh==='leave'){cc=' oa'; inn='<span class="bd bo">请假</span>';}
+          else if(sh==='full'){cc=' fa'; inn='<span class="bd bf">全天</span>';}
+          const oc=canEdit?`onclick="openShiftSelect('${dept}','${m.id}','${dayKey}', event)"`:'';
+          cs+=`<td class="${cc}${canEdit?' ce':''}" ${oc}>${inn}</td>`;
+        });
+        rows+=`<tr>${cs}</tr>`;
+      });
+    });
+    tableHtml=`<div class="sw"><table class="st"><thead><tr>${hc}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+
+  const weekEnd = weekDates[6];
+  const cards = weekDates.map(d=>{
+    const dateKey = formatDateKey(d);
+    const info = dayInfoFor(dept, dateKey);
+    const counts = metaCounts(dept, dateKey);
+    const isToday = dateKey===todayKey;
+    const act = info.activity.trim() ? info.activity.trim().split('\n').filter(Boolean).map(v=>`<div class="info-item activity">${escapeHtml(v)}</div>`).join('') : '<div class="info-empty">暂无活动</div>';
+    const note = info.note.trim() ? info.note.trim().split('\n').filter(Boolean).map(v=>`<div class="info-item note">${escapeHtml(v)}</div>`).join('') : '<div class="info-empty">暂无备注</div>';
+    const resv = info.reservation.trim() ? info.reservation.trim().split('\n').filter(Boolean).map(v=>`<div class="info-item reservation">${escapeHtml(v)}</div>`).join('') : '<div class="info-empty">暂无预约</div>';
+    return `
+      <div class="info-card ${isToday?'today':''}">
+        <div class="info-head">
+          <div>
+            <div class="info-date">${formatDisplayDate(d)}｜周${['日','一','二','三','四','五','六'][d.getDay()]}</div>
+            <div class="info-sub">${isToday?'今天':''}</div>
+          </div>
+          <div class="info-badges">
+            ${counts.activity ? `<span class="ib a">活动 ${counts.activity}</span>` : ''}
+            ${counts.note ? `<span class="ib n">备注 ${counts.note}</span>` : ''}
+            ${counts.reservation ? `<span class="ib r">预约 ${counts.reservation}</span>` : ''}
+          </div>
+        </div>
+        <div class="info-sec">
+          <div class="info-sec-title">活动日历</div>
+          ${act}
+        </div>
+        <div class="info-sec">
+          <div class="info-sec-title">备注信息</div>
+          ${note}
+        </div>
+        <div class="info-sec">
+          <div class="info-sec-title">${dept==='daochong'?'预约信息':'预约 / 预定位'}</div>
+          ${resv}
+        </div>
+        <div class="info-actions">
+          ${canEdit ? `<button class="btn-info" onclick="openInfoModal('${dept}','${dateKey}')">编辑当天信息</button>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('appContent').innerHTML=`
+    <div class="tipbox">
+      这是免部署版：数据只保存在当前设备当前浏览器。发给同事后，他们各自独立使用。现在支持班表、活动日历、备注、预约信息一起显示和导出。
+    </div>
+    <div class="month-nav">
+      <button class="month-btn" onclick="shiftWeek(-7)">‹</button>
+      <div class="month-title">${weekStart.getFullYear()}年 ${weekStart.getMonth()+1}月${weekStart.getDate()}日 ～ ${weekEnd.getMonth()+1}月${weekEnd.getDate()}日</div>
+      <div class="month-r">
+        <button class="month-btn" onclick="shiftWeek(7)">›</button>
+        <button class="btn-copy" onclick="copyThisWeekToNext('${dept}')">📋 复制到下周</button>
+        <button class="btn-info" onclick="openInfoModal('${dept}','${todayKey}')">📝 编辑当天信息</button>
+        <button class="btn-gen" onclick="genImg('${dept}')">📸 生成 JPG</button>
+      </div>
+    </div>
+    ${tableHtml}
+    <div class="legend">
+      <div class="li"><div class="ld" style="background:#c8e6fd"></div>早班</div>
+      <div class="li"><div class="ld" style="background:#ffe0b2"></div>晚班</div>
+      <div class="li"><div class="ld" style="background:#c8e6c9"></div>全天</div>
+      <div class="li"><div class="ld" style="background:#fce4ec"></div>休息 / 请假</div>
+      <div class="li"><span class="mini a">A</span>活动</div>
+      <div class="li"><span class="mini n">N</span>备注</div>
+      <div class="li"><span class="mini r">R</span>预约</div>
+      <div style="margin-left:auto;font-size:11px;color:#bbb">${canEdit?'点击班表格子选班次，点击下方卡片编辑当天信息':'仅查看'}</div>
+    </div>
+    <div class="panel" style="padding:16px 16px 18px;">
+      <div class="pt" style="margin-bottom:12px;">📅 活动日历＋备注＋预约信息</div>
+      <div class="info-grid">${cards}</div>
+    </div>`;
+}
+function shiftWeek(days){
+  const d=new Date(weekStart);
+  d.setDate(d.getDate()+days);
+  weekStart=getMonday(d);
+  renderView();
+}
+function copyThisWeekToNext(dept){
+  const currentWeekDates = getWeekDates();
+  const nextWeekStart = new Date(weekStart);
+  nextWeekStart.setDate(weekStart.getDate()+7);
+  const currentDeptData = (((DB.schedules||{}).weekly||{})[dept]) || {};
+  if(!DB.schedules.weekly[dept]) DB.schedules.weekly[dept] = {};
+  const staff = DB.staff[dept] || [];
+  staff.forEach(person=>{
+    if(!DB.schedules.weekly[dept][person.id]) DB.schedules.weekly[dept][person.id] = {};
+    currentWeekDates.forEach((d, idx)=>{
+      const sourceKey = formatDateKey(d);
+      const targetDate = new Date(nextWeekStart);
+      targetDate.setDate(nextWeekStart.getDate()+idx);
+      const targetKey = formatDateKey(targetDate);
+      const val = (((currentDeptData[person.id]||{}))[sourceKey]);
+      if(val) DB.schedules.weekly[dept][person.id][targetKey] = val;
+      else delete DB.schedules.weekly[dept][person.id][targetKey];
+    });
+  });
+
+  currentWeekDates.forEach((d, idx)=>{
+    const sourceKey = formatDateKey(d);
+    const targetDate = new Date(nextWeekStart);
+    targetDate.setDate(nextWeekStart.getDate()+idx);
+    const targetKey = formatDateKey(targetDate);
+    const info = dayInfoFor(dept, sourceKey);
+    if(!DB.dailyInfo[dept]) DB.dailyInfo[dept] = {};
+    DB.dailyInfo[dept][targetKey] = {activity:info.activity, note:info.note, reservation:info.reservation};
+  });
+
+  saveDB();
+  toast('本周班表和当天信息已复制到下周');
+}
+
+function openShiftSelect(dept,sid,dayKey,e){
+  if(e) e.preventDefault();
+  if(!ROLES[ME.role].editDepts.includes(dept)) return;
+  currentShiftEdit={dept,sid,dayKey};
+  const current = ((((DB.schedules||{}).weekly||{})[dept]||{})[sid]||{})[dayKey] || '';
+  document.getElementById('shiftValue').value=current;
+  ov('shiftModal');
+}
+function saveShiftSelection(){
+  if(!currentShiftEdit) return;
+  const {dept,sid,dayKey}=currentShiftEdit;
+  const value=document.getElementById('shiftValue').value;
+  if(!DB.schedules.weekly[dept]) DB.schedules.weekly[dept]={};
+  if(!DB.schedules.weekly[dept][sid]) DB.schedules.weekly[dept][sid]={};
+  if(value) DB.schedules.weekly[dept][sid][dayKey]=value;
+  else delete DB.schedules.weekly[dept][sid][dayKey];
+  saveDB(); cov('shiftModal'); renderView();
+}
+
+function openInfoModal(dept, dateKey){
+  if(!ROLES[ME.role].editDepts.includes(dept)) return;
+  currentInfoEdit={dept, dateKey};
+  const info = dayInfoFor(dept, dateKey);
+  document.getElementById('infoModalTitle').textContent = `${DEPTS[dept].name}｜${dateKey} 当天信息`;
+  document.getElementById('info_activity').value = info.activity || '';
+  document.getElementById('info_note').value = info.note || '';
+  document.getElementById('info_reservation').value = info.reservation || '';
+  ov('infoModal');
+}
+function saveInfoForDay(){
+  if(!currentInfoEdit) return;
+  const {dept, dateKey} = currentInfoEdit;
+  if(!DB.dailyInfo[dept]) DB.dailyInfo[dept]={};
+  DB.dailyInfo[dept][dateKey] = {
+    activity: document.getElementById('info_activity').value.trim(),
+    note: document.getElementById('info_note').value.trim(),
+    reservation: document.getElementById('info_reservation').value.trim()
+  };
+  saveDB();
+  cov('infoModal');
+  renderView();
+  toast('当天信息已保存');
+}
+function deleteInfoForDay(){
+  if(!currentInfoEdit) return;
+  const {dept, dateKey}=currentInfoEdit;
+  if(!confirm('确认清空当天活动、备注和预约信息？')) return;
+  if(DB.dailyInfo[dept]) DB.dailyInfo[dept][dateKey] = {activity:'',note:'',reservation:''};
+  saveDB();
+  cov('infoModal');
+  renderView();
+  toast('当天信息已清空');
+}
+
+function escapeHtml(str){
+  return str.replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
+
+async function genImg(dept){
+  const staff=DB.staff[dept]||[];
+  if(!staff.length){ toast('暂无人员'); return; }
+
+  toast('正在生成图片…');
+  const sc=((DB.schedules.weekly||{})[dept])||{};
+  const gr={}; staff.forEach(s=>{ (gr[s.position]||(gr[s.position]=[])).push(s); });
+  const weekDates = getWeekDates();
+  const weekEnd = weekDates[6];
+  const mainTitle = dept === 'daochong' ? '道冲元气圆满班表' : '熊抱大地圆满排班表';
+  const subTitle = `${weekStart.getFullYear()}年${weekStart.getMonth()+1}月${weekStart.getDate()}日 ～ ${weekEnd.getMonth()+1}月${weekEnd.getDate()}日`;
+
+  const w=document.createElement('div');
+  w.style.cssText='background:linear-gradient(180deg,#faf8f2 0%,#ffffff 100%);padding:34px 30px 28px;font-family:system-ui,PingFang SC,sans-serif;width:1280px;position:fixed;left:-9999px;top:0;z-index:-1;color:#2f2a24';
+
+  const head=document.createElement('div');
+  head.style.cssText='margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid rgba(0,0,0,.08)';
+  head.innerHTML = `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">
+      <div>
+        <div style="font-size:14px;letter-spacing:2px;color:#8b7d6b;margin-bottom:8px;">WEEKLY SCHEDULE</div>
+        <div style="font-size:34px;line-height:1.2;font-weight:700;color:#2f2a24;margin-bottom:8px;">${mainTitle}</div>
+        <div style="font-size:14px;color:#7a6f62;line-height:1.7;">${subTitle}</div>
+      </div>
+      <div style="min-width:160px;text-align:right;">
+        <div style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:${dept === 'daochong' ? '#eef7ef' : '#f4efe7'};color:${dept === 'daochong' ? '#3d6b45' : '#6b5a45'};font-size:13px;font-weight:600;">
+          ${dept === 'daochong' ? '🌿 道冲元气' : '🍽️ 熊抱大地'}
+        </div>
+      </div>
+    </div>
+  `;
+  w.appendChild(head);
+
+  const legend=document.createElement('div');
+  legend.style.cssText='display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-bottom:18px;font-size:12px;color:#7a6f62;';
+  legend.innerHTML = `
+    <div style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;border-radius:4px;background:#dbeafe;display:inline-block;"></span>早班</div>
+    <div style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;border-radius:4px;background:#ffedd5;display:inline-block;"></span>晚班</div>
+    <div style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;border-radius:4px;background:#dcfce7;display:inline-block;"></span>全天</div>
+    <div style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;border-radius:4px;background:#fce7f3;display:inline-block;"></span>休息 / 请假</div>
+    <div style="display:flex;align-items:center;gap:6px;"><span style="padding:3px 8px;border-radius:999px;background:#ede9fe;color:#6d28d9;font-weight:700;">活动</span></div>
+    <div style="display:flex;align-items:center;gap:6px;"><span style="padding:3px 8px;border-radius:999px;background:#e0f2fe;color:#0369a1;font-weight:700;">备注</span></div>
+    <div style="display:flex;align-items:center;gap:6px;"><span style="padding:3px 8px;border-radius:999px;background:#dcfce7;color:#166534;font-weight:700;">预约</span></div>
+  `;
+  w.appendChild(legend);
+
+  const tblWrap=document.createElement('div');
+  tblWrap.style.cssText='background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:22px;overflow:hidden;box-shadow:0 12px 36px rgba(0,0,0,.06);';
+  const tbl=document.createElement('table');
+  tbl.style.cssText='border-collapse:separate;border-spacing:0;width:100%;font-size:12px;background:#fff;';
+
+  const thead=document.createElement('thead');
+  const hr=document.createElement('tr');
+
+  const th0=document.createElement('th');
+  th0.style.cssText='background:#f7f2ea;padding:14px 16px;border-bottom:1px solid rgba(0,0,0,.08);font-size:13px;text-align:left;color:#5b5045;min-width:180px;';
+  th0.textContent='职位＋姓名';
+  hr.appendChild(th0);
+
+  weekDates.forEach((d)=>{
+    const dateKey = formatDateKey(d);
+    const wd=['日','一','二','三','四','五','六'][d.getDay()];
+    const counts = metaCounts(dept, dateKey);
+    const th=document.createElement('th');
+    th.style.cssText='background:#f7f2ea;padding:12px 6px;border-bottom:1px solid rgba(0,0,0,.08);text-align:center;min-width:110px;color:#5b5045;';
+    th.innerHTML=`<div style="font-size:15px;font-weight:700;color:#3c342d;">${d.getMonth()+1}/${d.getDate()}</div>
+      <div style="font-size:11px;color:#8a7f73;margin-top:4px;">周${wd}</div>
+      <div style="margin-top:6px;display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+        ${counts.activity ? `<span style="padding:2px 6px;border-radius:999px;background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:700;">活 ${counts.activity}</span>` : ''}
+        ${counts.note ? `<span style="padding:2px 6px;border-radius:999px;background:#e0f2fe;color:#0369a1;font-size:10px;font-weight:700;">备 ${counts.note}</span>` : ''}
+        ${counts.reservation ? `<span style="padding:2px 6px;border-radius:999px;background:#dcfce7;color:#166534;font-size:10px;font-weight:700;">约 ${counts.reservation}</span>` : ''}
+      </div>`;
+    hr.appendChild(th);
+  });
+  thead.appendChild(hr);
+  tbl.appendChild(thead);
+
+  const tb=document.createElement('tbody');
+  Object.entries(gr).forEach(([pos, ms])=>{
+    const grRow=document.createElement('tr');
+    const gtd=document.createElement('td');
+    gtd.colSpan=8;
+    gtd.style.cssText=`padding:11px 16px;font-size:13px;font-weight:700;letter-spacing:.5px;color:#ffffff;background:${dept === 'daochong' ? '#6a8f73' : '#8b7355'};`;
+    gtd.textContent=pos;
+    grRow.appendChild(gtd);
+    tb.appendChild(grRow);
+
+    ms.forEach((m, idx)=>{
+      const row=document.createElement('tr');
+      const zebra = idx % 2 === 1 ? '#fcfaf7' : '#ffffff';
+
+      const ntd=document.createElement('td');
+      ntd.style.cssText=`padding:14px 16px;border-bottom:1px solid rgba(0,0,0,.06);font-weight:600;white-space:nowrap;font-size:13px;background:${zebra};color:#2f2a24;`;
+      ntd.innerHTML=`<div style="font-size:13px;font-weight:700;">${m.name}</div><div style="font-size:11px;color:#8a7f73;margin-top:4px;">${m.position}</div>`;
+      row.appendChild(ntd);
+
+      weekDates.forEach((d)=>{
+        const dayKey=formatDateKey(d);
+        const sh=(sc[m.id]||{})[dayKey];
+        const td=document.createElement('td');
+        td.style.cssText=`border-bottom:1px solid rgba(0,0,0,.06);text-align:center;padding:10px 6px;background:${zebra};`;
+
+        let chipBg='#f3f4f6', chipColor='#6b7280', text='—';
+        if(sh==='early'){chipBg='#dbeafe'; chipColor='#1d4ed8'; text='早班';}
+        else if(sh==='late'){chipBg='#ffedd5'; chipColor='#c2410c'; text='晚班';}
+        else if(sh==='full'){chipBg='#dcfce7'; chipColor='#166534'; text='全天';}
+        else if(sh==='off'){chipBg='#fce7f3'; chipColor='#be185d'; text='休息';}
+        else if(sh==='leave'){chipBg='#fce7f3'; chipColor='#be185d'; text='请假';}
+        td.innerHTML=`<span style="display:inline-block;min-width:54px;padding:7px 10px;border-radius:999px;background:${chipBg};color:${chipColor};font-size:12px;font-weight:700;">${text}</span>`;
+        row.appendChild(td);
+      });
+      tb.appendChild(row);
+    });
+  });
+  tbl.appendChild(tb);
+  tblWrap.appendChild(tbl);
+  w.appendChild(tblWrap);
+
+  const infoWrap=document.createElement('div');
+  infoWrap.style.cssText='margin-top:18px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:22px;padding:18px;box-shadow:0 12px 36px rgba(0,0,0,.05);';
+  infoWrap.innerHTML = `<div style="font-size:18px;font-weight:700;color:#2f2a24;margin-bottom:14px;">活动日历＋备注＋预约信息</div>`;
+  const grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;';
+  weekDates.forEach((d)=>{
+    const dateKey = formatDateKey(d);
+    const info = dayInfoFor(dept, dateKey);
+    const card=document.createElement('div');
+    card.style.cssText='border:1px solid rgba(0,0,0,.08);border-radius:16px;padding:14px;background:#fcfaf7;';
+    const activity = info.activity ? info.activity.split('\n').filter(Boolean).map(v=>`<div style="padding:7px 9px;border-radius:10px;background:#f5f3ff;margin-bottom:6px;line-height:1.6;">${escapeHtml(v)}</div>`).join('') : '<div style="color:#bbb;">暂无活动</div>';
+    const note = info.note ? info.note.split('\n').filter(Boolean).map(v=>`<div style="padding:7px 9px;border-radius:10px;background:#f0f9ff;margin-bottom:6px;line-height:1.6;">${escapeHtml(v)}</div>`).join('') : '<div style="color:#bbb;">暂无备注</div>';
+    const reservation = info.reservation ? info.reservation.split('\n').filter(Boolean).map(v=>`<div style="padding:7px 9px;border-radius:10px;background:#f0fdf4;margin-bottom:6px;line-height:1.6;">${escapeHtml(v)}</div>`).join('') : '<div style="color:#bbb;">暂无预约</div>';
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px;">
+        <div>
+          <div style="font-size:15px;font-weight:700;">${d.getMonth()+1}/${d.getDate()}｜周${['日','一','二','三','四','五','六'][d.getDay()]}</div>
+          <div style="font-size:11px;color:#8a7f73;margin-top:4px;">${dateKey}</div>
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:12px;font-weight:700;color:#6a5f54;margin-bottom:6px;">活动日历</div>
+        ${activity}
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:12px;font-weight:700;color:#6a5f54;margin-bottom:6px;">备注信息</div>
+        ${note}
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#6a5f54;margin-bottom:6px;">${dept==='daochong'?'预约信息':'预约 / 预定位'}</div>
+        ${reservation}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+  infoWrap.appendChild(grid);
+  w.appendChild(infoWrap);
+
+  const foot=document.createElement('div');
+  foot.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:11px;color:#9a8f84;';
+  foot.innerHTML = `<div>生成时间：${new Date().toLocaleString('zh-CN')}</div><div>${dept === 'daochong' ? '道冲元气内部使用' : '熊抱大地内部使用'}</div>`;
+  w.appendChild(foot);
+
+  document.body.appendChild(w);
+  try{
+    const canvas=await html2canvas(w,{scale:2,backgroundColor:'#ffffff',logging:false,useCORS:true});
+    const url=canvas.toDataURL('image/jpeg',0.95);
+    document.getElementById('prevImg').src=url;
+    const fn=(dept === 'daochong' ? '道冲元气圆满班表' : '熊抱大地圆满排班表')+'_'+formatDateKey(weekStart)+'_to_'+formatDateKey(weekEnd)+'.jpg';
+    document.getElementById('dlLink').href=url;
+    document.getElementById('dlLink').download=fn;
+    document.getElementById('imgTitle').textContent=mainTitle;
+    ov('imgModal');
+  }catch(e){
+    toast('图片生成失败');
+  }finally{
+    document.body.removeChild(w);
+  }
+}
+
+function renderStaffView(){
+  const allowed=ME.role==='superadmin'?['frontHouse','kitchen','daochong']:ROLES[ME.role].editDepts;
+  if(!allowed.includes(svDept)) svDept=allowed[0];
+  const dts=allowed.map(d=>`<button class="dt${svDept===d?' active':''}" onclick="setSVD('${d}')">${DEPTS[d].icon} ${DEPTS[d].name}</button>`).join('');
+  const staff=DB.staff[svDept]||[];
+  const list=staff.length ? staff.map(s=>`
+    <div class="sc">
+      <div><div class="sn">${s.name}</div><div class="sm">${s.position}${s.phone?' ｜ '+s.phone:''}</div></div>
+      <div style="display:flex;gap:7px">
+        <button class="be2" onclick="openES('${s.id}')">编辑</button>
+        <button class="bdd" onclick="delS('${s.id}')">删除</button>
+      </div>
+    </div>`).join('') : `<div class="empty">暂无人员，点击「新增人员」添加</div>`;
+  document.getElementById('appContent').innerHTML=`
+    <div class="panel">
+      <div class="ph"><div class="pt">👥 人员管理</div><button class="ba" onclick="openAS()">+ 新增人员</button></div>
+      <div class="dtabs">${dts}</div>
+      <div>${list}</div>
+    </div>`;
+}
+function setSVD(d){ svDept=d; renderStaffView(); }
+function refreshPositionOptions(selectedValue){
+  const dept = document.getElementById('sf_d').value;
+  const sel = document.getElementById('sf_p');
+  const options = POSITION_OPTIONS[dept] || [];
+  sel.innerHTML = options.map(v => `<option value="${v}">${v}</option>`).join('');
+  if(selectedValue && options.includes(selectedValue)) sel.value = selectedValue;
+}
+document.addEventListener('change', function(e){
+  if(e.target && e.target.id === 'sf_d') refreshPositionOptions();
+});
+function openAS(){
+  editStaff=null;
+  document.getElementById('sMT').textContent='新增人员';
+  document.getElementById('sf_n').value='';
+  document.getElementById('sf_ph').value='';
+  document.getElementById('sf_d').value=svDept;
+  const allowed=ME.role==='superadmin'?['frontHouse','kitchen','daochong']:ROLES[ME.role].editDepts;
+  Array.from(document.getElementById('sf_d').options).forEach(o=>o.disabled=!allowed.includes(o.value));
+  refreshPositionOptions();
+  ov('staffModal');
+}
+function openES(id){
+  const s=Object.values(DB.staff).flat().find(x=>x.id===id); if(!s) return;
+  editStaff=id;
+  document.getElementById('sMT').textContent='编辑人员';
+  document.getElementById('sf_n').value=s.name;
+  document.getElementById('sf_d').value=s.dept;
+  document.getElementById('sf_ph').value=s.phone||'';
+  Array.from(document.getElementById('sf_d').options).forEach(o=>o.disabled=false);
+  refreshPositionOptions(s.position);
+  ov('staffModal');
+}
+function saveStaff(){
+  const nm=document.getElementById('sf_n').value.trim();
+  const dp=document.getElementById('sf_d').value;
+  const ps=document.getElementById('sf_p').value.trim();
+  const ph=document.getElementById('sf_ph').value.trim();
+  if(!nm||!ps){ toast('请填写姓名和职位'); return; }
+  if(editStaff){
+    for(const d of Object.keys(DB.staff)){ const i=DB.staff[d].findIndex(x=>x.id===editStaff); if(i>=0){DB.staff[d].splice(i,1); break;} }
+    DB.staff[dp].push({id:editStaff,name:nm,dept:dp,position:ps,phone:ph});
+    toast('人员已更新');
+  }else{
+    DB.staff[dp].push({id:'s'+Date.now(),name:nm,dept:dp,position:ps,phone:ph});
+    toast('新增成功');
+  }
+  saveDB(); cov('staffModal'); svDept=dp; renderTabs(); renderStaffView();
+}
+function delS(id){
+  if(!confirm('确认删除该人员？')) return;
+  for(const d of Object.keys(DB.staff)){ const i=DB.staff[d].findIndex(x=>x.id===id); if(i>=0){DB.staff[d].splice(i,1); break;} }
+  saveDB(); renderTabs(); renderStaffView(); toast('已删除');
+}
+
+function renderSettings(){
+  const timesHtml=Object.entries(DEPTS).map(([dept,cfg])=>{
+    const t=DB.shiftTimes[dept];
+    return `<div style="margin-bottom:18px">
+      <div style="font-size:14px;font-weight:700;color:${cfg.color};margin-bottom:9px">${cfg.icon} ${cfg.name}</div>
+      <div class="sg">
+        <div class="sk"><div class="sl">早班时间</div><div class="tr">
+          <input type="time" value="${t.early.s}" onchange="saveT('${dept}','early','s',this.value)">
+          <span style="color:#aaa">~</span>
+          <input type="time" value="${t.early.e}" onchange="saveT('${dept}','early','e',this.value)">
+        </div></div>
+        <div class="sk"><div class="sl">晚班时间</div><div class="tr">
+          <input type="time" value="${t.late.s}" onchange="saveT('${dept}','late','s',this.value)">
+          <span style="color:#aaa">~</span>
+          <input type="time" value="${t.late.e}" onchange="saveT('${dept}','late','e',this.value)">
+        </div></div>
+        <div class="sk"><div class="sl">全天时间</div><div class="tr">
+          <input type="time" value="${t.full.s}" onchange="saveT('${dept}','full','s',this.value)">
+          <span style="color:#aaa">~</span>
+          <input type="time" value="${t.full.e}" onchange="saveT('${dept}','full','e',this.value)">
+        </div></div>
+      </div></div>`;
+  }).join('');
+  const admins=(DB.users||[]).map(u=>`
+    <div class="sc">
+      <div><div class="sn">${u.name} <span style="font-size:12px;color:#aaa">@${u.username}</span></div><div class="sm">${ROLES[u.role].name} ｜ 密码：${u.password}</div></div>
+      <div style="display:flex;gap:7px;align-items:center">
+        <button class="be2" onclick="openEA('${u.id}')">编辑</button>
+        ${u.id!==ME.id?`<button class="bdd" onclick="delA('${u.id}')">删除</button>`:'<span style="font-size:11px;color:#bbb">当前</span>'}
+      </div>
+    </div>`).join('');
+  document.getElementById('appContent').innerHTML=`
+    <div class="panel"><div class="pt" style="margin-bottom:14px">⏰ 班次时间</div>${timesHtml}</div>
+    <div class="panel">
+      <div class="ph"><div class="pt">👤 管理员账号 <span style="font-size:12px;color:#aaa">（最多5位）</span></div><button class="ba" onclick="openAA()">+ 新增</button></div>
+      ${admins}
+    </div>
+    <div class="panel">
+      <div class="pt" style="margin-bottom:11px">🗂 数据管理</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="be2" onclick="exportJSON()">导出备份</button>
+        <button class="bdd" onclick="resetAll()">恢复初始数据</button>
+      </div>
+    </div>`;
+}
+function saveT(dept,type,field,val){ DB.shiftTimes[dept][type][field]=val; saveDB(); toast('时间已保存'); }
+function openAA(){
+  if((DB.users||[]).length>=5){ toast('最多只能设置5位管理员'); return; }
+  editAdmin=null;
+  document.getElementById('aMT').textContent='新增管理员';
+  document.getElementById('am_n').value='';
+  document.getElementById('am_u').value='';
+  document.getElementById('am_p').value='';
+  document.getElementById('am_r').value='superadmin';
+  ov('adminModal');
+}
+function openEA(id){
+  const u=(DB.users||[]).find(x=>x.id===id); if(!u) return;
+  editAdmin=id;
+  document.getElementById('aMT').textContent='编辑管理员';
+  document.getElementById('am_n').value=u.name;
+  document.getElementById('am_u').value=u.username;
+  document.getElementById('am_p').value=u.password;
+  document.getElementById('am_r').value=u.role;
+  ov('adminModal');
+}
+function saveAdmin(){
+  const nm=document.getElementById('am_n').value.trim();
+  const us=document.getElementById('am_u').value.trim();
+  const pw=document.getElementById('am_p').value.trim();
+  const ro=document.getElementById('am_r').value;
+  if(!nm||!us||!pw){ toast('请填写完整信息'); return; }
+  if((DB.users||[]).find(u=>u.username===us&&u.id!==editAdmin)){ toast('账号已存在'); return; }
+  if(editAdmin){
+    const i=(DB.users||[]).findIndex(u=>u.id===editAdmin);
+    if(i>=0) DB.users[i]={...DB.users[i],name:nm,username:us,password:pw,role:ro};
+    toast('已更新');
+  }else{
+    DB.users.push({id:'u'+Date.now(),name:nm,username:us,password:pw,role:ro});
+    toast('新增成功');
+  }
+  saveDB(); cov('adminModal'); renderSettings();
+}
+function delA(id){
+  if(id===ME.id){ toast('不能删除当前账号'); return; }
+  if(!confirm('确认删除？')) return;
+  DB.users=(DB.users||[]).filter(u=>u.id!==id);
+  saveDB(); renderSettings(); toast('已删除');
+}
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='班表管理备份_v9.json'; a.click();
+  URL.revokeObjectURL(url);
+  toast('备份已导出');
+}
+function resetAll(){
+  if(!confirm('确认恢复初始数据？当前浏览器里的所有班表、备注、预约会被清空。')) return;
+  DB=defaultDB(); saveDB(); renderTabs(); renderView(); toast('已恢复初始数据');
+}
+
+function ov(id){ document.getElementById(id).classList.add('open'); }
+function cov(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.ov').forEach(el=>el.addEventListener('click',e=>{ if(e.target===el) el.classList.remove('open'); }));
+let tt;
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.classList.add('show');
+  clearTimeout(tt);
+  tt=setTimeout(()=>el.classList.remove('show'),2600);
+}
+
+showOnly('loginScreen');
+</script>
+</body>
+</html>

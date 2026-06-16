@@ -1,0 +1,719 @@
+.page {
+  display: grid;
+  gap: 20px;
+}
+
+.headerPanel,
+.metricsStrip,
+.loadPanel,
+.segmentPanel,
+.tablePanel,
+.inspectorPanel {
+  border-radius: 26px;
+  border: 1px solid rgba(18, 28, 21, 0.08);
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 18px 42px rgba(14, 24, 18, 0.05);
+}
+
+.headerPanel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+  gap: 24px;
+  padding: 28px 30px;
+  background:
+    radial-gradient(circle at top right, rgba(52, 111, 79, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 246, 0.98));
+}
+
+.headerCopy {
+  display: grid;
+  gap: 10px;
+  max-width: 760px;
+}
+
+.eyebrow,
+.sectionEyebrow {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(39, 89, 61, 0.12);
+  background: rgba(238, 245, 240, 0.94);
+  color: #2f6247;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.headerCopy h1 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: clamp(34px, 4vw, 44px);
+  line-height: 0.98;
+  letter-spacing: -0.06em;
+}
+
+.headerCopy p,
+.metricCard p,
+.loadCard span,
+.sectionHeader p,
+.signalText,
+.issueCopy span,
+.emptyState,
+.emptyInspector {
+  margin: 0;
+  color: var(--muted-strong);
+  font-size: 14px;
+  line-height: 1.72;
+}
+
+.headerAside {
+  display: grid;
+  align-content: space-between;
+  gap: 16px;
+}
+
+.headerStatus {
+  display: grid;
+  gap: 8px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  border: 1px solid rgba(18, 28, 21, 0.08);
+  background: rgba(248, 250, 248, 0.98);
+}
+
+.headerStatus span,
+.metricCard span,
+.loadCardHeader span,
+.loadMeta span,
+.segmentTab span,
+.field span,
+.sortBar span,
+.identityCell span,
+.identityCell small,
+.ownerCell span,
+.detailGrid span,
+.issueCopy strong,
+.resultMeta span {
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.headerStatus strong,
+.metricCard strong,
+.loadCardHeader strong,
+.segmentTab strong,
+.sectionHeader strong,
+.resultMeta strong,
+.identityCell strong,
+.ownerCell strong,
+.detailGrid strong,
+.summaryTitle,
+.issueCopy strong {
+  color: var(--text-strong);
+}
+
+.headerStatus strong {
+  font-size: 22px;
+  line-height: 1.18;
+  letter-spacing: -0.04em;
+}
+
+.headerStatus small {
+  color: var(--muted-strong);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.headerActions,
+.inspectorActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.metricsStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+}
+
+.metricCard {
+  display: grid;
+  gap: 8px;
+  padding: 18px 20px;
+}
+
+.metricCard + .metricCard {
+  border-left: 1px solid rgba(18, 28, 21, 0.08);
+}
+
+.metricCard strong {
+  font-size: 32px;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.loadPanel,
+.segmentPanel,
+.tablePanel,
+.inspectorPanel {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+}
+
+.loadCards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.loadCard {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(18, 28, 21, 0.08);
+  background:
+    radial-gradient(circle at top right, rgba(52, 111, 79, 0.08), transparent 38%),
+    rgba(249, 251, 249, 0.98);
+}
+
+.loadCardHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.loadCardHeader strong {
+  font-size: 20px;
+  letter-spacing: -0.04em;
+}
+
+.loadMeta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 14px;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 390px;
+  gap: 18px;
+  align-items: start;
+}
+
+.mainColumn,
+.sideRail {
+  display: grid;
+  gap: 18px;
+}
+
+.sectionHeader,
+.panelTitleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.sectionHeader strong {
+  font-size: 22px;
+  line-height: 1.3;
+  letter-spacing: -0.04em;
+}
+
+.resultMeta {
+  display: grid;
+  gap: 4px;
+  min-width: 120px;
+  text-align: right;
+}
+
+.resultMeta strong {
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.segmentTabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.segmentTab,
+.sortButton,
+.resetButton,
+.inlineAction,
+.inlineActionGhost {
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.segmentTab {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(18, 28, 21, 0.08);
+  background: rgba(255, 255, 255, 0.95);
+  text-align: left;
+}
+
+.segmentTab strong {
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.segmentTab small {
+  color: var(--muted-strong);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.segmentTab:hover,
+.sortButton:hover,
+.inlineActionGhost:hover,
+.resetButton:hover {
+  border-color: rgba(39, 89, 61, 0.18);
+  color: var(--text-strong);
+  background: rgba(248, 250, 248, 0.98);
+}
+
+.segmentTabActive {
+  border-color: rgba(39, 89, 61, 0.18);
+  background: rgba(237, 245, 239, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(39, 89, 61, 0.08);
+}
+
+.filterBar {
+  display: grid;
+  grid-template-columns: minmax(260px, 2fr) repeat(3, minmax(140px, 1fr)) auto auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field input,
+.field select {
+  min-height: 46px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(18, 28, 21, 0.1);
+  background: rgba(250, 251, 250, 0.98);
+  color: var(--text-strong);
+  font-size: 14px;
+}
+
+.field input:focus,
+.field select:focus {
+  outline: none;
+  border-color: rgba(39, 89, 61, 0.24);
+  box-shadow: 0 0 0 3px rgba(39, 89, 61, 0.08);
+}
+
+.sortBar {
+  display: grid;
+  gap: 8px;
+}
+
+.sortButtons {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 16px;
+  border: 1px solid rgba(18, 28, 21, 0.08);
+  background: rgba(248, 250, 248, 0.96);
+}
+
+.sortButton {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.sortButtonActive {
+  background: #214e36;
+  color: #fff;
+}
+
+.sortButtonActive:hover {
+  background: #214e36;
+  color: #fff;
+}
+
+.resetButton {
+  min-height: 46px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(18, 28, 21, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--muted-strong);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tableWrap {
+  overflow: auto;
+  border-radius: 20px;
+  border: 1px solid rgba(18, 28, 21, 0.08);
+}
+
+.table {
+  width: 100%;
+  min-width: 1260px;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(18, 28, 21, 0.08);
+  background: rgba(246, 248, 246, 0.98);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.table tbody td {
+  padding: 16px;
+  border-bottom: 1px solid rgba(18, 28, 21, 0.07);
+  color: var(--text-strong);
+  font-size: 14px;
+  line-height: 1.55;
+  vertical-align: top;
+}
+
+.tableRow {
+  cursor: pointer;
+  transition: background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.tableRow:hover td {
+  background: rgba(248, 250, 248, 0.98);
+}
+
+.tableRowActive td {
+  background: rgba(244, 248, 245, 0.98);
+}
+
+.tableRowActive td:first-child {
+  box-shadow: inset 3px 0 0 rgba(39, 89, 61, 0.6);
+}
+
+.identityCell,
+.ownerCell,
+.signalStack,
+.stateStack {
+  display: grid;
+  gap: 6px;
+}
+
+.identityCell {
+  min-width: 230px;
+}
+
+.identityCell strong {
+  font-size: 15px;
+}
+
+.ownerCell {
+  min-width: 120px;
+}
+
+.signalStack {
+  min-width: 240px;
+}
+
+.signalText {
+  display: block;
+}
+
+.badgeGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.moreSignal {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(244, 246, 244, 0.98);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.nextActionCell {
+  min-width: 240px;
+  color: var(--muted-strong);
+}
+
+.tableActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.inlineAction,
+.inlineActionGhost {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.inlineAction {
+  border: 1px solid transparent;
+  background: rgba(33, 78, 54, 0.12);
+  color: #214e36;
+}
+
+.inlineAction:hover {
+  background: rgba(33, 78, 54, 0.18);
+}
+
+.emptyState,
+.emptyInspector {
+  padding: 28px 16px;
+}
+
+.emptyState {
+  text-align: center;
+}
+
+.inspectorPanel {
+  position: sticky;
+  top: 104px;
+}
+
+.inspectorBody {
+  display: grid;
+  gap: 16px;
+}
+
+.inspectorSummary,
+.governancePanel,
+.actionSequence {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(18, 28, 21, 0.08);
+  background: rgba(248, 250, 248, 0.98);
+}
+
+.summaryTitle {
+  font-size: 20px;
+  line-height: 1.4;
+  letter-spacing: -0.03em;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.detailGrid article {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(18, 28, 21, 0.08);
+  background: rgba(251, 252, 251, 0.98);
+}
+
+.governanceList {
+  display: grid;
+  gap: 10px;
+}
+
+.issueItem {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(18, 28, 21, 0.08);
+  background: rgba(251, 252, 251, 0.98);
+}
+
+.issueCopy {
+  display: grid;
+  gap: 4px;
+}
+
+.issueCopy strong {
+  font-size: 14px;
+  line-height: 1.6;
+  letter-spacing: 0;
+}
+
+.actionList {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0 0 0 18px;
+}
+
+.actionList li {
+  color: var(--muted-strong);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badgeNeutral {
+  background: rgba(241, 244, 241, 0.98);
+  color: #57625b;
+}
+
+.badgeInfo {
+  background: rgba(227, 240, 249, 0.94);
+  color: #1e5d84;
+}
+
+.badgeAccent {
+  background: rgba(237, 232, 248, 0.94);
+  color: #69508f;
+}
+
+.badgeSuccess {
+  background: rgba(232, 244, 236, 0.98);
+  color: #215b3d;
+}
+
+.badgeWarning {
+  background: rgba(251, 243, 225, 0.98);
+  color: #9b651e;
+}
+
+.badgeDanger {
+  background: rgba(250, 235, 232, 0.98);
+  color: #ae5147;
+}
+
+@media (max-width: 1360px) {
+  .headerPanel,
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .loadCards {
+    grid-template-columns: 1fr;
+  }
+
+  .inspectorPanel {
+    position: static;
+  }
+}
+
+@media (max-width: 1100px) {
+  .segmentTabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filterBar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .sortBar {
+    grid-column: 1 / -1;
+  }
+
+  .resetButton {
+    grid-column: 1 / -1;
+  }
+
+  .detailGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionHeader,
+  .panelTitleRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .resultMeta {
+    text-align: left;
+  }
+}
+
+@media (max-width: 840px) {
+  .metricsStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metricCard:nth-child(3) {
+    border-left: none;
+  }
+
+  .headerPanel,
+  .loadPanel,
+  .segmentPanel,
+  .tablePanel,
+  .inspectorPanel {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 680px) {
+  .metricsStrip,
+  .segmentTabs,
+  .filterBar {
+    grid-template-columns: 1fr;
+  }
+
+  .metricCard + .metricCard {
+    border-left: none;
+    border-top: 1px solid rgba(18, 28, 21, 0.08);
+  }
+
+  .sortButtons {
+    flex-wrap: wrap;
+  }
+}

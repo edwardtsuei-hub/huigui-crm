@@ -1,0 +1,641 @@
+.desktopViewport {
+  display: grid;
+  gap: 18px;
+}
+
+.mobileViewport {
+  display: none;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.95fr);
+  gap: 18px;
+}
+
+.heroPanel,
+.entryCard,
+.slotItem,
+.recentColumn,
+.mobileHero,
+.mobileStatCard {
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.96),
+      rgba(248, 250, 246, 0.9)
+    );
+  box-shadow: 0 18px 38px rgba(31, 47, 34, 0.05);
+}
+
+.heroPanel,
+.mobileHero {
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(255, 198, 140, 0.16),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at right center,
+      rgba(130, 208, 154, 0.14),
+      transparent 24%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.98),
+      rgba(247, 250, 246, 0.92)
+    );
+}
+
+.heroPanel {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+}
+
+.heroEyebrow {
+  display: inline-flex;
+  width: fit-content;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 209, 151, 0.32);
+  background: rgba(255, 248, 235, 0.92);
+  color: var(--brand-strong);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.heroTitle,
+.mobileHeroTitle {
+  margin: 0;
+  color: var(--text-strong);
+}
+
+.heroTitle {
+  font-size: clamp(28px, 3vw, 36px);
+  line-height: 1.08;
+}
+
+.mobileHeroTitle {
+  font-size: clamp(22px, 6.8vw, 28px);
+  line-height: 1.12;
+}
+
+.heroDescription,
+.mobileHeroDescription {
+  margin: 0;
+  color: var(--muted-strong);
+}
+
+.heroDescription {
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.mobileHeroDescription {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.heroMetaGrid {
+  display: grid;
+  gap: 14px;
+}
+
+.heroMetaCard {
+  display: grid;
+  gap: 8px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.92),
+      rgba(247, 250, 246, 0.88)
+    );
+}
+
+.heroMetaCard span,
+.entryHeader span,
+.slotHeader span,
+.recentRowMeta span,
+.mobileStatCard span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.heroMetaCard strong,
+.mobileStatCard strong {
+  color: var(--text-strong);
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.heroMetaCard p,
+.entryDescription,
+.slotItem p,
+.recentRowMeta p,
+.mobileStatCard p {
+  margin: 0;
+  color: var(--muted-strong);
+  line-height: 1.75;
+}
+
+.sectionGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.95fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.entryGrid,
+.recentGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.entryCard,
+.recentColumn {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+}
+
+.entryHeader {
+  display: grid;
+  gap: 10px;
+}
+
+.entryTitleRow,
+.recentRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.entryTitleRow strong,
+.slotHeader strong,
+.recentRow strong,
+.recentColumn h4 {
+  color: var(--text-strong);
+}
+
+.entryTitleRow strong {
+  font-size: 20px;
+  line-height: 1.15;
+}
+
+.entryActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.slotList {
+  display: grid;
+  gap: 14px;
+}
+
+.pulseGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.pulseCard,
+.noticePanel {
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.74);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.94),
+      rgba(249, 251, 246, 0.88)
+    );
+  box-shadow: 0 18px 36px rgba(31, 47, 34, 0.05);
+}
+
+.pulseCard {
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+}
+
+.pulseCardWarning {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 250, 239, 0.96),
+      rgba(255, 255, 255, 0.88)
+    );
+  box-shadow:
+    inset 4px 0 0 rgba(226, 179, 82, 0.78),
+    0 18px 36px rgba(31, 47, 34, 0.05);
+}
+
+.pulseCardDanger {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 244, 239, 0.96),
+      rgba(255, 255, 255, 0.88)
+    );
+  box-shadow:
+    inset 4px 0 0 rgba(215, 94, 59, 0.82),
+    0 18px 36px rgba(31, 47, 34, 0.05);
+}
+
+.pulseCard span,
+.mobilePriorityMeta span,
+.mobileSignalCard span,
+.noticeHeader span,
+.noticeMeta span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pulseCard strong {
+  color: var(--text-strong);
+  font-size: 28px;
+  line-height: 1;
+}
+
+.mobilePriorityMeta strong,
+.mobileSignalCard strong {
+  color: var(--text-strong);
+  line-height: 1;
+}
+
+.mobilePriorityMeta strong {
+  font-size: 30px;
+}
+
+.mobileSignalCard strong {
+  font-size: 24px;
+}
+
+.pulseCard p,
+.mobilePriorityCard p,
+.mobileSignalCard p,
+.noticeMeta p {
+  margin: 0;
+  color: var(--muted-strong);
+  line-height: 1.75;
+}
+
+.noticePanel {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 20px;
+}
+
+.noticeHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.noticeActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.noticeHeader strong,
+.noticeMeta strong {
+  color: var(--text-strong);
+}
+
+.noticeHeader strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 18px;
+}
+
+.noticeList {
+  display: grid;
+  gap: 12px;
+}
+
+.noticeRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(32, 52, 37, 0.08);
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.noticeRowUnread {
+  box-shadow: inset 4px 0 0 rgba(226, 179, 82, 0.82);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 251, 241, 0.92),
+    rgba(255, 255, 255, 0.78)
+  );
+}
+
+.noticeRowApproval {
+  border-color: rgba(220, 124, 86, 0.22);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 244, 239, 0.96),
+    rgba(255, 250, 247, 0.82)
+  );
+  box-shadow:
+    inset 4px 0 0 rgba(215, 94, 59, 0.86),
+    0 14px 28px rgba(215, 94, 59, 0.08);
+}
+
+.noticeLink {
+  min-width: 0;
+  text-decoration: none;
+}
+
+.noticeLink:hover strong,
+.recentLink:hover strong {
+  color: var(--brand-strong);
+}
+
+.noticeMeta {
+  display: grid;
+  gap: 8px;
+}
+
+.noticeAside {
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+}
+
+.noticeRow time {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.slotItem {
+  display: grid;
+  gap: 10px;
+  padding: 18px 20px;
+}
+
+.slotHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.recentColumn {
+  align-content: start;
+}
+
+.recentColumn h4 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.recentList {
+  display: grid;
+  gap: 12px;
+}
+
+.recentRow {
+  padding: 14px 0;
+  border-top: 1px solid rgba(32, 52, 37, 0.08);
+}
+
+.recentList .recentRow:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.recentLink {
+  text-decoration: none;
+}
+
+.emptyNote {
+  margin: 0;
+  color: var(--muted-strong);
+  line-height: 1.7;
+}
+
+.mobileHero {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.mobileHeroMeta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.mobileHeroMetaItem {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  padding: 9px 6px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.72);
+  text-align: center;
+}
+
+.mobileHeroMetaItem span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.mobileHeroMetaItem strong {
+  color: var(--text-strong);
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.mobilePrimaryAction,
+.mobileSecondaryActions {
+  display: grid;
+  gap: 10px;
+}
+
+.mobileSecondaryActions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mobileStatStrip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.mobileStatCard {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  min-height: 78px;
+  padding: 12px 10px;
+  text-align: center;
+}
+
+.mobileNoticeSurface {
+  margin-top: 0;
+}
+
+.mobileNoticePanel {
+  margin-top: 0;
+}
+
+.mobileNoticePanel .noticeActions {
+  justify-content: flex-start;
+}
+
+.mobileNoticeRow {
+  grid-template-columns: 1fr;
+}
+
+.mobileNoticeAside {
+  justify-items: start;
+}
+
+.mobileEntryList,
+.mobileRecentStack {
+  display: grid;
+  gap: 12px;
+}
+
+.mobilePulseStack {
+  display: grid;
+  gap: 12px;
+}
+
+.mobilePriorityCard,
+.mobileSignalCard {
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.74);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.94),
+      rgba(249, 251, 246, 0.88)
+    );
+  box-shadow: 0 18px 36px rgba(31, 47, 34, 0.05);
+}
+
+.mobilePriorityCard {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+
+.mobilePriorityHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.mobilePriorityMeta {
+  display: grid;
+  gap: 8px;
+}
+
+.mobileSignalGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.mobileSignalCard {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.mobileEntryCard,
+.mobileRecentColumn {
+  border-radius: 22px;
+}
+
+@media (max-width: 1200px) and (min-width: 961px) {
+  .entryGrid,
+  .recentGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1080px) and (min-width: 961px) {
+  .hero,
+  .sectionGrid,
+  .pulseGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 960px) {
+  .desktopViewport {
+    display: none;
+  }
+
+  .mobileViewport {
+    display: grid;
+    gap: 16px;
+  }
+
+  .mobilePrimaryAction :global(.button),
+  .mobileSecondaryActions :global(.button),
+  .mobilePulseStack :global(.button),
+  .mobileNoticePanel :global(.button),
+  .mobileEntryList :global(.button) {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 540px) {
+  .noticeHeader,
+  .noticeActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .noticeActions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 360px) {
+  .mobileSignalGrid,
+  .mobileSecondaryActions {
+    grid-template-columns: 1fr;
+  }
+}

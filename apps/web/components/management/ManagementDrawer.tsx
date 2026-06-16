@@ -10,6 +10,8 @@ type ManagementDrawerProps = {
   onClose: () => void;
   children: ReactNode;
   actions?: ReactNode;
+  eyebrow?: string;
+  size?: "medium" | "large";
 };
 
 export function ManagementDrawer({
@@ -18,7 +20,9 @@ export function ManagementDrawer({
   subtitle,
   onClose,
   children,
-  actions
+  actions,
+  eyebrow = "Management",
+  size = "medium",
 }: ManagementDrawerProps) {
   useEffect(() => {
     if (!open) {
@@ -37,22 +41,23 @@ export function ManagementDrawer({
     };
   }, [onClose, open]);
 
+  if (!open) {
+    return null;
+  }
+
   return (
     <>
       <button
-        aria-hidden={!open}
-        className={`drawer-backdrop ${open ? "open" : ""}`}
+        className="drawer-backdrop open"
         onClick={onClose}
-        tabIndex={open ? 0 : -1}
         type="button"
       />
       <aside
-        aria-hidden={!open}
-        className={`detail-drawer ${open ? "open" : ""}`}
+        className={`detail-drawer open ${size}`}
       >
         <div className="detail-drawer__header">
           <div className="stack compact-gap">
-            <div className="page-header__eyebrow">Management</div>
+            <div className="page-header__eyebrow">{eyebrow}</div>
             <h3>{title}</h3>
             {subtitle ? <p>{subtitle}</p> : null}
           </div>

@@ -1,15 +1,39 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
+import { resolveSiteBrand } from "../lib/site-brand";
 
-export const metadata: Metadata = {
-  title: "洄归生态客户管理与报价协同系统",
-  description: "面向网页端的 CRM、农业方案报价与协同系统"
-};
+function getRequestHost() {
+  const requestHeaders = headers();
+  return (
+    requestHeaders.get("x-forwarded-host") ??
+    requestHeaders.get("host") ??
+    undefined
+  );
+}
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export function generateMetadata(): Metadata {
+  const brand = resolveSiteBrand(getRequestHost());
+
+  return {
+    title: brand.metadataTitle,
+    description: brand.metadataDescription,
+    icons: {
+      icon: "/favicon.ico",
+    },
+  };
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const brand = resolveSiteBrand(getRequestHost());
+
   return (
     <html lang="zh-CN">
-      <body>{children}</body>
+      <body data-site-brand={brand.key}>{children}</body>
     </html>
   );
 }

@@ -23,6 +23,18 @@ export class MetaController {
     return this.metaService.getUsers(req.user);
   }
 
+  @Get("solution-customers")
+  @Permissions("menu.solutions")
+  async solutionCustomers(@Req() req: RequestWithUser) {
+    return this.metaService.getSolutionCustomers(req.user);
+  }
+
+  @Get("solution-products")
+  @Permissions("menu.solutions")
+  async solutionProducts() {
+    return this.metaService.getSolutionProducts();
+  }
+
   @Get("dashboard")
   @Permissions("page.dashboard.home")
   async dashboard(@Req() req: RequestWithUser) {

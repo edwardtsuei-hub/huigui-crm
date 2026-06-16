@@ -1,4 +1,4 @@
-import { DataScope } from "@prisma/client";
+import { DataScope, RecordDataScope } from "@prisma/client";
 
 export type AuthenticatedUser = {
   id: string;
@@ -10,6 +10,8 @@ export type AuthenticatedUser = {
   title?: string | null;
   managerUserId?: string | null;
   dataScope: DataScope;
+  recordDataScope: RecordDataScope;
+  testBatchId?: string | null;
   roleCode: string;
   roleName: string;
   permissions: string[];

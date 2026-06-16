@@ -11,6 +11,11 @@ import {
 } from "../../lib/workspace";
 import { RightDrawer } from "../system/primitives";
 
+type QuickWorkspaceComposerKind = Extract<
+  WorkspaceItemKind,
+  "reminder" | "schedule" | "todo"
+>;
+
 type QuickWorkspaceComposerProps = {
   assignee?: string;
   initialKind?: WorkspaceItemKind;
@@ -23,15 +28,25 @@ type QuickWorkspaceComposerProps = {
   relatedType: "customer" | "quotation" | "contract" | "solution" | "internal";
 };
 
-const kindOptions: WorkspaceItemKind[] = ["reminder", "schedule", "todo"];
+const kindOptions: Array<Exclude<QuickWorkspaceComposerKind, "schedule">> = [
+  "reminder",
+  "todo",
+];
 const priorityOptions: WorkspacePriority[] = ["high", "medium", "low"];
 
-function buildDefaultTitle(kind: WorkspaceItemKind, relatedLabel: string) {
+function normalizeComposerKind(
+  kind: WorkspaceItemKind,
+): Exclude<QuickWorkspaceComposerKind, "schedule"> {
+  return kind === "todo" ? "todo" : "reminder";
+}
+
+function buildDefaultTitle(
+  kind: Exclude<QuickWorkspaceComposerKind, "schedule">,
+  relatedLabel: string,
+) {
   switch (kind) {
     case "reminder":
       return `跟进 ${relatedLabel}`;
-    case "schedule":
-      return `${relatedLabel} 日程安排`;
     case "todo":
       return `${relatedLabel} 待办`;
     default:
@@ -50,7 +65,9 @@ export function QuickWorkspaceComposer({
   relatedLabel,
   relatedType,
 }: QuickWorkspaceComposerProps) {
-  const [kind, setKind] = useState<WorkspaceItemKind>(initialKind);
+  const [kind, setKind] = useState<
+    Exclude<QuickWorkspaceComposerKind, "schedule">
+  >(normalizeComposerKind(initialKind));
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
   const [dueAt, setDueAt] = useState("");
@@ -63,8 +80,9 @@ export function QuickWorkspaceComposer({
       return;
     }
 
-    setKind(initialKind);
-    setTitle(buildDefaultTitle(initialKind, relatedLabel));
+    const normalizedKind = normalizeComposerKind(initialKind);
+    setKind(normalizedKind);
+    setTitle(buildDefaultTitle(normalizedKind, relatedLabel));
     setSummary("");
     setDueAt("");
     setPriority("medium");
@@ -94,7 +112,7 @@ export function QuickWorkspaceComposer({
   return (
     <RightDrawer
       className="workspace-composer-drawer"
-      description="把当前对象关联进提醒、日程或待办，方便后续在首页和通知里统一处理。"
+      description="把当前对象关联进本地提醒或待办，方便后续在首页和日程工作台里继续处理。"
       eyebrow="协作动作"
       footer={
         <>
@@ -126,7 +144,7 @@ export function QuickWorkspaceComposer({
             }}
             type="button"
           >
-            保存协作事项
+            保存本地事项
           </button>
         </>
       }
@@ -173,7 +191,7 @@ export function QuickWorkspaceComposer({
         <div className="grid-2">
           <div className="field">
             <label htmlFor="workspace-due-at">
-              {kind === "schedule" ? "日程时间" : "提醒时间"}
+              {kind === "todo" ? "计划时间" : "提醒时间"}
             </label>
             <input
               id="workspace-due-at"

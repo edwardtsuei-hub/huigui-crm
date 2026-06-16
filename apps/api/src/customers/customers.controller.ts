@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+} from "@nestjs/common";
 import type { Request } from "express";
 import { Permissions } from "../common/decorators/permissions.decorator";
 import type { AuthenticatedUser } from "../common/types/authenticated-user";
@@ -7,8 +17,9 @@ import {
   CreateCustomerDto,
   CreateCustomerFollowupDto,
   CustomerQueryDto,
+  ReviewCustomerApprovalDto,
   UpdateCustomerDto,
-  UpdateCustomerFollowupDto
+  UpdateCustomerFollowupDto,
 } from "./dto/customer.dto";
 
 type RequestWithUser = Request & {
@@ -39,8 +50,40 @@ export class CustomersController {
 
   @Permissions("action.customer.update")
   @Patch(":id")
-  async update(@Param("id") id: string, @Body() dto: UpdateCustomerDto, @Req() req: RequestWithUser) {
+  async update(
+    @Param("id") id: string,
+    @Body() dto: UpdateCustomerDto,
+    @Req() req: RequestWithUser,
+  ) {
     return this.customersService.update(id, dto, req.user);
+  }
+
+  @Permissions("action.customer.update")
+  @Post(":id/claim-owner")
+  async claimOwnership(@Param("id") id: string, @Req() req: RequestWithUser) {
+    return this.customersService.claimOwnership(id, req.user);
+  }
+
+  @Permissions("action.customer.update")
+  @Post(":id/extend-protection")
+  async extendProtection(@Param("id") id: string, @Req() req: RequestWithUser) {
+    return this.customersService.extendProtection(id, req.user);
+  }
+
+  @Permissions("action.quotation.approve", "action.quotation.reject")
+  @Post(":id/review-approval")
+  async reviewApproval(
+    @Param("id") id: string,
+    @Body() dto: ReviewCustomerApprovalDto,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.customersService.reviewApproval(
+      id,
+      dto.type,
+      dto.decision,
+      req.user,
+      dto.remark,
+    );
   }
 
   @Permissions("action.customer.delete")
@@ -60,7 +103,7 @@ export class CustomersController {
   async createFollowup(
     @Param("id") id: string,
     @Body() dto: CreateCustomerFollowupDto,
-    @Req() req: RequestWithUser
+    @Req() req: RequestWithUser,
   ) {
     return this.customersService.createFollowup(id, dto, req.user);
   }
@@ -72,7 +115,11 @@ export class CustomerFollowupsController {
 
   @Permissions("action.schedule.update")
   @Patch(":id")
-  async update(@Param("id") id: string, @Body() dto: UpdateCustomerFollowupDto, @Req() req: RequestWithUser) {
+  async update(
+    @Param("id") id: string,
+    @Body() dto: UpdateCustomerFollowupDto,
+    @Req() req: RequestWithUser,
+  ) {
     return this.customersService.updateFollowup(id, dto, req.user);
   }
 

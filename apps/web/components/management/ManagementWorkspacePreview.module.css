@@ -1,0 +1,486 @@
+.previewPage {
+  display: grid;
+  gap: 24px;
+  color: #18231b;
+}
+
+.commandDeck,
+.signalBoard,
+.metricCard,
+.queuePanel,
+.inspectorPanel,
+.quickPanel {
+  border: 1px solid rgba(21, 34, 25, 0.08);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 20px 46px rgba(16, 25, 19, 0.05);
+}
+
+.commandDeck {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(300px, 0.82fr);
+  gap: 24px;
+  padding: 30px 32px;
+  background:
+    radial-gradient(circle at top right, rgba(111, 63, 30, 0.12), transparent 32%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 246, 242, 0.98));
+}
+
+.commandCopy {
+  display: grid;
+  gap: 12px;
+  max-width: 760px;
+}
+
+.eyebrow,
+.sectionEyebrow,
+.metricCard span,
+.signalCard span,
+.queueItemTop span,
+.queueMeta span,
+.selectedCard span,
+.selectedGrid span,
+.quickCard span {
+  color: #6d675d;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.eyebrow,
+.sectionEyebrow {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(111, 63, 30, 0.12);
+  background: rgba(246, 238, 231, 0.96);
+  color: #79502f;
+}
+
+.commandCopy h1 {
+  margin: 0;
+  color: #1a1915;
+  font-size: clamp(34px, 4vw, 48px);
+  line-height: 0.98;
+  letter-spacing: -0.06em;
+}
+
+.commandCopy p,
+.sectionHeader p,
+.signalCard p,
+.metricCard p,
+.queueItem p,
+.selectedCard p,
+.quickCard p,
+.liveCard small {
+  margin: 0;
+  color: #59544d;
+  font-size: 14px;
+  line-height: 1.72;
+}
+
+.commandMeta {
+  display: grid;
+  align-content: space-between;
+  gap: 16px;
+}
+
+.liveCard {
+  display: grid;
+  gap: 8px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  border: 1px solid rgba(21, 34, 25, 0.08);
+  background: rgba(249, 248, 246, 0.98);
+}
+
+.liveCard span {
+  color: #6d675d;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.liveCard strong {
+  color: #1a1915;
+  font-size: 24px;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.commandActions,
+.inspectorActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.primaryAction,
+.secondaryAction {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 700;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.primaryAction {
+  background: #6e4e33;
+  color: #fbf7f1;
+  box-shadow: 0 16px 28px rgba(110, 78, 51, 0.18);
+}
+
+.secondaryAction {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(21, 34, 25, 0.1);
+  color: #4e3c2a;
+}
+
+.primaryAction:hover,
+.secondaryAction:hover,
+.tabButton:hover,
+.queueItem:hover {
+  transform: translateY(-1px);
+}
+
+.signalBoard,
+.queuePanel,
+.inspectorPanel,
+.quickPanel {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.sectionHeader strong {
+  display: block;
+  margin-top: 10px;
+  color: #1a1915;
+  font-size: clamp(22px, 2.4vw, 28px);
+  line-height: 1.08;
+  letter-spacing: -0.05em;
+}
+
+.signalGrid,
+.metricRibbon,
+.workspace,
+.tabRow,
+.queueList,
+.queueMeta,
+.selectedGrid,
+.quickList {
+  display: grid;
+}
+
+.signalGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.signalCard {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(21, 34, 25, 0.08);
+  background: rgba(248, 250, 248, 0.98);
+  animation: management-card-rise 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.signalCard strong {
+  color: #1a1915;
+  font-size: 38px;
+  line-height: 1;
+  letter-spacing: -0.07em;
+}
+
+.signalCard h2 {
+  margin: 0;
+  color: #1a1915;
+  font-size: 20px;
+  line-height: 1.3;
+  letter-spacing: -0.04em;
+}
+
+.signalWarning {
+  background: linear-gradient(180deg, rgba(251, 243, 231, 0.98), rgba(248, 237, 221, 0.98));
+}
+
+.signalDanger {
+  background: linear-gradient(180deg, rgba(252, 239, 237, 0.98), rgba(248, 231, 228, 0.98));
+}
+
+.signalSuccess {
+  background: linear-gradient(180deg, rgba(242, 246, 241, 0.98), rgba(236, 242, 234, 0.98));
+}
+
+.metricRibbon {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.metricCard {
+  display: grid;
+  gap: 8px;
+  padding: 20px;
+}
+
+.metricCard strong {
+  color: #1a1915;
+  font-size: 34px;
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+
+.workspace {
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 18px;
+  align-items: start;
+}
+
+.mainColumn,
+.sideColumn {
+  display: grid;
+  gap: 18px;
+}
+
+.tabRow {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.tabButton {
+  display: grid;
+  gap: 6px;
+  padding: 16px 18px;
+  border: 1px solid rgba(21, 34, 25, 0.08);
+  border-radius: 22px;
+  background: rgba(249, 251, 249, 0.98);
+  text-align: left;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.tabButton strong,
+.selectedCard strong,
+.selectedGrid strong,
+.quickCard strong {
+  color: #1a1915;
+  font-size: 17px;
+  line-height: 1.4;
+  letter-spacing: -0.03em;
+}
+
+.tabButton span {
+  color: #655f57;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.tabButtonActive {
+  border-color: rgba(110, 78, 51, 0.18);
+  background: rgba(246, 238, 231, 0.94);
+  box-shadow: 0 16px 30px rgba(21, 34, 25, 0.05);
+}
+
+.queueList,
+.quickList {
+  gap: 12px;
+}
+
+.queueItem {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(21, 34, 25, 0.08);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(250, 251, 249, 0.98), rgba(247, 250, 248, 0.98)),
+    linear-gradient(135deg, rgba(110, 78, 51, 0.04), transparent 56%);
+  text-align: left;
+  animation: management-card-rise 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.queueItemActive {
+  border-color: rgba(110, 78, 51, 0.18);
+  background: rgba(249, 244, 239, 0.98);
+  box-shadow: inset 3px 0 0 rgba(110, 78, 51, 0.56);
+}
+
+.queueItemTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.queueItemTop strong {
+  display: block;
+  margin-top: 6px;
+  color: #1a1915;
+  font-size: 22px;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.badgeNeutral {
+  background: rgba(236, 240, 237, 0.98);
+  color: #4e5f54;
+}
+
+.badgeSuccess {
+  background: rgba(234, 242, 236, 0.96);
+  color: #28583d;
+}
+
+.badgeWarning {
+  background: rgba(251, 243, 224, 0.96);
+  color: #8b6211;
+}
+
+.badgeDanger {
+  background: rgba(250, 234, 231, 0.96);
+  color: #a14741;
+}
+
+.queueMeta,
+.selectedGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.queueMeta div,
+.selectedGrid div,
+.quickCard {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(21, 34, 25, 0.08);
+  background: rgba(248, 250, 248, 0.98);
+}
+
+.queueFoot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.queueFoot small {
+  color: #6d675d;
+  font-size: 12px;
+}
+
+.inspectorBody {
+  display: grid;
+  gap: 14px;
+}
+
+.selectedCard {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(110, 78, 51, 0.14);
+  background:
+    radial-gradient(circle at top right, rgba(110, 78, 51, 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(250, 249, 247, 0.98), rgba(247, 244, 241, 0.98));
+}
+
+@keyframes management-card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1280px) {
+  .commandDeck,
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .signalGrid,
+  .metricRibbon {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 960px) {
+  .tabRow,
+  .signalGrid,
+  .metricRibbon,
+  .queueMeta,
+  .selectedGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionHeader,
+  .queueItemTop {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 720px) {
+  .commandDeck,
+  .signalBoard,
+  .queuePanel,
+  .inspectorPanel,
+  .quickPanel {
+    padding: 20px;
+    border-radius: 24px;
+  }
+
+  .commandCopy h1 {
+    font-size: 34px;
+  }
+
+  .metricCard strong,
+  .signalCard strong {
+    font-size: 28px;
+  }
+}

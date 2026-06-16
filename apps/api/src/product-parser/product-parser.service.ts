@@ -1,10 +1,20 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
+import { ProductParseReviewStatus } from "@prisma/client";
 import type { AuthenticatedUser } from "../common/types/authenticated-user";
-import { ParseProductMixedDto, ParseProductTextDto } from "./dto/product-parser.dto";
+import {
+  ParseProductMixedDto,
+  ParseProductTextDto,
+  ProductParseQueueQueryDto,
+  ReviewProductParseLogDto,
+} from "./dto/product-parser.dto";
 import { FieldMapperService } from "./field-mapper.service";
 import { ImageParserService } from "./image-parser.service";
 import { ProductParserLogService } from "./product-parser-log.service";
-import { UploadedImageFile } from "./product-parser.types";
+import type {
+  ProductParseQueueDetail,
+  ProductParseQueueItem,
+  UploadedImageFile,
+} from "./product-parser.types";
 import { TextParserService } from "./text-parser.service";
 
 @Injectable()
@@ -81,5 +91,36 @@ export class ProductParserService {
       user
     });
     return response;
+  }
+
+  async listQueue(
+    query: ProductParseQueueQueryDto,
+  ): Promise<ProductParseQueueItem[]> {
+    return this.productParserLogService.listLogs({
+      reviewStatus: query.reviewStatus,
+      keyword: query.keyword,
+      sourceType: query.sourceType,
+    });
+  }
+
+  async getQueueItem(id: string): Promise<ProductParseQueueDetail> {
+    return this.productParserLogService.getLogById(id);
+  }
+
+  async reviewQueueItem(
+    id: string,
+    dto: ReviewProductParseLogDto,
+    user: AuthenticatedUser,
+  ) {
+    if (dto.reviewStatus === ProductParseReviewStatus.PENDING) {
+      throw new BadRequestException("待确认状态无需手动提交");
+    }
+
+    return this.productParserLogService.reviewLog({
+      id,
+      reviewStatus: dto.reviewStatus,
+      reviewNote: dto.reviewNote,
+      user,
+    });
   }
 }

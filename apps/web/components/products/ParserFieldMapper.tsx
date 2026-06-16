@@ -1,13 +1,15 @@
 "use client";
 
+import styles from "./ProductParserPanels.module.css";
 import {
   MAPPABLE_FIELD_LABELS,
   hasValue,
+  outputTemplateOptions,
   type IndustryGroupOption,
   type ProductFormValues,
   type ProductParseFieldKey,
   type ProductParseResponse,
-  type ProductParserMappableField
+  type ProductParserMappableField,
 } from "./types";
 
 type ParserFieldMapperProps = {
@@ -24,7 +26,9 @@ type ParserFieldMapperProps = {
   onClear: () => void;
 };
 
-const directFieldToConflictKey: Partial<Record<ProductParserMappableField, ProductParseFieldKey>> = {
+const directFieldToConflictKey: Partial<
+  Record<ProductParserMappableField, ProductParseFieldKey>
+> = {
   name: "name",
   displayName: "displayName",
   spec: "spec",
@@ -34,7 +38,7 @@ const directFieldToConflictKey: Partial<Record<ProductParserMappableField, Produ
   scenarios: "scenarios",
   tagText: "labelText",
   remark: "remark",
-  outputTemplateType: "outputTemplateTypeSuggestion"
+  outputTemplateType: "outputTemplateTypeSuggestion",
 };
 
 export function ParserFieldMapper(props: ParserFieldMapperProps) {
@@ -49,14 +53,16 @@ export function ParserFieldMapper(props: ParserFieldMapperProps) {
     onFieldChange,
     onConflictSelect,
     onApply,
-    onClear
+    onClear,
   } = props;
 
   if (!result) {
     return null;
   }
 
-  const selectedGroup = industries.find((industry) => industry.id === mappingValues.industryGroupId);
+  const selectedGroup = industries.find(
+    (industry) => industry.id === mappingValues.industryGroupId,
+  );
   const subgroupOptions = selectedGroup?.subgroups ?? [];
 
   const fields: Array<{
@@ -74,17 +80,23 @@ export function ParserFieldMapper(props: ParserFieldMapperProps) {
     { key: "remark", type: "textarea" },
     { key: "industryGroupId", type: "select" },
     { key: "industrySubgroupId", type: "select" },
-    { key: "outputTemplateType", type: "select" }
+    { key: "outputTemplateType", type: "select" },
   ];
 
   return (
-    <section className="panel stack">
-      <div>
-        <h3>填表确认区</h3>
-        <p className="muted">每个字段都可以继续修正。已有表单值默认保留，你可以逐项切换成覆盖解析值。</p>
+    <section className={`panel ${styles.panelShell}`}>
+      <div className={styles.panelHeader}>
+        <div className={styles.panelHeaderMain}>
+          <span className={styles.stepTag}>Step 3</span>
+          <h3>字段确认并写回表单</h3>
+          <p>
+            每个字段都可以继续修正。已有表单值默认保留，你可以逐项切换成覆盖解析值，再统一写入。
+          </p>
+        </div>
+        <div className={styles.headerMeta}>确认后才会进入正式表单</div>
       </div>
 
-      <div className="stack">
+      <div className={styles.fieldList}>
         {fields.map((field) => {
           const currentValue = String(form[field.key] ?? "");
           const mappedValue = String(mappingValues[field.key] ?? "");
@@ -100,68 +112,82 @@ export function ParserFieldMapper(props: ParserFieldMapperProps) {
             : undefined;
           const hasExisting = hasValue(currentValue);
           const hasMapped = hasValue(mappedValue);
+          const mode = fieldModes[field.key] ?? "keep";
 
           return (
-            <div className="quote-card" key={field.key}>
-              <div className="toolbar">
-                <strong>{MAPPABLE_FIELD_LABELS[field.key]}</strong>
+            <article className={styles.fieldCard} key={field.key}>
+              <div className={styles.fieldTop}>
+                <div className={styles.fieldLabel}>
+                  <strong>{MAPPABLE_FIELD_LABELS[field.key]}</strong>
+                  <span>{hasMapped ? "已生成解析建议" : "当前没有建议值"}</span>
+                </div>
+
                 {hasExisting && hasMapped ? (
-                  <div className="toolbar">
-                    <label className="small">
-                      <input
-                        type="radio"
-                        checked={(fieldModes[field.key] ?? "keep") === "keep"}
-                        onChange={() => onModeChange(field.key, "keep")}
-                      />{" "}
+                  <div className={styles.segmented}>
+                    <button
+                      type="button"
+                      className={`${styles.segmentButton} ${
+                        mode === "keep" ? styles.segmentButtonActive : ""
+                      }`}
+                      onClick={() => onModeChange(field.key, "keep")}
+                    >
                       保留原值
-                    </label>
-                    <label className="small">
-                      <input
-                        type="radio"
-                        checked={(fieldModes[field.key] ?? "keep") === "apply"}
-                        onChange={() => onModeChange(field.key, "apply")}
-                      />{" "}
-                      覆盖
-                    </label>
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.segmentButton} ${
+                        mode === "apply" ? styles.segmentButtonActive : ""
+                      }`}
+                      onClick={() => onModeChange(field.key, "apply")}
+                    >
+                      覆盖解析值
+                    </button>
                   </div>
                 ) : null}
               </div>
 
               {hasExisting ? (
-                <div className="small muted" style={{ marginTop: 8 }}>
-                  当前表单值：{currentValue}
+                <div className={styles.currentValue}>
+                  <span>当前表单值</span>
+                  <strong>{currentValue}</strong>
                 </div>
               ) : null}
 
               {conflict ? (
-                <div style={{ marginTop: 12 }}>
-                  <div className="small muted">检测到冲突候选，请先选择一个候选值：</div>
-                  <div className="toolbar" style={{ marginTop: 8 }}>
+                <div className={styles.surfaceCard}>
+                  <div className={styles.surfaceHeading}>
+                    <strong>冲突候选值</strong>
+                    <span>图文识别结果不一致，建议先选一个候选值再继续。</span>
+                  </div>
+                  <div className={styles.candidateRow}>
                     {conflict.candidates.map((candidate, index) => (
                       <button
                         type="button"
                         key={`${field.key}-${index}`}
-                        className="button secondary inline"
-                        onClick={() => onConflictSelect(conflict.field, candidate.value)}
+                        className={styles.candidateButton}
+                        onClick={() =>
+                          onConflictSelect(conflict.field, candidate.value)
+                        }
                       >
-                        {candidate.source}：{candidate.value}
+                        {candidate.source} · {candidate.value}
                       </button>
                     ))}
                   </div>
                 </div>
               ) : null}
 
-              <div style={{ marginTop: 12 }}>
+              <div className={styles.fieldEditor}>
                 {field.type === "textarea" ? (
                   <textarea
+                    className={styles.textArea}
                     value={mappedValue}
                     onChange={(event) => onFieldChange(field.key, event.target.value)}
-                    style={{ minHeight: 100 }}
                   />
                 ) : null}
 
                 {field.type === "input" ? (
                   <input
+                    className={styles.textInput}
                     value={mappedValue}
                     onChange={(event) => onFieldChange(field.key, event.target.value)}
                   />
@@ -169,6 +195,7 @@ export function ParserFieldMapper(props: ParserFieldMapperProps) {
 
                 {field.type === "select" && field.key === "industryGroupId" ? (
                   <select
+                    className={styles.selectInput}
                     value={mappedValue}
                     onChange={(event) => onFieldChange(field.key, event.target.value)}
                   >
@@ -183,6 +210,7 @@ export function ParserFieldMapper(props: ParserFieldMapperProps) {
 
                 {field.type === "select" && field.key === "industrySubgroupId" ? (
                   <select
+                    className={styles.selectInput}
                     value={mappedValue}
                     onChange={(event) => onFieldChange(field.key, event.target.value)}
                   >
@@ -197,30 +225,43 @@ export function ParserFieldMapper(props: ParserFieldMapperProps) {
 
                 {field.type === "select" && field.key === "outputTemplateType" ? (
                   <select
+                    className={styles.selectInput}
                     value={mappedValue}
                     onChange={(event) => onFieldChange(field.key, event.target.value)}
                   >
                     <option value="">请选择输出模板</option>
-                    <option value="AGRICULTURE_PLAN">AGRICULTURE_PLAN</option>
-                    <option value="PRODUCT_QUOTE">PRODUCT_QUOTE</option>
-                    <option value="SOLUTION_QUOTE">SOLUTION_QUOTE</option>
+                    {outputTemplateOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 ) : null}
               </div>
-            </div>
+            </article>
           );
         })}
       </div>
 
-      {applyMessage ? <div className="small">{applyMessage}</div> : null}
+      <div className={styles.fieldFooter}>
+        <div>
+          {applyMessage ? (
+            <div className={styles.messagePositive}>{applyMessage}</div>
+          ) : (
+            <div className={styles.statusText}>
+              只有点击“确认填入表单”后，这些建议值才会进入正式产品录入表单。
+            </div>
+          )}
+        </div>
 
-      <div className="toolbar">
-        <button type="button" onClick={onApply}>
-          确认填入表单
-        </button>
-        <button type="button" className="button secondary" onClick={onClear}>
-          清空解析结果
-        </button>
+        <div className={styles.footerBar}>
+          <button type="button" onClick={onApply}>
+            确认填入表单
+          </button>
+          <button type="button" className="button secondary" onClick={onClear}>
+            清空解析结果
+          </button>
+        </div>
       </div>
     </section>
   );

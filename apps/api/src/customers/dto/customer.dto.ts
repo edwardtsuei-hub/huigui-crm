@@ -1,6 +1,15 @@
-import { Type } from "class-transformer";
-import { IsBoolean, IsEmail, IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
+import { Transform, Type } from "class-transformer";
+import { IsBoolean, IsEmail, IsEnum, IsIn, IsInt, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 import { CustomerStatus } from "@prisma/client";
+
+function emptyStringToUndefined(value: unknown) {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const normalizedValue = value.trim();
+  return normalizedValue ? normalizedValue : undefined;
+}
 
 export class CreateCustomerDto {
   @IsString()
@@ -23,6 +32,7 @@ export class CreateCustomerDto {
   wechatId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => emptyStringToUndefined(value))
   @IsEmail()
   email?: string;
 
@@ -106,6 +116,7 @@ export class UpdateCustomerDto {
   wechatId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => emptyStringToUndefined(value))
   @IsEmail()
   email?: string;
 
@@ -166,6 +177,10 @@ export class UpdateCustomerDto {
   @IsOptional()
   @IsString()
   remark?: string;
+
+  @IsOptional()
+  @IsString()
+  transferReason?: string;
 }
 
 export class CustomerQueryDto {
@@ -196,6 +211,10 @@ export class CustomerQueryDto {
   @IsOptional()
   @IsString()
   ownerUserId?: string;
+
+  @IsOptional()
+  @IsString()
+  includeSystemRecords?: string;
 
   @IsOptional()
   @Type(() => Number)
@@ -265,4 +284,16 @@ export class UpdateCustomerFollowupDto {
   @IsOptional()
   @IsBoolean()
   needReminder?: boolean;
+}
+
+export class ReviewCustomerApprovalDto {
+  @IsIn(["claim", "extension", "transfer"])
+  type!: "claim" | "extension" | "transfer";
+
+  @IsIn(["approve", "reject"])
+  decision!: "approve" | "reject";
+
+  @IsOptional()
+  @IsString()
+  remark?: string;
 }

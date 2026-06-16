@@ -13,16 +13,22 @@ function formatMoney(value: any) {
   return Number(value || 0).toFixed(2);
 }
 
+function isPdfkitFontPath(fontPath: string) {
+  return [".ttf", ".otf"].some((extension) => fontPath.toLowerCase().endsWith(extension));
+}
+
 function resolvePdfFontPath() {
   const candidates = [
     process.env.PDF_FONT_PATH,
-    "/System/Library/Fonts/PingFang.ttc",
-    "/System/Library/Fonts/Supplemental/Songti.ttc",
-    "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-    "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc"
+    "/usr/share/fonts/truetype/arphic-gbsn00lp/gbsn00lp.ttf",
+    "/usr/share/fonts/truetype/arphic-gkai00mp/gkai00mp.ttf"
   ].filter(Boolean) as string[];
 
-  return candidates.find((fontPath) => fs.existsSync(fontPath)) ?? null;
+  return (
+    candidates.find(
+      (fontPath) => isPdfkitFontPath(fontPath) && fs.existsSync(fontPath)
+    ) ?? null
+  );
 }
 
 @Injectable()
