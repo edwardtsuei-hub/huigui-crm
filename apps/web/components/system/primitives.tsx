@@ -298,20 +298,15 @@ export function RightDrawer({
   title: string;
   widthClass?: string;
 }) {
+  if (!open) {
+    return null;
+  }
+
   return (
     <>
-      <button
-        aria-hidden={!open}
-        className={`drawer-backdrop ${open ? "open" : ""}`}
-        onClick={onClose}
-        tabIndex={open ? 0 : -1}
-        type="button"
-      />
+      <button className="drawer-backdrop open" onClick={onClose} type="button" />
 
-      <aside
-        aria-hidden={!open}
-        className={cn("notification-drawer", open && "open", widthClass, className)}
-      >
+      <aside className={cn("notification-drawer", "open", widthClass, className)}>
         <div className="notification-drawer__header">
           <div className="stack compact-gap">
             {eyebrow ? <div className="page-header__eyebrow">{eyebrow}</div> : null}

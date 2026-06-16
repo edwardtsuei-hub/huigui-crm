@@ -1,0 +1,157 @@
+{
+  "report": "parallel-collab-shift-roster-halfday-pagecheck",
+  "date": "2026-06-16",
+  "executedAt": "2026-06-16 14:41:45 +0800",
+  "workflow": "B",
+  "status": "partial_blocked_by_auth",
+  "readonlyConstraints": {
+    "codeModified": false,
+    "databaseWritten": false,
+    "deployed": false,
+    "restarted": false,
+    "credentialsSubmitted": false
+  },
+  "requestedOutputs": {
+    "markdown": "/opt/huigui-crm/docs/parallel-collab-shift-roster-halfday-pagecheck-2026-06-16.md",
+    "json": "/opt/huigui-crm/output/employee-data-migration/2026-06-16/parallel-collab-shift-roster-halfday-pagecheck.json"
+  },
+  "actualOutputs": {
+    "markdown": "docs/parallel-collab-shift-roster-halfday-pagecheck-2026-06-16.md",
+    "json": "output/employee-data-migration/2026-06-16/parallel-collab-shift-roster-halfday-pagecheck.json",
+    "requestedPathWriteError": {
+      "path": "/opt/huigui-crm",
+      "mkdir": "Permission denied",
+      "sudoNoPrompt": "sudo: a password is required"
+    }
+  },
+  "browserCheck": {
+    "targetUrl": "https://management.hui-health.com/schedule/shifts",
+    "chromeFinalUrl": "https://management.hui-health.com/login?redirect=%2F",
+    "enteredAuthenticatedPage": false,
+    "blocker": "No active management login session in Chrome; did not submit credentials."
+  },
+  "httpCheck": {
+    "url": "https://management.hui-health.com/schedule/shifts",
+    "status": 200,
+    "htmlAssets": [
+      "/assets/index-C20sRqov.js",
+      "/assets/index-DUmE3prg.css"
+    ],
+    "cacheControl": "no-store, no-cache, must-revalidate"
+  },
+  "runtimePackageCheck": {
+    "sourceRouteUsesShiftSchedulerNative": true,
+    "sourceRouteFile": "apps/web/app/(dashboard)/schedule/shifts/page.tsx",
+    "sourceRouteEvidence": "return <ShiftSchedulerNative />",
+    "productionAsset": "/assets/index-C20sRqov.js",
+    "productionAssetContainsShiftSchedulerNativeLiteral": false,
+    "result": "inconclusive",
+    "note": "Repository route points to ShiftSchedulerNative, but authenticated runtime UI could not be entered and the compressed production SPA asset does not expose the component name literal."
+  },
+  "halfDayDataEvidence": {
+    "migrationPlanFile": "output/employee-data-migration/2026-06-16/roster-backfill-plan.json",
+    "frontHouseHalfDayCount": 5,
+    "frontHouseHalfDayRows": [
+      {
+        "teamKey": "bearhug-front",
+        "personName": "迦迦",
+        "role": "前厅兼职",
+        "day": "周一",
+        "dateLabel": "06/15",
+        "shift": "半天班",
+        "title": "半天班",
+        "time": "09:50-14:00"
+      },
+      {
+        "teamKey": "bearhug-front",
+        "personName": "迦迦",
+        "role": "前厅兼职",
+        "day": "周二",
+        "dateLabel": "06/16",
+        "shift": "半天班",
+        "title": "半天班",
+        "time": "09:50-14:00"
+      },
+      {
+        "teamKey": "bearhug-front",
+        "personName": "迦迦",
+        "role": "前厅兼职",
+        "day": "周三",
+        "dateLabel": "06/17",
+        "shift": "半天班",
+        "title": "半天班",
+        "time": "09:50-14:00"
+      },
+      {
+        "teamKey": "bearhug-front",
+        "personName": "迦迦",
+        "role": "前厅兼职",
+        "day": "周六",
+        "dateLabel": "06/20",
+        "shift": "半天班",
+        "title": "半天班",
+        "time": "09:50-14:00"
+      },
+      {
+        "teamKey": "bearhug-front",
+        "personName": "迦迦",
+        "role": "前厅兼职",
+        "day": "周日",
+        "dateLabel": "06/21",
+        "shift": "半天班",
+        "title": "半天班",
+        "time": "09:50-14:00"
+      }
+    ],
+    "productionAssetContainsBearhugFrontHalfDayOption": true,
+    "productionAssetHalfDayOptionSnippet": "bearhug-front value:\"半天班\", label:\"半天\", title:\"半天班\", time:\"09:50-14:00\", detail:\"前厅兼职\""
+  },
+  "surfaceChecks": [
+    {
+      "surface": "desktop_table",
+      "status": "not_verified",
+      "reason": "Authenticated page not accessible."
+    },
+    {
+      "surface": "mobile_shift_buttons",
+      "status": "not_verified",
+      "reason": "Authenticated page not accessible."
+    },
+    {
+      "surface": "shift_picker_modal",
+      "status": "not_verified",
+      "reason": "Authenticated page not accessible."
+    },
+    {
+      "surface": "shift_settings",
+      "status": "not_verified",
+      "reason": "Authenticated page not accessible; source ShiftSchedulerNative settings only maps early/late/full, with early label as 早班."
+    },
+    {
+      "surface": "export_preview",
+      "status": "not_verified",
+      "reason": "Authenticated page not accessible."
+    }
+  ],
+  "shiftLocalStandaloneV9Check": {
+    "sourceNativeReadsOrWritesKey": false,
+    "sourceNativeApiEndpoint": "/settings/shift-roster",
+    "keyOnlyFoundIn": [
+      "apps/web/components/shift-roster/ShiftSchedulerEmbedded.tsx",
+      "apps/web/public/embedded/shift-scheduler-v9.html"
+    ],
+    "productionAssetContainsKey": false,
+    "result": "not_directly_affected_by_shift_local_standalone_v9"
+  },
+  "risks": [
+    "apps/web/lib/shift-roster.ts still defines early label as 早班 and has no halfDay shift code.",
+    "If authenticated /schedule/shifts still runs old ShiftSchedulerNative and half-day data is encoded as early, UI surfaces can display 早班.",
+    "Production asset contains half-day strings, but login was required before visual UI verification could be completed."
+  ],
+  "recommendedFollowUp": [
+    "Log in with a formal management account and reopen /schedule/shifts.",
+    "Verify bearhug-front 06/15-06/21 person 迦迦 shows 半天班 on Mon/Tue/Wed/Sat/Sun.",
+    "Switch desktop and mobile viewports; open shift picker, settings, and export preview; record visible text or DOM evidence.",
+    "Confirm whether authenticated runtime is the repository ShiftSchedulerNative route or the deployed SPA roster surface."
+  ]
+}

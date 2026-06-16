@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  ServiceUnavailableException
+} from "@nestjs/common";
 import { createWorker } from "tesseract.js";
 import { CosStorageService } from "../files/cos-storage.service";
 import { UploadedImageFile } from "./product-parser.types";
@@ -21,13 +27,7 @@ export class ImageParserService implements OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    if (!this.workerPromise) {
-      return;
-    }
-
-    const worker = await this.workerPromise;
-    await worker.terminate();
-    this.workerPromise = null;
+    await this.resetWorker();
   }
 
   private ensureImageFile(file?: UploadedImageFile) {
@@ -45,29 +45,65 @@ export class ImageParserService implements OnModuleDestroy {
   }
 
   private async extractTextFromBuffer(buffer: Buffer) {
-    const worker = await this.getWorker();
-    const {
-      data: { text }
-    } = await worker.recognize(buffer);
+    try {
+      const worker = await this.getWorker();
+      const {
+        data: { text }
+      } = await worker.recognize(buffer);
 
-    return this.cleanOcrText(text);
+      return this.cleanOcrText(text);
+    } catch (error) {
+      this.logger.error(
+        `OCR 解析失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      await this.resetWorker();
+      throw new ServiceUnavailableException("图片解析服务暂时不可用，请稍后重试，或先改用文字解析。");
+    }
   }
 
   private async getWorker() {
     if (!this.workerPromise) {
       this.workerPromise = createWorker(["chi_sim", "eng"], 1, {
-        logger:
-          process.env.NODE_ENV === "development"
-            ? (message) => {
-                if (message.status.includes("recognizing")) {
-                  this.logger.debug(`${message.status} ${Math.round(message.progress * 100)}%`);
-                }
-              }
-            : undefined
+        logger: (message) => {
+          if (process.env.NODE_ENV !== "development") {
+            return;
+          }
+
+          if (message.status.includes("recognizing")) {
+            this.logger.debug(`${message.status} ${Math.round(message.progress * 100)}%`);
+          }
+        },
+        errorHandler: (error) => {
+          this.logger.error(`OCR worker 错误: ${String(error)}`);
+        }
+      }).catch((error) => {
+        this.workerPromise = null;
+        throw error;
       });
     }
 
     return this.workerPromise;
+  }
+
+  private async resetWorker() {
+    if (!this.workerPromise) {
+      return;
+    }
+
+    const currentWorkerPromise = this.workerPromise;
+    this.workerPromise = null;
+
+    const worker = await currentWorkerPromise.catch(() => null);
+    if (!worker) {
+      return;
+    }
+
+    await worker.terminate().catch((error) => {
+      this.logger.warn(
+        `OCR worker 终止失败: ${error instanceof Error ? error.message : "未知错误"}`
+      );
+    });
   }
 
   private async loadImageBuffer(imageUrl: string) {

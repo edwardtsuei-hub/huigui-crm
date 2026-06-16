@@ -35,6 +35,39 @@ export type CustomerFormValues = {
   remark: string;
 };
 
+export type CustomerStage =
+  | "new"
+  | "contacted"
+  | "following"
+  | "quoted"
+  | "cooperating"
+  | "paused";
+
+export type CustomerPriority = "normal" | "high" | "urgent";
+
+export type CustomerQuoteStatus = "none" | "linked" | "waiting_reply";
+
+export interface CustomerItem {
+  id: string;
+  name: string;
+  code?: string;
+  stage: CustomerStage;
+  priority?: CustomerPriority;
+  ownerName?: string;
+  industry?: string;
+  source?: string;
+  nextAction?: string;
+  recentActivityAt?: string;
+  recentActivitySummary?: string;
+  intentionScore?: number;
+  quoteAmount?: number;
+  followUpCount?: number;
+  quoteStatus?: CustomerQuoteStatus;
+  tags?: string[];
+  lastUpdatedAt?: string;
+  priorityReason?: string;
+}
+
 export type CustomerDetail = {
   id: string;
   name: string;
@@ -54,6 +87,32 @@ export type CustomerDetail = {
   estimatedAmount?: string | null;
   successProbability?: number | null;
   remark?: string | null;
+  ownerAssignedAt: string;
+  ownerProtectionMonths: number;
+  ownerProtectedUntil: string;
+  ownerProtectionStatus: "PROTECTED" | "PENDING_MAINTENANCE";
+  canClaimOwnership?: boolean;
+  approvalRequests?: Array<{
+    id: string;
+    type: string;
+    status: "PENDING" | "APPROVED" | "REJECTED" | "NOT_REQUIRED";
+    title: string;
+    summary?: string | null;
+    requiredRoleCode?: string | null;
+    decisionRemark?: string | null;
+    createdAt: string;
+    decidedAt?: string | null;
+    requester?: {
+      id: string;
+      displayName: string;
+      roleName: string;
+    } | null;
+    actor?: {
+      id: string;
+      displayName: string;
+      roleName: string;
+    } | null;
+  }>;
   owner: { id: string; displayName: string; role: { name: string } };
   industryGroup?: { id: string; name: string } | null;
   industrySubgroup?: { id: string; name: string } | null;
@@ -64,12 +123,47 @@ export const customerStatusOptions = [
   { value: "CONTACTED", label: "已联系" },
   { value: "MET", label: "已拜访" },
   { value: "COOPERATING", label: "合作中" },
-  { value: "PAUSED", label: "暂停跟进" }
+  { value: "PAUSED", label: "暂停跟进" },
 ] as const;
 
-export const customerStatusLabelMap: Record<string, string> = Object.fromEntries(
-  customerStatusOptions.map((option) => [option.value, option.label])
-);
+export const customerStatusLabelMap: Record<string, string> =
+  Object.fromEntries(
+    customerStatusOptions.map((option) => [option.value, option.label]),
+  );
+
+export function customerStageFromStatus(
+  status: string,
+  hasQuotation = false,
+): CustomerStage {
+  if (hasQuotation && status !== "COOPERATING") {
+    return "quoted";
+  }
+
+  switch (status) {
+    case "CONTACTED":
+      return "contacted";
+    case "MET":
+      return "following";
+    case "COOPERATING":
+      return "cooperating";
+    case "PAUSED":
+      return "paused";
+    default:
+      return "new";
+  }
+}
+
+export function customerQuoteStatusLabel(status?: CustomerQuoteStatus) {
+  switch (status) {
+    case "linked":
+      return "已关联";
+    case "waiting_reply":
+      return "待回复";
+    case "none":
+    default:
+      return "未报价";
+  }
+}
 
 export function customerStatusTone(status: string) {
   switch (status) {
@@ -82,6 +176,18 @@ export function customerStatusTone(status: string) {
     default:
       return "neutral";
   }
+}
+
+export function customerOwnerProtectionTone(
+  status: CustomerDetail["ownerProtectionStatus"],
+) {
+  return status === "PROTECTED" ? "success" : "warning";
+}
+
+export function customerOwnerProtectionLabel(
+  status: CustomerDetail["ownerProtectionStatus"],
+) {
+  return status === "PROTECTED" ? "保护中" : "待维护";
 }
 
 export const defaultCustomerForm: CustomerFormValues = {
@@ -104,17 +210,19 @@ export const defaultCustomerForm: CustomerFormValues = {
   cooperationContent: "",
   estimatedAmount: "",
   dealProbability: "50",
-  remark: ""
+  remark: "",
 };
 
 export function createCustomerForm(ownerUserId = ""): CustomerFormValues {
   return {
     ...defaultCustomerForm,
-    ownerUserId
+    ownerUserId,
   };
 }
 
-export function customerToFormValues(customer: CustomerDetail): CustomerFormValues {
+export function customerToFormValues(
+  customer: CustomerDetail,
+): CustomerFormValues {
   return {
     customerName: customer.name,
     companyName: customer.companyName ?? "",
@@ -135,18 +243,45 @@ export function customerToFormValues(customer: CustomerDetail): CustomerFormValu
     cooperationContent: customer.cooperationContent ?? "",
     estimatedAmount: customer.estimatedAmount ?? "",
     dealProbability:
-      customer.successProbability === null || customer.successProbability === undefined
+      customer.successProbability === null ||
+      customer.successProbability === undefined
         ? ""
         : String(customer.successProbability),
-    remark: customer.remark ?? ""
+    remark: customer.remark ?? "",
   };
+}
+
+function normalizeOptionalText(value: string) {
+  const normalizedValue = value.trim();
+  return normalizedValue ? normalizedValue : undefined;
 }
 
 export function toCustomerPayload(form: CustomerFormValues) {
   return {
-    ...form,
-    estimatedAmount: form.estimatedAmount ? Number(form.estimatedAmount) : undefined,
-    dealProbability: form.dealProbability ? Number(form.dealProbability) : undefined
+    customerName: form.customerName.trim(),
+    companyName: normalizeOptionalText(form.companyName),
+    contactName: normalizeOptionalText(form.contactName),
+    mobile: normalizeOptionalText(form.mobile),
+    wechatId: normalizeOptionalText(form.wechatId),
+    email: normalizeOptionalText(form.email),
+    province: normalizeOptionalText(form.province),
+    city: normalizeOptionalText(form.city),
+    district: normalizeOptionalText(form.district),
+    address: normalizeOptionalText(form.address),
+    source: normalizeOptionalText(form.source),
+    industryGroupId: normalizeOptionalText(form.industryGroupId),
+    industrySubgroupId: normalizeOptionalText(form.industrySubgroupId),
+    status: form.status,
+    ownerUserId: form.ownerUserId,
+    cooperationDirection: normalizeOptionalText(form.cooperationDirection),
+    cooperationContent: normalizeOptionalText(form.cooperationContent),
+    estimatedAmount: form.estimatedAmount
+      ? Number(form.estimatedAmount)
+      : undefined,
+    dealProbability: form.dealProbability
+      ? Number(form.dealProbability)
+      : undefined,
+    remark: normalizeOptionalText(form.remark),
   };
 }
 
@@ -157,6 +292,6 @@ export function formatCustomerMoney(value?: string | null) {
 
   return `¥${Number(value).toLocaleString("zh-CN", {
     minimumFractionDigits: 0,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
   })}`;
 }

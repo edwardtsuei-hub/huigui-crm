@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 2,
+  "workstream": "release-control-review-v2",
+  "line": "D",
+  "status": "ready_for_readonly_release_check",
+  "reviewedAt": "2026-06-16T19:20:08+08:00",
+  "restrictionsObserved": {
+    "deployed": false,
+    "restartedService": false,
+    "rolledBack": false,
+    "changedBusinessCode": false,
+    "changedApiCode": false,
+    "changedFrontendCode": false,
+    "changedSchema": false,
+    "wroteDatabase": false,
+    "printedEnvPlaintext": false
+  },
+  "readFiles": [
+    "docs/parallel-collaboration-control-2026-06-16.md",
+    "docs/employee-data-production-migration-record-2026-06-16.md",
+    "docs/parallel-collab-release-control-2026-06-16.md",
+    "docs/parallel-collab-api-db-first-2026-06-16.md",
+    "docs/parallel-collab-a-line-verification-2026-06-16.md"
+  ],
+  "writtenFiles": [
+    "docs/parallel-collab-release-control-review-v2-2026-06-16.md",
+    "output/employee-data-migration/2026-06-16/parallel-collab-release-control-review-v2.json"
+  ],
+  "apiDbFirstHandoff": {
+    "path": "docs/parallel-collab-api-db-first-2026-06-16.md",
+    "exists": true,
+    "previousBlockedReasonCleared": true,
+    "status": "handoff_present",
+    "aLineVerifiedOnline": true,
+    "apiFileFingerprintsMatchServer": true,
+    "healthOk": true
+  },
+  "releaseDecision": {
+    "status": "ready_for_readonly_release_check",
+    "releaseAllowed": "ready_for_readonly_release_check",
+    "deploymentAllowed": false,
+    "reason": "A-line handoff is present, but shared/shared api_db_first_bridge payload growth risk remains open.",
+    "allowedNextActions": [
+      "read-only pre-release checks",
+      "monitor WeeklyReportPayload grouped counts",
+      "monitor shared/shared draft payload growth",
+      "collect logs and evidence if growth continues"
+    ],
+    "blockedActionsWithoutUserApproval": [
+      "deploy",
+      "restart services",
+      "write production database",
+      "change API/frontend/schema",
+      "create Docker rollback tag"
+    ]
+  },
+  "latestFacts": {
+    "apiHealth": "ok",
+    "rosterCounts": {
+      "RosterWeek": 6,
+      "RosterShift": 210,
+      "orphan_RosterShift": 0
+    },
+    "weeklyReportPayloadTotal": 19,
+    "weeklyReportPayloadBySourceAndStatus": [
+      {
+        "source": "legacy_weekly_workspace",
+        "migrationStatus": "IMPORTED",
+        "count": 3,
+        "baselineRole": "legacy migration baseline"
+      },
+      {
+        "source": "legacy_weekly_workspace",
+        "migrationStatus": "NEEDS_REVIEW",
+        "count": 3,
+        "baselineRole": "legacy migration baseline"
+      },
+      {
+        "source": "api_db_first_bridge",
+        "migrationStatus": "IMPORTED",
+        "count": 13,
+        "baselineRole": "post-bridge risk monitor"
+      }
+    ],
+    "sharedSharedRisk": {
+      "sourceUserKey": "shared",
+      "canonicalUserKey": "shared",
+      "reportState": "draft",
+      "source": "api_db_first_bridge",
+      "migrationStatus": "IMPORTED",
+      "count": 13,
+      "distinctSourceSha16": 13,
+      "riskStatus": "needs_monitoring"
+    }
+  },
+  "runbookUpdatesRecommended": {
+    "weeklyReportPayloadBaseline": {
+      "oldRule": "WeeklyReportPayload total must equal 6",
+      "newRule": "Validate by source and migrationStatus; legacy_weekly_workspace remains 3 IMPORTED and 3 NEEDS_REVIEW, while api_db_first_bridge rows are monitored separately.",
+      "mustMonitorGrowth": true
+    },
+    "sharedPayloadMonitoring": {
+      "required": true,
+      "rule": "Before release, confirm shared/shared draft api_db_first_bridge count and distinct sourceSha16 do not continue growing without an intentional write trigger."
+    },
+    "dockerComposeFallback": {
+      "required": true,
+      "reason": "docker compose may be blocked by .env permissions in production.",
+      "fallbackCommands": [
+        "docker ps --format 'table {{.Names}}\\t{{.Image}}\\t{{.Status}}\\t{{.Ports}}'",
+        "docker inspect huigui-api --format '{{.Image}} {{json .State}}'",
+        "docker logs --tail=200 huigui-api",
+        "docker exec huigui-mysql sh -lc 'mysql -uroot -p\"$MYSQL_ROOT_PASSWORD\" \"$MYSQL_DATABASE\" -N -B -e \"SELECT 1;\"'"
+      ]
+    },
+    "rollbackTagClassification": {
+      "command": "docker tag \"$PRE_API_IMAGE\" \"$ROLLBACK_TAG\"",
+      "isReadOnly": false,
+      "requiresUserConfirmation": true,
+      "recommendation": "Move out of pure read-only checks; label as a user-confirmed Docker metadata write."
+    }
+  },
+  "databaseFieldChecks": {
+    "WeeklyReportPayload": {
+      "statusField": "migrationStatus",
+      "status": "correct"
+    },
+    "RosterShift": {
+      "relationField": "rosterWeekId",
+      "status": "correct"
+    }
+  },
+  "stopPoint": "Review refreshed. A-line handoff is present; proceed only to read-only release checks and shared/shared payload monitoring, not deployment.",
+  "nextStepSuggestion": "Run a fresh read-only pre-release check that includes grouped WeeklyReportPayload counts and shared/shared growth comparison before asking the user for any deployment approval."
+}

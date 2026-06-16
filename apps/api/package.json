@@ -26,7 +26,8 @@
     "qcloud-cos-sts": "^3.1.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
-    "tesseract.js": "^7.0.0"
+    "tesseract.js": "^7.0.0",
+    "undici": "^6.21.3"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",

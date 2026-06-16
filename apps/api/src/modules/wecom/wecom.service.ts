@@ -2,12 +2,15 @@ import {
   BadGatewayException,
   BadRequestException,
   Injectable,
+  Logger,
   ServiceUnavailableException,
   UnauthorizedException
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { createDecipheriv, createHash } from "crypto";
+import { PrismaService } from "../../prisma/prisma.service";
 import { WecomCallbackQueryDto } from "./dto/wecom.dto";
+import { resolveWecomAppConfig } from "./wecom-app-config";
 import { WecomTokenService } from "./wecom-token.service";
 
 type WecomBaseResponse = {
@@ -23,39 +26,45 @@ type WecomRequestOptions = {
   body?: Record<string, unknown>;
   query?: Record<string, string | number | boolean | undefined>;
   requiresToken?: boolean;
+  origin?: string;
 };
 
 @Injectable()
 export class WecomService {
+  private readonly logger = new Logger(WecomService.name);
+
   constructor(
     private readonly configService: ConfigService,
-    private readonly tokenService: WecomTokenService
+    private readonly tokenService: WecomTokenService,
+    private readonly prisma: PrismaService
   ) {}
 
-  getClientConfig() {
-    const corpId = this.configService.get<string>("WECOM_CORP_ID")?.trim() ?? "";
-    const agentId = this.configService.get<string>("WECOM_AGENT_ID")?.trim() ?? "";
+  getClientConfig(origin?: string) {
+    const appConfig = resolveWecomAppConfig(this.configService, origin);
 
     return {
-      enabled: Boolean(corpId && agentId),
-      corpId,
-      agentId
+      enabled: Boolean(appConfig.corpId && appConfig.agentId && appConfig.secret),
+      corpId: appConfig.corpId,
+      agentId: appConfig.agentId,
+      redirectUri: appConfig.redirectUri
     };
   }
 
   async get<T extends WecomBaseResponse>(
     path: string,
-    query?: Record<string, string | number | boolean | undefined>
+    query?: Record<string, string | number | boolean | undefined>,
+    origin?: string
   ) {
-    return this.request<T>(path, { query, requiresToken: true });
+    return this.request<T>(path, { query, requiresToken: true, origin });
   }
 
   async post<T extends WecomBaseResponse>(
     path: string,
     body: Record<string, unknown>,
-    query?: Record<string, string | number | boolean | undefined>
+    query?: Record<string, string | number | boolean | undefined>,
+    origin?: string
   ) {
-    return this.request<T>(path, { body, query, requiresToken: true });
+    return this.request<T>(path, { body, query, requiresToken: true, origin });
   }
 
   verifyCallback(query: WecomCallbackQueryDto) {
@@ -69,7 +78,7 @@ export class WecomService {
     return this.decrypt(query.echostr);
   }
 
-  handleCallback(query: WecomCallbackQueryDto, rawBody: string) {
+  async handleCallback(query: WecomCallbackQueryDto, rawBody: string) {
     this.ensureCallbackConfig();
 
     if (!rawBody) {
@@ -82,26 +91,73 @@ export class WecomService {
     }
 
     this.validateSignature(query.msg_signature, query.timestamp, query.nonce, encrypted);
-    this.decrypt(encrypted);
+    const xml = this.decrypt(encrypted);
+    await this.recordCallback(xml);
+  }
+
+  private async recordCallback(xml: string) {
+    try {
+      const summary = this.parseCallbackXml(xml);
+      await this.prisma.wecomCallbackLog.create({
+        data: {
+          event: summary.Event,
+          changeType: summary.ChangeType,
+          fromUserId: summary.FromUserName ?? summary.UserID,
+          agentId: summary.AgentID,
+          rawXml: xml,
+          status: "RECEIVED"
+        }
+      });
+    } catch (error) {
+      this.logger.warn(
+        `企业微信回调记录失败: ${error instanceof Error ? error.message : String(error)}`
+      );
+
+      try {
+        await this.prisma.wecomCallbackLog.create({
+          data: {
+            rawXml: xml,
+            status: "FAILED",
+            error: error instanceof Error ? error.message : String(error)
+          }
+        });
+      } catch (recordError) {
+        this.logger.warn(
+          `企业微信回调失败记录写入失败: ${
+            recordError instanceof Error ? recordError.message : String(recordError)
+          }`
+        );
+      }
+    }
+  }
+
+  private parseCallbackXml(xml: string) {
+    return {
+      Event: this.extractXmlValue(xml, "Event"),
+      ChangeType: this.extractXmlValue(xml, "ChangeType"),
+      FromUserName: this.extractXmlValue(xml, "FromUserName"),
+      UserID: this.extractXmlValue(xml, "UserID"),
+      AgentID: this.extractXmlValue(xml, "AgentID")
+    };
   }
 
   private async request<T extends WecomBaseResponse>(
     path: string,
     options: WecomRequestOptions
   ) {
-    this.ensureAppConfig();
+    this.ensureAppConfig(options.origin);
 
     const requiresToken = options.requiresToken ?? true;
     const query = { ...(options.query ?? {}) };
 
     if (requiresToken) {
-      query.access_token = await this.tokenService.getAccessToken();
+      query.access_token = await this.tokenService.getAccessToken(false, options.origin);
     }
 
     let payload = await this.performRequest<T>(path, options.body, query);
 
     if (requiresToken && this.isTokenExpired(payload.errcode)) {
-      query.access_token = await this.tokenService.getAccessToken(true);
+      query.access_token = await this.tokenService.getAccessToken(true, options.origin);
       payload = await this.performRequest<T>(path, options.body, query);
     }
 
@@ -220,10 +276,8 @@ export class WecomService {
     return [40014, 42001, 42007].includes(errcode);
   }
 
-  private ensureAppConfig() {
-    const corpId = this.configService.get<string>("WECOM_CORP_ID")?.trim();
-    const agentId = this.configService.get<string>("WECOM_AGENT_ID")?.trim();
-    const secret = this.configService.get<string>("WECOM_SECRET")?.trim();
+  private ensureAppConfig(origin?: string) {
+    const { corpId, agentId, secret } = resolveWecomAppConfig(this.configService, origin);
 
     if (!corpId || !agentId || !secret) {
       throw new ServiceUnavailableException("企业微信接入尚未配置完整");

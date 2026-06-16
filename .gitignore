@@ -1,6 +1,8 @@
 .env
 **/.env
 **/.env.local
+.env.backup*
+.env.bak*
 
 node_modules
 **/node_modules
@@ -11,13 +13,21 @@ dist
 
 storage
 logs
+output
 coverage
 .npm-cache
 .playwright-cli
 tmp
+backups
+.codex-backups
+.codex-tools
 .DS_Store
+._*
 *.log
+*.bak-*
 *.tsbuildinfo
 *.zip
+__pycache__/
+*.pyc
 
 prisma/dev.db

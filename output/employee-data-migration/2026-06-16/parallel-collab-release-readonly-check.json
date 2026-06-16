@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "workstream": "release-readonly-check",
+  "line": "D",
+  "status": "readonly_check_passed_with_shared_monitoring",
+  "checkedAt": "2026-06-16T19:33:04+08:00",
+  "restrictionsObserved": {
+    "deployed": false,
+    "restartedService": false,
+    "rolledBack": false,
+    "createdRollbackTag": false,
+    "changedBusinessCode": false,
+    "changedApiCode": false,
+    "changedFrontendCode": false,
+    "changedSchema": false,
+    "wroteDatabase": false,
+    "printedEnvPlaintext": false
+  },
+  "server": {
+    "cwd": "/opt/huigui-crm",
+    "gitHead": "573e3da91614fcb7d0da6b32c971db290a7fa2c1",
+    "handoffDocument": "/opt/huigui-crm/docs/parallel-collab-api-db-first-2026-06-16.md",
+    "handoffPresent": true,
+    "health": {
+      "status": "ok",
+      "service": "huigui-api",
+      "timestamp": "2026-06-16T11:33:04.895Z"
+    },
+    "containers": {
+      "huigui-api": "Up About an hour",
+      "huigui-app": "Up 5 hours",
+      "huigui-nginx": "Up 2 days",
+      "huigui-mysql": "Up 3 weeks (healthy)"
+    },
+    "apiImage": "sha256:4806488c135889ce4dd622f83b60ba788e876564d8d128ca85510a32ac2ea1e0",
+    "apiFileFingerprints": {
+      "apps/api/src/employee-launch/employee-launch.service.ts": "c07e0845d3e5daf464d489041f1ad009cdd652cd5d94f5c4707ba8958c6310e7",
+      "apps/api/src/employee-launch/employee-launch.controller.ts": "90314cdfa46c22ebf5714d1e1ca090aa58a0674d8f2a41259adea1efcb5089bf"
+    },
+    "gitWorktreeObservation": {
+      "statusIsBroadlyDirty": true,
+      "selectedTrackedApiDiffEmpty": true,
+      "employeeLaunchDirectoryAppearsUntracked": true,
+      "releaseRisk": "Do not treat the current production worktree as a clean release source; use explicit artifact, commit, or image if deployment is later approved."
+    }
+  },
+  "databaseReadOnlyCounts": {
+    "RosterWeek": 6,
+    "RosterShift": 210,
+    "orphan_RosterShift": 0,
+    "WeeklyReportPayload": 19
+  },
+  "weeklyReportPayloadBySourceAndStatus": [
+    {
+      "source": "api_db_first_bridge",
+      "migrationStatus": "IMPORTED",
+      "count": 13,
+      "baselineRole": "post-bridge risk monitor"
+    },
+    {
+      "source": "legacy_weekly_workspace",
+      "migrationStatus": "IMPORTED",
+      "count": 3,
+      "baselineRole": "legacy migration baseline"
+    },
+    {
+      "source": "legacy_weekly_workspace",
+      "migrationStatus": "NEEDS_REVIEW",
+      "count": 3,
+      "baselineRole": "legacy migration baseline"
+    }
+  ],
+  "sharedSharedRisk": {
+    "sourceUserKey": "shared",
+    "canonicalUserKey": "shared",
+    "reportState": "draft",
+    "source": "api_db_first_bridge",
+    "migrationStatus": "IMPORTED",
+    "count": 13,
+    "distinctSourceSha16": 13,
+    "growthComparedToReviewV2": 0,
+    "riskStatus": "stable_but_unexplained"
+  },
+  "releaseDecision": {
+    "readonlyCheckAllowed": true,
+    "readonlyCheckPassed": true,
+    "deploymentAllowed": false,
+    "rollbackAllowed": false,
+    "rollbackTagAllowed": false,
+    "allowedNextActions": [
+      "commit and sync D-line runbook and readonly check evidence",
+      "continue monitoring shared/shared payload growth",
+      "continue B-line halfDay implementation planning",
+      "continue C-line archive schema drafting"
+    ],
+    "blockedActionsWithoutUserApproval": [
+      "deploy",
+      "restart services",
+      "write production database",
+      "change API/frontend/schema",
+      "create Docker rollback tag"
+    ]
+  },
+  "writtenFiles": [
+    "docs/parallel-collab-release-control-2026-06-16.md",
+    "docs/parallel-collab-release-readonly-check-2026-06-16.md",
+    "output/employee-data-migration/2026-06-16/parallel-collab-release-readonly-check.json"
+  ],
+  "stopPoint": "Read-only release check passed with shared/shared bridge payload stable at 13, but deployment remains blocked pending user approval and release-source clarification."
+}

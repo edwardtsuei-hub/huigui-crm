@@ -4,6 +4,7 @@ import type { AuthenticatedUser } from "../common/types/authenticated-user";
 import { AccessControlService } from "../common/services/access-control.service";
 import { ApprovalService } from "../common/services/approval.service";
 import { AuditService } from "../common/services/audit.service";
+import { RecordPartitionService } from "../common/services/record-partition.service";
 import { PrismaService } from "../prisma/prisma.service";
 import {
   CalculateGeneralQuoteDto,
@@ -30,7 +31,8 @@ export class GeneralQuotesService {
     private readonly prisma: PrismaService,
     private readonly accessControl: AccessControlService,
     private readonly approvalService: ApprovalService,
-    private readonly auditService: AuditService
+    private readonly auditService: AuditService,
+    private readonly recordPartition: RecordPartitionService,
   ) {}
 
   private async ensureCustomerAccessible(customerId: string, user: AuthenticatedUser) {
@@ -156,6 +158,7 @@ export class GeneralQuotesService {
     const preview = await this.calculate(dto);
     const quotationNo = buildQuotationNo();
     const targetIndustryGroupId = dto.industryGroupId ?? customer.industryGroupId;
+    const partition = await this.recordPartition.getWritableCreateData(user);
     const industryGroup = targetIndustryGroupId
       ? await this.prisma.industryGroup.findUnique({
           where: { id: targetIndustryGroupId }
@@ -185,7 +188,10 @@ export class GeneralQuotesService {
           discountReason: preview.discountReason,
           remark: preview.remark,
           creatorUserId: user.id,
-          status: QuotationStatus.GENERATED
+          status: QuotationStatus.GENERATED,
+          dataScope: partition.dataScope,
+          partitionKey: partition.partitionKey,
+          testBatchId: partition.testBatchId,
         }
       });
 

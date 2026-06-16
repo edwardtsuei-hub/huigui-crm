@@ -2,14 +2,15 @@ import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import {
   ContractStatus,
-  NotificationChannel,
-  NotificationSendStatus,
+  RecordDataScope,
   TaskStatus,
   UserStatus
 } from "@prisma/client";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { PrismaService } from "../../prisma/prisma.service";
+import { REAL_PARTITION_KEY } from "../../common/services/record-partition.service";
 import { NotificationService } from "../notifications/notification.service";
+import { WorkManagementService } from "../../work-management/work-management.service";
 
 type ReminderPayload = {
   recipients: string[];
@@ -27,7 +28,8 @@ export class ReminderService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
+    private readonly workManagementService: WorkManagementService
   ) {}
 
   @Cron(CronExpression.EVERY_10_MINUTES)
@@ -35,7 +37,8 @@ export class ReminderService {
     const jobs = [
       this.processFollowupReminders(),
       this.processTaskReminders(),
-      this.processContractReminders()
+      this.processContractReminders(),
+      this.processWorkManagementReminders()
     ];
 
     const results = await Promise.allSettled(jobs);
@@ -53,7 +56,14 @@ export class ReminderService {
         nextContactAt: {
           not: null,
           lte: new Date()
-        }
+        },
+        customer: {
+          is: {
+            dataScope: RecordDataScope.REAL,
+            partitionKey: REAL_PARTITION_KEY,
+            testBatchId: null
+          }
+        },
       },
       include: {
         customer: {
@@ -94,7 +104,10 @@ export class ReminderService {
         },
         status: {
           in: [TaskStatus.TODO, TaskStatus.DOING]
-        }
+        },
+        dataScope: RecordDataScope.REAL,
+        partitionKey: REAL_PARTITION_KEY,
+        testBatchId: null,
       },
       select: {
         id: true,
@@ -141,7 +154,10 @@ export class ReminderService {
             gte: now,
             lte: deadline
           },
-          status: ContractStatus.ACTIVE
+          status: ContractStatus.ACTIVE,
+          dataScope: RecordDataScope.REAL,
+          partitionKey: REAL_PARTITION_KEY,
+          testBatchId: null,
         },
         include: {
           customer: {
@@ -189,20 +205,52 @@ export class ReminderService {
     }
   }
 
+  private async processWorkManagementReminders() {
+    const [weeklyTargets, monthlyTargets] = await Promise.all([
+      this.workManagementService.listWeeklyReportReminderTargets(new Date()),
+      this.workManagementService.listMonthlyGoalReminderTargets(new Date())
+    ]);
+
+    for (const target of weeklyTargets) {
+      await this.deliverReminder({
+        recipients: [target.userId],
+        type: "WEEKLY_REPORT_REMINDER",
+        title: "周报填写提醒",
+        content: [
+          `请填写下周周报：${this.formatDate(target.weekStartDate)} 至 ${this.formatDate(target.weekEndDate)}`,
+          "请回顾上周计划，并补充下周计划与预计完成时间。"
+        ].join("\n"),
+        relatedType: "WEEKLY_REPORT",
+        relatedId: this.formatDate(target.weekStartDate)
+      });
+    }
+
+    for (const target of monthlyTargets) {
+      await this.deliverReminder({
+        recipients: [target.userId],
+        type: "MONTHLY_GOAL_REMINDER",
+        title: "月目标填写提醒",
+        content: [
+          `请填写 ${target.targetYear} 年 ${String(target.targetMonth).padStart(2, "0")} 月目标`,
+          "请在月底前补充下一月的核心目标、交付结果与时间安排。"
+        ].join("\n"),
+        relatedType: "MONTHLY_GOAL",
+        relatedId: `${target.targetYear}-${String(target.targetMonth).padStart(2, "0")}`
+      });
+    }
+  }
+
   private async deliverReminder(payload: ReminderPayload) {
     const recipients = Array.from(new Set(payload.recipients.filter(Boolean)));
 
     for (const userId of recipients) {
-      await this.notificationService.createIfAbsent({
+      await this.notificationService.deliverSystemAndWecom({
         userId,
         type: payload.type,
         title: payload.title,
         content: payload.content,
         relatedType: payload.relatedType,
-        relatedId: payload.relatedId,
-        sendChannel: NotificationChannel.SYSTEM,
-        sendStatus: NotificationSendStatus.SENT,
-        sentAt: new Date()
+        relatedId: payload.relatedId
       });
     }
   }
@@ -216,6 +264,17 @@ export class ReminderService {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false
+    })
+      .format(value)
+      .replace(/\//g, "-");
+  }
+
+  private formatDate(value: Date) {
+    return new Intl.DateTimeFormat("zh-CN", {
+      timeZone: "Asia/Shanghai",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
     })
       .format(value)
       .replace(/\//g, "-");

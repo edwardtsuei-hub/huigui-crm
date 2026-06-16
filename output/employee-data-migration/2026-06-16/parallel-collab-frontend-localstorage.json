@@ -1,0 +1,302 @@
+{
+  "schemaVersion": 1,
+  "workstream": "frontend-localstorage",
+  "status": "done",
+  "startedAt": "2026-06-16T12:13:00+08:00",
+  "completedAt": "2026-06-16T12:30:58+08:00",
+  "scope": {
+    "requested": [
+      "Read collaboration control document",
+      "Read-only scan of apps/web/src and frontend bundle",
+      "Classify roster and weekly-report localStorage keys",
+      "Prepare page acceptance checklist",
+      "Write Markdown report and machine-readable JSON"
+    ],
+    "performed": [
+      "Read current repository copy of the collaboration control document because /opt/huigui-crm does not exist locally",
+      "Scanned apps/web/app, apps/web/components, apps/web/lib because apps/web/src does not exist",
+      "Scanned latest employee frontend bundle at apps/web/public/employee-frontend/releases/20260616090241/assets",
+      "Wrote documentation and JSON only"
+    ],
+    "notPerformed": [
+      "No API changes",
+      "No Prisma or migration changes",
+      "No database writes",
+      "No deployment"
+    ]
+  },
+  "pathFindings": {
+    "requestedControlDocument": "/opt/huigui-crm/docs/parallel-collaboration-control-2026-06-16.md",
+    "requestedControlDocumentFound": false,
+    "actualControlDocument": "docs/parallel-collaboration-control-2026-06-16.md",
+    "appsWebSrcFound": false,
+    "actualSourceRoots": [
+      "apps/web/app",
+      "apps/web/components",
+      "apps/web/lib"
+    ],
+    "codegraphFound": false,
+    "buildDirsFound": [],
+    "bundleRoot": "apps/web/public/employee-frontend/releases/20260616090241/assets"
+  },
+  "readFiles": [
+    "docs/parallel-collaboration-control-2026-06-16.md",
+    "apps/web/components/shift-roster/ShiftSchedulerNative.tsx",
+    "apps/web/components/shift-roster/ShiftSchedulerEmbedded.tsx",
+    "apps/web/public/embedded/shift-scheduler-v9.html",
+    "apps/web/app/(dashboard)/schedule/shifts/page.tsx",
+    "apps/web/app/(dashboard)/schedule/page.tsx",
+    "apps/web/app/(dashboard)/work-management/weekly-reports/page.tsx",
+    "apps/web/app/(dashboard)/work-management/team/weekly-reports/page.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/workspace.ts",
+    "apps/web/public/employee-frontend/releases/20260616090241/assets/app-local-adapters-D0DYFoBy.js",
+    "apps/web/public/employee-frontend/releases/20260616090241/assets/index-C20sRqov.js",
+    "apps/web/public/employee-frontend/releases/20260616090241/assets/ecom-weekly-components-CcSI8B5U.js"
+  ],
+  "writtenFiles": [
+    "docs/parallel-collab-frontend-localstorage-2026-06-16.md",
+    "output/employee-data-migration/2026-06-16/parallel-collab-frontend-localstorage.json"
+  ],
+  "sourceFacts": [
+    {
+      "id": "current-shift-native-api",
+      "summary": "Current /schedule/shifts renders ShiftSchedulerNative and uses /settings/shift-roster through apiFetch; no direct localStorage in the native component."
+    },
+    {
+      "id": "embedded-shift-local-cache",
+      "summary": "ShiftSchedulerEmbedded injects cloud config into the old embedded HTML, writes shift_local_standalone_v9, and posts changes back to the parent for /settings/shift-roster PATCH."
+    },
+    {
+      "id": "weekly-management-api",
+      "summary": "Current /work-management/weekly-reports uses API endpoints for list, draft, detail, submit, review, archive, team closure, remind, derive tasks, and public digest; no direct localStorage."
+    },
+    {
+      "id": "schedule-weekly-import-api",
+      "summary": "Current /schedule imports weekly report plan items through API and patches plannedAt back to /work-management/weekly-reports/{id}."
+    },
+    {
+      "id": "employee-bundle-legacy-localstorage",
+      "summary": "Latest employee bundle still contains weekly workspace, roster profile, roster permission, mobile report, e-commerce weekly, schedule record, and pending sync localStorage keys."
+    }
+  ],
+  "localStorageKeys": {
+    "formalData": [
+      {
+        "keyPattern": "shift_local_standalone_v9",
+        "domain": "roster",
+        "sources": [
+          "apps/web/components/shift-roster/ShiftSchedulerEmbedded.tsx",
+          "apps/web/public/embedded/shift-scheduler-v9.html"
+        ],
+        "content": "Roster DB object with users, staff, shiftTimes, schedules.weekly, and dailyInfo.",
+        "recommendation": "Keep until /settings/shift-roster DB-first read, save, and reload are verified. Export or migrate old standalone users before deletion.",
+        "deleteAfter": "Only after cloud or DB roster parity is verified and old standalone usage is retired."
+      },
+      {
+        "keyPattern": "da-ai-gui-xin.weekly-workspace.v1.<userId>",
+        "domain": "weekly-report",
+        "sources": [
+          "apps/web/public/employee-frontend/releases/20260616090241/assets/index-C20sRqov.js"
+        ],
+        "content": "Legacy weekly workspace with reportDraft, weekReports, monthlyReportDraft, weeklyRules, teamReports, summary publication draft, personal summaries, and savedAt.",
+        "recommendation": "Keep until WeeklyReportPayload parity and historical payload export are confirmed.",
+        "deleteAfter": "After DB payload parity and archival export by userId."
+      },
+      {
+        "keyPattern": "da-ai-gui-xin.weekly-workspace.api.v1.<userKey>",
+        "domain": "weekly-report",
+        "sources": [
+          "apps/web/public/employee-frontend/releases/20260616090241/assets/app-local-adapters-D0DYFoBy.js"
+        ],
+        "content": "Newer employee-bundle local API adapter workspace with mock_storage metadata.",
+        "recommendation": "Keep until confirmed no un-migrated employee-bundle records remain.",
+        "deleteAfter": "After API mode is stable and local adapter data is verified empty or archived."
+      },
+      {
+        "keyPattern": "da-ai-gui-xin.mobile-work-report-ui.v1",
+        "domain": "weekly-report",
+        "sources": [
+          "apps/web/public/employee-frontend/releases/20260616090241/assets/index-C20sRqov.js"
+        ],
+        "content": "Mobile work report entries with mode weekly/activity, status draft/submitted, done, next, support, attachments, and notice state.",
+        "recommendation": "Compare submitted weekly records against DB before deletion; draft entries are user-local content.",
+        "deleteAfter": "After submitted items are migrated or explicitly archived."
+      },
+      {
+        "keyPattern": "da-ai-gui-xin.ecom-weekly.v1.<weekRange>",
+        "domain": "ecom-weekly-report",
+        "sources": [
+          "apps/web/public/employee-frontend/releases/20260616090241/assets/ecom-weekly-components-CcSI8B5U.js"
+        ],
+        "content": "E-commerce weekly report overrides, narratives, and publish data keyed by week range.",
+        "recommendation": "Treat as separate e-commerce weekly scope; do not delete with core work-management weekly keys.",
+        "deleteAfter": "After separate e-commerce weekly migration or explicit retirement."
+      },
+      {
+        "keyPattern": "da-ai-gui-xin.schedule-record.v2",
+        "domain": "schedule-roster-attendance",
+        "sources": [
+          "apps/web/public/employee-frontend/releases/20260616090241/assets/app-local-adapters-D0DYFoBy.js"
+        ],
+        "content": "Local mock_api leave, attendance, attachment, audit, and roster note records.",
+        "recommendation": "Keep as old employee-bundle business trace until formal attendance and roster records cover it.",
+        "deleteAfter": "After attendance and roster-note parity is verified."
+      },
+      {
+        "keyPattern": "da-ai-gui-xin.roster-profiles.v1",
+        "domain": "roster-weekly-config",
+        "sources": [
+          "apps/web/public/employee-frontend/releases/20260616090241/assets/index-C20sRqov.js"
+        ],
+        "content": "Roster profile flags including participatesInRoster, teamId, employmentType, needsLoginAccount, needsWeeklyReport, and needsRosterPermission.",
+        "recommendation": "Keep until migrated into employee or permission configuration.",
+        "deleteAfter": "After formal profile and weekly-report requirement fields cover it."
+      },
+      {
+        "keyPattern": "da-ai-gui-xin.roster-permissions.v1",
+        "domain": "roster-permission-config",
+        "sources": [
+          "apps/web/public/employee-frontend/releases/20260616090241/assets/index-C20sRqov.js"
+        ],
+        "content": "User-to-roster-team permission mapping.",
+        "recommendation": "Keep until formal permission model covers roster team permissions.",
+        "deleteAfter": "After permission parity is verified."
+      }
+    ],
+    "draftCache": [
+      {
+        "keyPattern": "da-ai-gui-xin.weekly.pending-sync.v1",
+        "domain": "weekly-report",
+        "sources": [
+          "apps/web/public/employee-frontend/releases/20260616090241/assets/index-C20sRqov.js"
+        ],
+        "content": "Pending weekly draft or submit queue for failed API sync, with payload, attempts, and lastError.",
+        "recommendation": "Replay or manually inspect before clearing. Do not import as canonical weekly report without review.",
+        "deleteAfter": "After queue is empty, replayed, or archived."
+      },
+      {
+        "keyPattern": "da-ai-gui-xin.weekly-pending-sync.v1",
+        "domain": "weekly-report",
+        "sources": [
+          "apps/web/public/employee-frontend/releases/20260616090241/assets/index-C20sRqov.js"
+        ],
+        "content": "Legacy pending weekly sync queue name read alongside the newer key.",
+        "recommendation": "Clear only together with the newer queue after confirmation.",
+        "deleteAfter": "After new queue is empty and no legacy entries remain."
+      },
+      {
+        "keyPattern": "da-ai-gui-xin.ecom-weekly.v1.parsed",
+        "domain": "ecom-weekly-report",
+        "sources": [
+          "apps/web/public/employee-frontend/releases/20260616090241/assets/ecom-weekly-components-CcSI8B5U.js"
+        ],
+        "content": "Parsed import snapshot and metadata for e-commerce weekly report import.",
+        "recommendation": "Safe to clear after import succeeds or reset is requested.",
+        "deleteAfter": "After e-commerce weekly import is confirmed."
+      },
+      {
+        "keyPattern": "huigui-workspace-items",
+        "domain": "local-workspace",
+        "sources": [
+          "apps/web/lib/workspace.ts"
+        ],
+        "content": "Local workspace items with kind schedule, todo, reminder, member, role, or approval_rule; capped at 80.",
+        "recommendation": "Not canonical roster or weekly data. Clear or migrate only if duplicate local schedule/todo items are observed.",
+        "deleteAfter": "After user confirms local-only workspace items are disposable."
+      }
+    ],
+    "uiState": [
+      {
+        "keyPattern": "huigui-record-scope",
+        "domain": "api-mode",
+        "sources": [
+          "apps/web/lib/api.ts"
+        ],
+        "content": "Browser data mode REAL or TEST; sent as x-huigui-record-scope.",
+        "recommendation": "Keep. Before formal acceptance, verify value is REAL.",
+        "deleteAfter": "Do not migrate. Clear only to reset browser mode."
+      },
+      {
+        "keyPattern": "huigui-test-batch-id",
+        "domain": "api-mode",
+        "sources": [
+          "apps/web/lib/api.ts"
+        ],
+        "content": "Selected test batch id used when record scope is TEST.",
+        "recommendation": "Keep. Before formal acceptance, verify empty.",
+        "deleteAfter": "Do not migrate. Clear when leaving test mode."
+      },
+      {
+        "keyPattern": "huigui-test-batch-name",
+        "domain": "api-mode",
+        "sources": [
+          "apps/web/lib/api.ts"
+        ],
+        "content": "Selected test batch display name used when record scope is TEST.",
+        "recommendation": "Keep. Before formal acceptance, verify empty.",
+        "deleteAfter": "Do not migrate. Clear when leaving test mode."
+      },
+      {
+        "keyPattern": "ecom-weekly-api-mode",
+        "domain": "ecom-weekly-ui-mode",
+        "sources": [
+          "apps/web/public/employee-frontend/releases/20260616090241/assets/ecom-weekly-components-CcSI8B5U.js"
+        ],
+        "content": "Candidate UI mode key for e-commerce weekly API/local/locked mode. The scanned component exposes the constant and mode flow; direct same-file localStorage get/set was not found.",
+        "recommendation": "Observe only. Not part of core roster or weekly migration.",
+        "deleteAfter": "Do not migrate."
+      }
+    ]
+  },
+  "excludedKeys": [
+    {
+      "keyPattern": "huigui_token",
+      "reason": "Authentication, not roster or weekly business data."
+    },
+    {
+      "keyPattern": "huigui_user",
+      "reason": "Authentication user cache, not roster or weekly business data."
+    },
+    {
+      "keyPattern": "huigui_auth_expires_at",
+      "reason": "Authentication session state."
+    },
+    {
+      "keyPattern": "huigui_auth_last_login_at",
+      "reason": "Authentication session state."
+    },
+    {
+      "keyPattern": "sidebar and first-run guide keys",
+      "reason": "Generic UI state outside roster and weekly report scope."
+    }
+  ],
+  "acceptanceChecklist": {
+    "roster": [
+      "Open /schedule/shifts with a formal user and confirm the page loads from API without needing shift_local_standalone_v9.",
+      "Switch front house, kitchen, and Daochong departments and verify week navigation and person rows.",
+      "Compare API-side expected RosterWeek=6 and RosterShift=210 against visible coverage.",
+      "Reload after clearing shift_local_standalone_v9 and confirm data is restored from API.",
+      "Only with user-approved write testing, edit one low-risk note or test shift and verify PATCH /settings/shift-roster persists after reload.",
+      "Do not treat direct /embedded/shift-scheduler-v9.html as production DB-first acceptance because it remains local-only when opened directly."
+    ],
+    "weeklyReport": [
+      "Open /work-management/weekly-reports and confirm list, pending report, and team items load from API.",
+      "Open report detail and confirm summary, review items, plan items, and review history load from API.",
+      "Open archive and team closure views and confirm they use API endpoints.",
+      "Use /schedule weekly import candidates and verify selected weekly plan items patch plannedAt back to /work-management/weekly-reports/{id}.",
+      "After management-page actions, verify localStorage does not gain new da-ai-gui-xin.weekly-workspace.* or weekly.pending-sync.* keys.",
+      "Before formal acceptance, verify huigui-record-scope is REAL and test batch keys are empty."
+    ]
+  },
+  "checksExecuted": [
+    "Checked for .codegraph and skipped CodeGraph because it is absent.",
+    "Checked requested /opt/huigui-crm control document path and found it absent.",
+    "Read repository control document.",
+    "Checked apps/web/src and found it absent.",
+    "Scanned source localStorage/sessionStorage calls in apps/web/app, apps/web/components, and apps/web/lib.",
+    "Scanned latest employee frontend bundle for localStorage key patterns.",
+    "Checked current roster and weekly pages for API usage and localStorage absence."
+  ],
+  "stopPoint": "Classification table, acceptance checklist, Markdown report, and JSON report are complete. Await API DB-first handoff before live page acceptance."
+}

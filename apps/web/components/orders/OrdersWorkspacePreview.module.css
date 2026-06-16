@@ -1,0 +1,536 @@
+.previewPage {
+  display: grid;
+  gap: 24px;
+  color: #18231b;
+}
+
+.commandDeck,
+.focusBoard,
+.metricCard,
+.lanePanel,
+.queuePanel,
+.inspectorPanel,
+.quickPanel,
+.linkPanel {
+  border: 1px solid rgba(21, 34, 25, 0.08);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 20px 46px rgba(16, 25, 19, 0.05);
+}
+
+.commandDeck {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(300px, 0.82fr);
+  gap: 24px;
+  padding: 30px 32px;
+  background:
+    radial-gradient(circle at top right, rgba(41, 94, 66, 0.12), transparent 32%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 249, 246, 0.98));
+}
+
+.commandCopy {
+  display: grid;
+  gap: 12px;
+  max-width: 760px;
+}
+
+.eyebrow,
+.sectionEyebrow,
+.selectedOrder span,
+.orderCardTop span,
+.orderMetaGrid span,
+.orderFooter span,
+.metricCard span,
+.trackCard span,
+.timelinePanel span,
+.timelineItem span,
+.selectedGrid span,
+.quickBlock span {
+  color: #617366;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.eyebrow,
+.sectionEyebrow {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(41, 94, 66, 0.12);
+  background: rgba(237, 244, 239, 0.96);
+  color: #2d6244;
+}
+
+.commandCopy h1 {
+  margin: 0;
+  color: #14211a;
+  font-size: clamp(34px, 4vw, 48px);
+  line-height: 0.98;
+  letter-spacing: -0.06em;
+}
+
+.commandCopy p,
+.sectionHeader p,
+.trackCard p,
+.metricCard p,
+.orderCard p,
+.selectedOrder p,
+.quickBlock p,
+.linkCard p,
+.liveCard small {
+  margin: 0;
+  color: #526358;
+  font-size: 14px;
+  line-height: 1.72;
+}
+
+.commandMeta {
+  display: grid;
+  align-content: space-between;
+  gap: 16px;
+}
+
+.liveCard {
+  display: grid;
+  gap: 8px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  border: 1px solid rgba(21, 34, 25, 0.08);
+  background: rgba(248, 250, 248, 0.98);
+}
+
+.liveCard span {
+  color: #617366;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.liveCard strong {
+  color: #14211a;
+  font-size: 24px;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.commandActions,
+.inspectorActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.primaryAction,
+.secondaryAction {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 700;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.primaryAction {
+  background: #214d35;
+  color: #f6faf7;
+  box-shadow: 0 16px 28px rgba(33, 77, 53, 0.18);
+}
+
+.secondaryAction {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(21, 34, 25, 0.1);
+  color: #244430;
+}
+
+.primaryAction:hover,
+.secondaryAction:hover,
+.laneTab:hover,
+.orderCard:hover {
+  transform: translateY(-1px);
+}
+
+.focusBoard,
+.lanePanel,
+.queuePanel,
+.inspectorPanel,
+.quickPanel,
+.linkPanel {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.sectionHeader strong {
+  display: block;
+  margin-top: 10px;
+  color: #14211a;
+  font-size: clamp(22px, 2.4vw, 28px);
+  line-height: 1.08;
+  letter-spacing: -0.05em;
+}
+
+.trackGrid,
+.metricRibbon,
+.workspace,
+.laneTabs,
+.orderList,
+.selectedGrid,
+.timelineList,
+.quickBlocks,
+.linkList {
+  display: grid;
+}
+
+.trackGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.trackCard {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(21, 34, 25, 0.08);
+  background: rgba(248, 250, 248, 0.98);
+  animation: card-rise 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.trackCard strong {
+  color: #14211a;
+  font-size: 38px;
+  line-height: 1;
+  letter-spacing: -0.07em;
+}
+
+.trackCard h2 {
+  margin: 0;
+  color: #14211a;
+  font-size: 20px;
+  line-height: 1.3;
+  letter-spacing: -0.04em;
+}
+
+.trackWarning {
+  background: linear-gradient(180deg, rgba(251, 244, 231, 0.98), rgba(249, 239, 222, 0.98));
+}
+
+.trackSuccess {
+  background: linear-gradient(180deg, rgba(239, 247, 242, 0.98), rgba(232, 243, 236, 0.98));
+}
+
+.trackDanger {
+  background: linear-gradient(180deg, rgba(252, 240, 238, 0.98), rgba(249, 232, 229, 0.98));
+}
+
+.metricRibbon {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.metricCard {
+  display: grid;
+  gap: 8px;
+  padding: 20px;
+  animation: card-rise 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.metricCard strong {
+  color: #14211a;
+  font-size: 34px;
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+
+.workspace {
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 18px;
+  align-items: start;
+}
+
+.mainColumn,
+.sideColumn {
+  display: grid;
+  gap: 18px;
+}
+
+.laneTabs {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.laneTab {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid rgba(21, 34, 25, 0.08);
+  border-radius: 22px;
+  background: rgba(249, 251, 249, 0.98);
+  text-align: left;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.laneTab div {
+  display: grid;
+  gap: 6px;
+}
+
+.laneTab strong,
+.quickBlock strong,
+.linkCard strong,
+.selectedOrder strong,
+.selectedGrid strong,
+.timelineItem strong {
+  color: #14211a;
+  font-size: 17px;
+  line-height: 1.4;
+  letter-spacing: -0.03em;
+}
+
+.laneTab span {
+  color: #58695e;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.laneTab b {
+  color: #214d35;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.laneTabActive {
+  border-color: rgba(41, 94, 66, 0.16);
+  background: rgba(236, 244, 239, 0.94);
+  box-shadow: 0 16px 30px rgba(21, 34, 25, 0.05);
+}
+
+.orderList,
+.quickBlocks,
+.linkList,
+.timelineList {
+  gap: 12px;
+}
+
+.orderCard {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(21, 34, 25, 0.08);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(250, 251, 249, 0.98), rgba(247, 250, 248, 0.98)),
+    linear-gradient(135deg, rgba(41, 94, 66, 0.04), transparent 56%);
+  text-align: left;
+  animation: card-rise 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.orderCardActive {
+  border-color: rgba(41, 94, 66, 0.18);
+  background: rgba(244, 249, 246, 0.98);
+  box-shadow: inset 3px 0 0 rgba(41, 94, 66, 0.56);
+}
+
+.orderCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.orderCardTop strong {
+  display: block;
+  margin-top: 6px;
+  color: #14211a;
+  font-size: 22px;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.badgeNeutral {
+  background: rgba(236, 240, 237, 0.98);
+  color: #4e5f54;
+}
+
+.badgeSuccess {
+  background: rgba(231, 243, 236, 0.96);
+  color: #1d5e3d;
+}
+
+.badgeWarning {
+  background: rgba(251, 243, 224, 0.96);
+  color: #8b6211;
+}
+
+.badgeDanger {
+  background: rgba(250, 234, 231, 0.96);
+  color: #a14741;
+}
+
+.orderMetaGrid,
+.selectedGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.orderMetaGrid div,
+.selectedGrid div,
+.timelineItem,
+.quickBlock,
+.linkCard {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(21, 34, 25, 0.08);
+  background: rgba(248, 250, 248, 0.98);
+}
+
+.orderFooter {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.orderFooter div {
+  display: grid;
+  gap: 6px;
+}
+
+.orderFooter small {
+  color: #66786c;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.inspectorBody {
+  display: grid;
+  gap: 14px;
+}
+
+.selectedOrder {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(41, 94, 66, 0.14);
+  background:
+    radial-gradient(circle at top right, rgba(41, 94, 66, 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(250, 251, 249, 0.98), rgba(245, 248, 245, 0.98));
+}
+
+.selectedOrder strong {
+  font-size: 24px;
+  line-height: 1.06;
+  letter-spacing: -0.05em;
+}
+
+.timelinePanel {
+  display: grid;
+  gap: 10px;
+}
+
+@keyframes card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1280px) {
+  .commandDeck,
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .trackGrid,
+  .metricRibbon {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 960px) {
+  .laneTabs,
+  .trackGrid,
+  .metricRibbon,
+  .orderMetaGrid,
+  .selectedGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionHeader,
+  .orderCardTop,
+  .orderFooter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 720px) {
+  .commandDeck,
+  .focusBoard,
+  .lanePanel,
+  .queuePanel,
+  .inspectorPanel,
+  .quickPanel,
+  .linkPanel {
+    padding: 20px;
+    border-radius: 24px;
+  }
+
+  .commandCopy h1 {
+    font-size: 34px;
+  }
+
+  .metricCard strong,
+  .trackCard strong {
+    font-size: 28px;
+  }
+}

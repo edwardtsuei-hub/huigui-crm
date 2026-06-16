@@ -24,8 +24,17 @@ export class AuthController {
     return this.authService.me(req.user.id);
   }
 
+  @Get("session")
+  async session(@Req() req: RequestWithUser) {
+    return this.authService.buildEmployeeSession(req.user);
+  }
+
   @Post("logout")
   async logout() {
-    return { success: true };
+    return {
+      success: true,
+      authenticated: false,
+      employee: null
+    };
   }
 }

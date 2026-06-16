@@ -1,0 +1,71 @@
+{
+  "generatedAt": "2026-06-13T07:38:02+08:00",
+  "startedAt": "2026-06-13T07:38:01+08:00",
+  "finishedAt": "2026-06-13T07:38:02+08:00",
+  "status": "passed",
+  "site": "https://management.hui-health.com",
+  "apiBaseUrl": "https://management.hui-health.com/api",
+  "probes": [
+    {
+      "name": "frontend-root",
+      "url": "https://management.hui-health.com/",
+      "expectedHttpStatus": 200,
+      "httpStatus": 200,
+      "status": "passed",
+      "issue": "",
+      "bodyPreview": "<!doctype html> <html lang=_zh-CN_>   <head>     <meta charset=_UTF-8_ />     <meta name=_viewport_ content=_width=device-width, initial-scale=1.0_ />     <titl"
+    },
+    {
+      "name": "frontend-mobile",
+      "url": "https://management.hui-health.com/mobile",
+      "expectedHttpStatus": 200,
+      "httpStatus": 200,
+      "status": "passed",
+      "issue": "",
+      "bodyPreview": "<!doctype html> <html lang=_zh-CN_>   <head>     <meta charset=_UTF-8_ />     <meta name=_viewport_ content=_width=device-width, initial-scale=1.0_ />     <titl"
+    },
+    {
+      "name": "api-health",
+      "url": "https://management.hui-health.com/api/health",
+      "expectedHttpStatus": 200,
+      "httpStatus": 200,
+      "status": "passed",
+      "issue": "",
+      "bodyPreview": "{_status_:_ok_,_service_:_huigui-api_,_timestamp_:_2026-06-12T23:38:01.831Z_}"
+    }
+  ],
+  "compose": {
+    "services": [
+      {
+        "name": "huigui-api",
+        "service": "api",
+        "state": "running",
+        "status": "Up 2 hours",
+        "health": ""
+      },
+      {
+        "name": "huigui-app",
+        "service": "app",
+        "state": "running",
+        "status": "Up 2 weeks",
+        "health": ""
+      },
+      {
+        "name": "huigui-mysql",
+        "service": "mysql",
+        "state": "running",
+        "status": "Up 2 weeks (healthy)",
+        "health": "healthy"
+      },
+      {
+        "name": "huigui-nginx",
+        "service": "nginx",
+        "state": "running",
+        "status": "Up 2 weeks",
+        "health": ""
+      }
+    ],
+    "badCount": 0
+  },
+  "issues": []
+}

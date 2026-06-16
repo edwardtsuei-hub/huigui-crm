@@ -11,8 +11,8 @@ const entries = [
   },
   {
     href: "/solutions/industry/new",
-    title: "通用报价",
-    note: "适合工业、服务业、养殖业等标准报价场景。"
+    title: "其他行业",
+    note: "适合工业、服务业、养殖业等通用报价场景。"
   },
   {
     href: "/quotations",

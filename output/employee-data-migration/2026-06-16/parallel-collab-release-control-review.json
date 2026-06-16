@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "workstream": "release-control-review",
+  "line": "D",
+  "status": "blocked",
+  "reviewedAt": "2026-06-16T19:02:10+08:00",
+  "restrictionsObserved": {
+    "deployed": false,
+    "restartedService": false,
+    "rolledBack": false,
+    "changedCode": false,
+    "wroteDatabase": false,
+    "printedEnvPlaintext": false
+  },
+  "readFiles": [
+    "docs/parallel-collaboration-control-2026-06-16.md",
+    "docs/employee-data-production-migration-record-2026-06-16.md",
+    "docs/parallel-collab-release-control-2026-06-16.md"
+  ],
+  "writtenFiles": [
+    "docs/parallel-collab-release-control-review-2026-06-16.md",
+    "output/employee-data-migration/2026-06-16/parallel-collab-release-control-review.json"
+  ],
+  "apiDbFirstHandoff": {
+    "path": "docs/parallel-collab-api-db-first-2026-06-16.md",
+    "exists": false,
+    "status": "blocked",
+    "releaseAllowed": false,
+    "blockingCondition": "API DB-first handoff document is missing"
+  },
+  "runbookReview": {
+    "accuracy": "partially_accurate",
+    "releaseGateStatus": "blocked",
+    "stillAccurate": [
+      "Safety boundaries remain correct: no active deploy, no code changes, no database writes, no .env plaintext.",
+      "Production baseline counts match the migration record.",
+      "Pre-release checklist includes a test for the API DB-first handoff document.",
+      "P1 DB-first acceptance correctly depends on A-line handoff paths instead of guessing endpoints.",
+      "Rollback principles avoid deleting migrated tables or restoring full database backups by default."
+    ],
+    "inaccurateOrStale": [
+      "Runbook says A-line API DB-first bridge is complete and the handoff document exists, but the handoff file is absent in the current local docs.",
+      "Current stop point says the A-line handoff document exists; it should be changed to blocked until the handoff exists.",
+      "The runbook should label Docker image tagging as a user-confirmed write operation, not pure read-only evidence capture.",
+      "The runbook should include direct docker ps/docker inspect fallback when docker compose cannot read .env due permissions."
+    ]
+  },
+  "databaseFieldChecks": {
+    "WeeklyReportPayload": {
+      "expectedField": "migrationStatus",
+      "runbookUsesExpectedField": true,
+      "schemaEvidence": [
+        "prisma/schema.prisma:1445-1457",
+        "prisma/migrations/20260616103000_employee_data_migration_foundation/migration.sql:104-116"
+      ],
+      "status": "correct"
+    },
+    "RosterShift": {
+      "expectedRelationField": "rosterWeekId",
+      "runbookUsesExpectedRelationField": true,
+      "schemaEvidence": [
+        "prisma/schema.prisma:1370-1390",
+        "prisma/migrations/20260616103000_employee_data_migration_foundation/migration.sql:34-36",
+        "prisma/migrations/20260616103000_employee_data_migration_foundation/migration.sql:142-145"
+      ],
+      "status": "correct"
+    }
+  },
+  "releaseDecision": {
+    "enterRelease": false,
+    "reason": "Missing docs/parallel-collab-api-db-first-2026-06-16.md",
+    "unblockCondition": "A-line must provide the API DB-first handoff document or equivalent explicit handoff evidence, then D-line should rerun pre-release checks."
+  },
+  "stopPoint": "Review completed; release control is blocked pending API DB-first handoff evidence.",
+  "nextStepSuggestion": "Have A-line create docs/parallel-collab-api-db-first-2026-06-16.md with build, validation, endpoint, fallback, and deployment status evidence before any release proceeds."
+}

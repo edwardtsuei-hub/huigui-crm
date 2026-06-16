@@ -55,6 +55,40 @@ export type ProductParseResponse = {
   conflicts: ProductParseConflict[];
 };
 
+export type ProductParseQueueItem = {
+  id: string;
+  sourceType: string;
+  reviewStatus: "PENDING" | "CONFIRMED" | "IGNORED";
+  reviewNote?: string | null;
+  createdAt: string;
+  reviewedAt?: string | null;
+  rawText?: string | null;
+  imageUrl?: string | null;
+  parsed: ProductParsedData;
+  confidence: ProductConfidenceMap;
+  conflicts: ProductParseConflict[];
+  parsedFieldCount: number;
+  lowConfidenceCount: number;
+  mediumConfidenceCount: number;
+  conflictCount: number;
+  title: string;
+  summary: string;
+  operator: {
+    id: string;
+    name: string;
+    loginAccount?: string | null;
+  };
+  reviewer?: {
+    id: string;
+    name: string;
+    loginAccount?: string | null;
+  } | null;
+};
+
+export type ProductParseQueueDetail = ProductParseQueueItem & {
+  result: ProductParseResponse;
+};
+
 export type UploadedImageFile = {
   buffer: Buffer;
   mimetype: string;

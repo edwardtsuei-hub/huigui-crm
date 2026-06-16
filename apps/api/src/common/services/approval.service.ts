@@ -1,7 +1,15 @@
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { ApprovalRuleType, ApprovalStatus, Prisma } from "@prisma/client";
+import {
+  ApprovalRuleType,
+  ApprovalStatus,
+  Prisma,
+  RecordDataScope,
+  UserStatus,
+} from "@prisma/client";
 import type { AuthenticatedUser } from "../types/authenticated-user";
 import { PrismaService } from "../../prisma/prisma.service";
+import { REAL_PARTITION_KEY } from "./record-partition.service";
+import { NotificationService } from "../../modules/notifications/notification.service";
 
 function toNumber(value: Prisma.Decimal | number | string | null | undefined) {
   return Number(value ?? 0);
@@ -9,7 +17,10 @@ function toNumber(value: Prisma.Decimal | number | string | null | undefined) {
 
 @Injectable()
 export class ApprovalService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationService: NotificationService,
+  ) {}
 
   async syncQuotationApprovals(quotationId: string, requester: AuthenticatedUser) {
     const quotation = await this.prisma.quotation.findUnique({
@@ -20,14 +31,23 @@ export class ApprovalService {
       throw new NotFoundException("报价不存在");
     }
 
-    const discountRule = await this.prisma.approvalRule.findUnique({
-      where: { code: ApprovalRuleType.DISCOUNT }
-    });
-
     const discountRate = this.calculateDiscountRate(
       quotation.totalOriginalAmount,
       quotation.totalDiscountedAmount
     );
+
+    if (!this.isRealQuotation(quotation)) {
+      await this.resetQuotationApprovalsForNonRealData(quotationId);
+
+      return {
+        approvalStatus: ApprovalStatus.NOT_REQUIRED,
+        discountRate
+      };
+    }
+
+    const discountRule = await this.prisma.approvalRule.findUnique({
+      where: { code: ApprovalRuleType.DISCOUNT }
+    });
 
     if (!discountRule?.enabled) {
       await this.prisma.quotation.update({
@@ -80,7 +100,7 @@ export class ApprovalService {
       };
     }
 
-    await this.createOrRefreshRequest({
+    const approvalRequest = await this.createOrRefreshRequest({
       quotationId,
       type: ApprovalRuleType.DISCOUNT,
       requesterUserId: requester.id,
@@ -88,6 +108,10 @@ export class ApprovalService {
       title: "报价折扣审批",
       summary: `报价 ${quotation.quotationNo} 折扣 ${discountRate.toFixed(1)}%，需要 ${requiredRoleCode} 审批`
     });
+
+    if (approvalRequest?.created) {
+      await this.notifyApprovalCreated(approvalRequest.request);
+    }
 
     await this.prisma.quotation.update({
       where: { id: quotationId },
@@ -110,6 +134,11 @@ export class ApprovalService {
 
     if (!quotation) {
       throw new NotFoundException("报价不存在");
+    }
+
+    if (!this.isRealQuotation(quotation)) {
+      await this.resetQuotationApprovalsForNonRealData(quotationId);
+      return quotation;
     }
 
     if (quotation.approvalStatus === ApprovalStatus.PENDING) {
@@ -154,7 +183,7 @@ export class ApprovalService {
 
     const requiredRoleCode = String(config.approverRoleCode ?? "SALES_MANAGER");
 
-    await this.createOrRefreshRequest({
+    const approvalRequest = await this.createOrRefreshRequest({
       quotationId,
       type: ApprovalRuleType.EXPORT_QUOTATION,
       requesterUserId: requester.id,
@@ -162,6 +191,10 @@ export class ApprovalService {
       title: "正式报价导出审批",
       summary: `报价 ${quotation.quotationNo} 导出 PDF 前需要 ${requiredRoleCode} 审批`
     });
+
+    if (approvalRequest?.created) {
+      await this.notifyApprovalCreated(approvalRequest.request);
+    }
 
     await this.prisma.quotation.update({
       where: { id: quotationId },
@@ -182,7 +215,14 @@ export class ApprovalService {
       where: {
         quotationId,
         type,
-        status: ApprovalStatus.PENDING
+        status: ApprovalStatus.PENDING,
+        quotation: {
+          is: {
+            dataScope: RecordDataScope.REAL,
+            partitionKey: REAL_PARTITION_KEY,
+            testBatchId: null
+          }
+        }
       },
       orderBy: { createdAt: "desc" }
     });
@@ -201,7 +241,7 @@ export class ApprovalService {
 
     const nextStatus = decision === "approve" ? ApprovalStatus.APPROVED : ApprovalStatus.REJECTED;
 
-    await this.prisma.$transaction([
+    const [updatedRequest] = await this.prisma.$transaction([
       this.prisma.approvalRequest.update({
         where: { id: request.id },
         data: {
@@ -220,6 +260,8 @@ export class ApprovalService {
       })
     ]);
 
+    await this.notifyApprovalDecision(updatedRequest);
+
     return {
       requestId: request.id,
       status: nextStatus
@@ -230,7 +272,14 @@ export class ApprovalService {
     return this.prisma.approvalRequest.findMany({
       where: {
         status: ApprovalStatus.PENDING,
-        OR: [{ requiredRoleCode: { in: roleCodes } }, { requiredRoleCode: null }]
+        OR: [{ requiredRoleCode: { in: roleCodes } }, { requiredRoleCode: null }],
+        quotation: {
+          is: {
+            dataScope: RecordDataScope.REAL,
+            partitionKey: REAL_PARTITION_KEY,
+            testBatchId: null
+          }
+        }
       },
       include: {
         requester: {
@@ -263,6 +312,10 @@ export class ApprovalService {
       throw new NotFoundException("报价不存在");
     }
 
+    if (!this.isRealQuotation(quotation)) {
+      return null;
+    }
+
     const existingRequest = await this.prisma.approvalRequest.findFirst({
       where: {
         quotationId: input.quotationId,
@@ -272,7 +325,7 @@ export class ApprovalService {
     });
 
     if (existingRequest) {
-      return this.prisma.approvalRequest.update({
+      const request = await this.prisma.approvalRequest.update({
         where: { id: existingRequest.id },
         data: {
           requiredRoleCode: input.requiredRoleCode,
@@ -280,9 +333,11 @@ export class ApprovalService {
           summary: input.summary
         }
       });
+
+      return { request, created: false };
     }
 
-    return this.prisma.approvalRequest.create({
+    const request = await this.prisma.approvalRequest.create({
       data: {
         type: input.type,
         targetType: "Quotation",
@@ -293,6 +348,96 @@ export class ApprovalService {
         title: input.title,
         summary: input.summary
       }
+    });
+
+    return { request, created: true };
+  }
+
+  private async notifyApprovalCreated(request: {
+    id: string;
+    requesterUserId: string;
+    requiredRoleCode: string | null;
+    title: string;
+    summary: string | null;
+    targetType: string;
+    targetId: string;
+  }) {
+    const approvers = await this.findApprovalRecipients(request.requiredRoleCode);
+    const recipientUserIds = approvers
+      .map((user) => user.id)
+      .filter((userId) => userId !== request.requesterUserId);
+
+    if (!recipientUserIds.length) {
+      return;
+    }
+
+    await this.notificationService.deliverManyEventsSystemAndWecom(
+      recipientUserIds.map((userId) => ({
+        userId,
+        type: "APPROVAL_REQUEST_CREATED",
+        title: request.title,
+        content: request.summary ?? "有新的审批申请待处理。",
+        relatedType: request.targetType.toUpperCase(),
+        relatedId: request.targetId,
+      })),
+    );
+  }
+
+  private async notifyApprovalDecision(request: {
+    id: string;
+    requesterUserId: string;
+    title: string;
+    summary: string | null;
+    status: ApprovalStatus;
+    targetType: string;
+    targetId: string;
+    decisionRemark: string | null;
+  }) {
+    const statusText = request.status === ApprovalStatus.APPROVED ? "已通过" : "已驳回";
+
+    await this.notificationService.deliverEventSystemAndWecom({
+      userId: request.requesterUserId,
+      type: "APPROVAL_REQUEST_DECIDED",
+      title: `审批${statusText}`,
+      content: [
+        `${request.title}${statusText}`,
+        request.summary,
+        request.decisionRemark ? `备注：${request.decisionRemark}` : null,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+      relatedType: request.targetType.toUpperCase(),
+      relatedId: request.targetId,
+    });
+  }
+
+  private async findApprovalRecipients(requiredRoleCode: string | null) {
+    if (requiredRoleCode) {
+      return this.prisma.user.findMany({
+        where: {
+          status: UserStatus.ACTIVE,
+          role: {
+            is: {
+              code: requiredRoleCode,
+            },
+          },
+        },
+        select: { id: true },
+      });
+    }
+
+    return this.prisma.user.findMany({
+      where: {
+        status: UserStatus.ACTIVE,
+        role: {
+          is: {
+            code: {
+              in: ["SUPER_ADMIN", "ADMIN"],
+            },
+          },
+        },
+      },
+      select: { id: true },
     });
   }
 
@@ -308,5 +453,32 @@ export class ApprovalService {
     }
 
     return ((original - discounted) / original) * 100;
+  }
+
+  private isRealQuotation(input: {
+    dataScope: RecordDataScope;
+    partitionKey: string;
+    testBatchId: string | null;
+  }) {
+    return (
+      input.dataScope === RecordDataScope.REAL &&
+      input.partitionKey === REAL_PARTITION_KEY &&
+      input.testBatchId === null
+    );
+  }
+
+  private async resetQuotationApprovalsForNonRealData(quotationId: string) {
+    await this.prisma.$transaction([
+      this.prisma.approvalRequest.deleteMany({
+        where: { quotationId }
+      }),
+      this.prisma.quotation.update({
+        where: { id: quotationId },
+        data: {
+          approvalStatus: ApprovalStatus.NOT_REQUIRED,
+          exportApprovalStatus: ApprovalStatus.NOT_REQUIRED
+        }
+      })
+    ]);
   }
 }

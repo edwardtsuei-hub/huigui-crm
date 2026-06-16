@@ -7,7 +7,8 @@ import { DetailTabs } from "../../../../components/dashboard/DetailTabs";
 import { EntityDetailHeader } from "../../../../components/dashboard/EntityDetailHeader";
 import { QuickWorkspaceComposer } from "../../../../components/dashboard/QuickWorkspaceComposer";
 import { StepStrip } from "../../../../components/dashboard/StepStrip";
-import { apiFetch } from "../../../../lib/api";
+import { apiFetch, getCurrentUser, hasPermission } from "../../../../lib/api";
+import { buildScheduleCreateHref } from "../../../../lib/schedule";
 import {
   WORKSPACE_ITEMS_CHANGED_EVENT,
   bucketDueLabel,
@@ -22,35 +23,23 @@ import {
   type WorkspaceItemKind,
 } from "../../../../lib/workspace";
 import {
+  customerOwnerProtectionLabel,
+  customerOwnerProtectionTone,
   customerStatusLabelMap,
   customerStatusTone,
   formatCustomerMoney,
+  type CustomerDetail as CustomerBaseDetail,
 } from "../../../../components/customers/types";
+import {
+  type InspectionListItem,
+  type InspectionListResponse,
+  inspectionPaymentStatusLabel,
+  inspectionStatusLabel,
+} from "../../../../components/inspections/types";
 
-type CustomerDetail = {
-  id: string;
-  name: string;
-  companyName?: string | null;
-  contactName?: string | null;
-  mobile?: string | null;
-  wechat?: string | null;
-  email?: string | null;
-  province?: string | null;
-  city?: string | null;
-  district?: string | null;
-  address?: string | null;
-  source?: string | null;
-  status: string;
-  cooperationDirection?: string | null;
-  cooperationContent?: string | null;
-  estimatedAmount?: string | null;
-  successProbability?: number | null;
-  remark?: string | null;
+type CustomerDetail = CustomerBaseDetail & {
   createdAt: string;
   updatedAt: string;
-  owner: { id: string; displayName: string; role: { name: string } };
-  industryGroup?: { id: string; name: string } | null;
-  industrySubgroup?: { id: string; name: string } | null;
   followups: Array<{
     id: string;
     content: string;
@@ -122,6 +111,12 @@ type ReminderRow = {
   label: string;
   detail: string;
   priority?: WorkspacePriority;
+};
+
+type CustomerActionResult = {
+  mode: "completed" | "approval_submitted";
+  message: string;
+  requiredRoleCode?: string | null;
 };
 
 const customerSteps = [
@@ -392,8 +387,60 @@ function buildReminderRows(
   );
 }
 
+function customerOwnerHeadline(customer: CustomerDetail) {
+  return customer.ownerProtectionStatus === "PENDING_MAINTENANCE"
+    ? "待维护"
+    : customer.owner.displayName;
+}
+
+function customerOwnerCaption(customer: CustomerDetail) {
+  return customer.ownerProtectionStatus === "PENDING_MAINTENANCE"
+    ? `上一负责人：${customer.owner.displayName}`
+    : `保护至 ${formatDateLabel(customer.ownerProtectedUntil)}`;
+}
+
+function customerApprovalTypeLabel(type: string) {
+  switch (type) {
+    case "CUSTOMER_CLAIM":
+      return "负责客户申请";
+    case "CUSTOMER_PROTECTION_EXTENSION":
+      return "延长保护期申请";
+    case "CUSTOMER_TRANSFER":
+      return "负责人转移申请";
+    default:
+      return "客户审批";
+  }
+}
+
+function approvalStatusLabel(status?: string) {
+  switch (status) {
+    case "APPROVED":
+      return "已通过";
+    case "REJECTED":
+      return "已驳回";
+    case "NOT_REQUIRED":
+      return "免审批";
+    default:
+      return "待审批";
+  }
+}
+
+function approvalStatusTone(status?: string) {
+  switch (status) {
+    case "APPROVED":
+      return "success";
+    case "REJECTED":
+      return "danger";
+    case "NOT_REQUIRED":
+      return "neutral";
+    default:
+      return "warning";
+  }
+}
+
 export default function CustomerDetailPage() {
   const params = useParams<{ id: string }>();
+  const currentUser = getCurrentUser();
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
   const [followupForm, setFollowupForm] = useState({
     content: "",
@@ -404,15 +451,23 @@ export default function CustomerDetailPage() {
   const [workspaceItems, setWorkspaceItems] = useState<LocalWorkspaceItem[]>(
     [],
   );
+  const [inspectionItems, setInspectionItems] = useState<InspectionListItem[]>(
+    [],
+  );
   const [composerOpen, setComposerOpen] = useState(false);
   const [composerKind, setComposerKind] =
     useState<WorkspaceItemKind>("reminder");
+  const [claimingOwner, setClaimingOwner] = useState(false);
+  const [extendingProtection, setExtendingProtection] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [inspectionError, setInspectionError] = useState("");
 
   async function loadDetail() {
     const response = await apiFetch<CustomerDetail>(`/customers/${params.id}`);
     setCustomer(response);
+    return response;
   }
 
   useEffect(() => {
@@ -444,6 +499,30 @@ export default function CustomerDetailPage() {
     };
   }, [params.id]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    apiFetch<InspectionListResponse>(
+      `/inspections?customerId=${params.id}&pageSize=5`,
+    )
+      .then((response) => {
+        if (!cancelled) {
+          setInspectionItems(response.items);
+        }
+      })
+      .catch((requestError) => {
+        if (!cancelled) {
+          setInspectionError(
+            requestError instanceof Error ? requestError.message : "加载检测记录失败",
+          );
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [params.id]);
+
   async function addFollowup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
@@ -469,12 +548,94 @@ export default function CustomerDetailPage() {
         nextAction: "",
         nextFollowupAt: "",
       });
-      setMessage("跟进记录已新增");
-      await loadDetail();
+      const refreshedCustomer = await loadDetail();
+      const hasPendingClaimRequest = refreshedCustomer.approvalRequests?.some(
+        (request) =>
+          request.type === "CUSTOMER_CLAIM" && request.status === "PENDING",
+      );
+      setMessage(
+        refreshedCustomer.canClaimOwnership && !hasPendingClaimRequest
+          ? "跟进记录已新增，现在可以点“申请负责客户”继续认领流程。"
+          : "跟进记录已新增",
+      );
     } catch (requestError) {
       setError(
         requestError instanceof Error ? requestError.message : "新增跟进失败",
       );
+    }
+  }
+
+  async function claimOwnership() {
+    setClaimingOwner(true);
+    setMessage("");
+    setError("");
+
+    try {
+      const result = await apiFetch<CustomerActionResult>(
+        `/customers/${params.id}/claim-owner`,
+        {
+          method: "POST",
+        },
+      );
+      await loadDetail();
+      setMessage(result.message);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "申请负责客户失败",
+      );
+    } finally {
+      setClaimingOwner(false);
+    }
+  }
+
+  async function extendProtection() {
+    setExtendingProtection(true);
+    setMessage("");
+    setError("");
+
+    try {
+      const result = await apiFetch<CustomerActionResult>(
+        `/customers/${params.id}/extend-protection`,
+        {
+          method: "POST",
+        },
+      );
+      await loadDetail();
+      setMessage(result.message);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "申请延长保护期失败",
+      );
+    } finally {
+      setExtendingProtection(false);
+    }
+  }
+
+  async function handleReviewApproval(
+    type: "claim" | "extension" | "transfer",
+    decision: "approve" | "reject",
+  ) {
+    setReviewLoading(`${type}-${decision}`);
+    setMessage("");
+    setError("");
+
+    try {
+      await apiFetch(`/customers/${params.id}/review-approval`, {
+        method: "POST",
+        body: JSON.stringify({ type, decision }),
+      });
+      await loadDetail();
+      setMessage(decision === "approve" ? "审批已通过" : "申请已驳回");
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error ? requestError.message : "审批处理失败",
+      );
+    } finally {
+      setReviewLoading(null);
     }
   }
 
@@ -501,6 +662,61 @@ export default function CustomerDetailPage() {
   const reminderRows = useMemo(
     () => (customer ? buildReminderRows(customer, workspaceItems) : []),
     [customer, workspaceItems],
+  );
+  const canMaintainCustomer = hasPermission(
+    currentUser,
+    "action.customer.update",
+  );
+  const isCurrentOwner = currentUser?.id === customer?.owner.id;
+  const canRequestProtectionExtension = Boolean(
+    customer && canMaintainCustomer && isCurrentOwner,
+  );
+  const canRequestOwnership = Boolean(
+    customer &&
+    customer.ownerProtectionStatus === "PENDING_MAINTENANCE" &&
+    canMaintainCustomer &&
+    !isCurrentOwner,
+  );
+  const canSubmitOwnershipClaim = Boolean(
+    customer?.canClaimOwnership && canRequestOwnership,
+  );
+  const pendingClaimRequest = customer?.approvalRequests?.find(
+    (request) => request.type === "CUSTOMER_CLAIM" && request.status === "PENDING",
+  );
+  const pendingExtensionRequest = customer?.approvalRequests?.find(
+    (request) =>
+      request.type === "CUSTOMER_PROTECTION_EXTENSION" &&
+      request.status === "PENDING",
+  );
+  const pendingTransferRequest = customer?.approvalRequests?.find(
+    (request) => request.type === "CUSTOMER_TRANSFER" && request.status === "PENDING",
+  );
+  const hasApprovalReviewPermission =
+    hasPermission(currentUser, "action.quotation.approve") ||
+    hasPermission(currentUser, "action.quotation.reject");
+  const canReviewClaimRequest = Boolean(
+    pendingClaimRequest &&
+      hasApprovalReviewPermission &&
+      (currentUser?.roleCode === "SUPER_ADMIN" ||
+        !pendingClaimRequest.requiredRoleCode ||
+        pendingClaimRequest.requiredRoleCode === currentUser?.roleCode),
+  );
+  const canReviewExtensionRequest = Boolean(
+    pendingExtensionRequest &&
+      hasApprovalReviewPermission &&
+      (currentUser?.roleCode === "SUPER_ADMIN" ||
+        !pendingExtensionRequest.requiredRoleCode ||
+        pendingExtensionRequest.requiredRoleCode === currentUser?.roleCode),
+  );
+  const canReviewTransferRequest = Boolean(
+    pendingTransferRequest &&
+      hasApprovalReviewPermission &&
+      (currentUser?.roleCode === "SUPER_ADMIN" ||
+        !pendingTransferRequest.requiredRoleCode ||
+        pendingTransferRequest.requiredRoleCode === currentUser?.roleCode),
+  );
+  const showOwnershipActionCard = Boolean(
+    canRequestProtectionExtension || canRequestOwnership,
   );
   const solutionRows = useMemo(
     () =>
@@ -545,9 +761,37 @@ export default function CustomerDetailPage() {
             </button>
             <Link
               className="button secondary inline"
+              href={buildScheduleCreateHref({
+                customerId: customer.id,
+                sourceModule: "客户跟进",
+                title: `跟进 ${customer.name}`,
+              })}
+            >
+              新增日程
+            </Link>
+            <Link
+              className="button secondary inline"
               href={`/quotes/general?customerId=${customer.id}`}
             >
               新建报价
+            </Link>
+            <Link
+              className="button secondary inline"
+              href={`/orders?customerId=${customer.id}`}
+            >
+              新建订单
+            </Link>
+            <Link
+              className="button secondary inline"
+              href={`/inspections/new?customerId=${customer.id}`}
+            >
+              新建检测
+            </Link>
+            <Link
+              className="button secondary inline"
+              href={`/inspections?customerId=${customer.id}`}
+            >
+              查看检测
             </Link>
             <Link
               className="button inline"
@@ -598,7 +842,15 @@ export default function CustomerDetailPage() {
         eyebrow="客户详情"
         meta={[
           { label: "意向评分", value: `${customer.successProbability ?? 0}` },
-          { label: "负责人", value: customer.owner.displayName },
+          { label: "负责人", value: customerOwnerHeadline(customer) },
+          {
+            label: "负责人状态",
+            value:
+              customer.ownerProtectionStatus === "PROTECTED"
+                ? `保护至 ${formatDateLabel(customer.ownerProtectedUntil)}`
+                : "待维护",
+            tone: customerOwnerProtectionTone(customer.ownerProtectionStatus),
+          },
           {
             label: "最近跟进",
             value: lastFollowupAt
@@ -663,6 +915,13 @@ export default function CustomerDetailPage() {
                 <strong>{customer.source || "未填写"}</strong>
               </article>
               <article className="detail-info-card">
+                <span>负责人状态</span>
+                <strong>{customerOwnerHeadline(customer)}</strong>
+                <div className="small muted">
+                  {customerOwnerCaption(customer)}
+                </div>
+              </article>
+              <article className="detail-info-card">
                 <span>所在地区</span>
                 <strong>
                   {[customer.province, customer.city, customer.district]
@@ -697,6 +956,117 @@ export default function CustomerDetailPage() {
                 </p>
               </div>
             </div>
+
+            {showOwnershipActionCard ? (
+              <div className="summary-card">
+                <div className="detail-block__header">
+                  <div>
+                    <strong>{customerOwnerHeadline(customer)}</strong>
+                    <div className="small muted">
+                      {customerOwnerCaption(customer)}
+                    </div>
+                  </div>
+                  <span
+                    className={`status-pill ${customerOwnerProtectionTone(customer.ownerProtectionStatus)}`}
+                  >
+                    {customerOwnerProtectionLabel(
+                      customer.ownerProtectionStatus,
+                    )}
+                  </span>
+                </div>
+                <p className="small muted mt-10">
+                  {canRequestProtectionExtension
+                    ? pendingExtensionRequest
+                      ? `延长保护期申请已提交，当前等待 ${pendingExtensionRequest.requiredRoleCode || "审批人"} 处理。`
+                      : customer.ownerProtectionStatus === "PENDING_MAINTENANCE"
+                      ? "你仍是当前负责人。客户目前已经进入待维护状态，可以直接申请延长保护期。"
+                      : `你当前是客户负责人，如需继续保留归属，可以申请延长保护期。当前保护期为 ${customer.ownerProtectionMonths} 个月。`
+                    : pendingClaimRequest
+                      ? pendingClaimRequest.requester?.id === currentUser?.id
+                        ? `你的负责客户申请已提交，当前等待 ${pendingClaimRequest.requiredRoleCode || "审批人"} 处理。`
+                        : `${pendingClaimRequest.requester?.displayName || "其他同事"} 已提交负责客户申请，当前等待审批。`
+                    : canSubmitOwnershipClaim
+                      ? "这位客户已经到期待维护，你已满足条件，现在可以申请负责客户。"
+                      : "这位客户已经到期待维护。先保存一条新的沟通记录，再点“申请负责客户”完成认领。"}
+                </p>
+              </div>
+            ) : null}
+
+            {customer.approvalRequests?.length ? (
+              <div className="focus-list">
+                {customer.approvalRequests.slice(0, 4).map((request) => {
+                  let requestType: "claim" | "extension" | "transfer" = "claim";
+                  let canReviewRequest = false;
+
+                  if (request.type === "CUSTOMER_PROTECTION_EXTENSION") {
+                    requestType = "extension";
+                    canReviewRequest = canReviewExtensionRequest;
+                  } else if (request.type === "CUSTOMER_TRANSFER") {
+                    requestType = "transfer";
+                    canReviewRequest = canReviewTransferRequest;
+                  } else {
+                    requestType = "claim";
+                    canReviewRequest = canReviewClaimRequest;
+                  }
+
+                  return (
+                    <article className="list-card" key={request.id}>
+                      <div className="detail-block__header">
+                        <div>
+                          <strong>{customerApprovalTypeLabel(request.type)}</strong>
+                          <div className="small muted">
+                            {request.requester?.displayName || "系统"} ·{" "}
+                            {formatDateLabel(request.createdAt)}
+                          </div>
+                        </div>
+                        <span
+                          className={`status-pill ${approvalStatusTone(request.status)}`}
+                        >
+                          {approvalStatusLabel(request.status)}
+                        </span>
+                      </div>
+                      <p>{request.summary || request.title}</p>
+                      <div className="small muted">
+                        审批角色：{request.requiredRoleCode || "未指定"}
+                      </div>
+                      {request.decisionRemark ? (
+                        <div className="small muted">
+                          审批备注：{request.decisionRemark}
+                        </div>
+                      ) : null}
+                      {request.status === "PENDING" && canReviewRequest ? (
+                        <div className="summary-row">
+                          <button
+                            className="button inline"
+                            disabled={reviewLoading === `${requestType}-approve`}
+                            onClick={() =>
+                              void handleReviewApproval(requestType, "approve")
+                            }
+                            type="button"
+                          >
+                            {reviewLoading === `${requestType}-approve`
+                              ? "处理中..."
+                              : "审批通过"}
+                          </button>
+                          <button
+                            className="button secondary inline"
+                            disabled={reviewLoading === `${requestType}-reject`}
+                            onClick={() =>
+                              void handleReviewApproval(requestType, "reject")
+                            }
+                            type="button"
+                          >
+                            {reviewLoading === `${requestType}-reject`
+                              ? "处理中..."
+                              : "驳回申请"}
+                          </button>
+                        </div>
+                      ) : null}
+                    </article>
+                  );
+                })}
+              </div>
+            ) : null}
 
             <form className="detail-inline-form" onSubmit={addFollowup}>
               <div className="field">
@@ -766,16 +1136,63 @@ export default function CustomerDetailPage() {
                   <button className="button inline" type="submit">
                     保存跟进
                   </button>
-                  <button
+                  {canRequestProtectionExtension ? (
+                    <button
+                      className="button secondary inline"
+                      disabled={extendingProtection || Boolean(pendingExtensionRequest)}
+                      onClick={extendProtection}
+                      type="button"
+                    >
+                      {extendingProtection
+                        ? "申请中..."
+                        : pendingExtensionRequest
+                          ? "申请已提交"
+                          : "申请延长保护期"}
+                    </button>
+                  ) : null}
+                  {canRequestOwnership ? (
+                    <button
+                      className="button secondary inline"
+                      disabled={
+                        claimingOwner ||
+                        !canSubmitOwnershipClaim ||
+                        Boolean(pendingClaimRequest)
+                      }
+                      onClick={claimOwnership}
+                      title={
+                        pendingClaimRequest
+                          ? pendingClaimRequest.requester?.id === currentUser?.id
+                            ? "你已提交过负责客户申请"
+                            : "当前已有其他负责客户申请在处理中"
+                          : canSubmitOwnershipClaim
+                          ? "提交负责客户申请"
+                          : "请先新增一条新的沟通记录，再申请负责客户"
+                      }
+                      type="button"
+                    >
+                      {claimingOwner
+                        ? "申请中..."
+                        : pendingClaimRequest
+                          ? pendingClaimRequest.requester?.id === currentUser?.id
+                            ? "申请已提交"
+                            : "已有申请处理中"
+                          : "申请负责客户"}
+                    </button>
+                  ) : null}
+                  <Link
                     className="button secondary inline"
-                    onClick={() => {
-                      setComposerKind("schedule");
-                      setComposerOpen(true);
-                    }}
-                    type="button"
+                    href={buildScheduleCreateHref({
+                      customerId: customer.id,
+                      sourceModule: "客户跟进",
+                      title: `跟进 ${customer.name}`,
+                      content: followupForm.content,
+                      nextAction: followupForm.nextAction,
+                      reminderAt: followupForm.nextFollowupAt,
+                      startAt: followupForm.nextFollowupAt,
+                    })}
                   >
                     新增关联日程
-                  </button>
+                  </Link>
                 </div>
               </div>
             </form>
@@ -1030,21 +1447,80 @@ export default function CustomerDetailPage() {
 
           <section className="panel stack">
             <div className="section-heading">
+              <h3>关联网检测</h3>
+              <p>直接从客户详情看这个基地或客户最近做过哪些检测。</p>
+            </div>
+
+            {inspectionError ? (
+              <div className="danger-text small">{inspectionError}</div>
+            ) : null}
+
+            <div className="focus-list">
+              {inspectionItems.length ? (
+                inspectionItems.map((item) => (
+                  <article className="list-card" key={item.id}>
+                    <div className="detail-block__header">
+                      <div>
+                        <strong>{item.title}</strong>
+                        <div className="small muted">{item.inspectionNo}</div>
+                      </div>
+                      <span className="status-pill neutral">
+                        {item.submittedAt
+                          ? formatDateLabel(item.submittedAt)
+                          : formatDateLabel(item.updatedAt)}
+                      </span>
+                    </div>
+                    <p>{item.latestTimeline?.content || item.labName}</p>
+                    <div className="small muted">
+                      {inspectionStatusLabel(item.status)} ·{" "}
+                      {inspectionPaymentStatusLabel(item.paymentStatus)}
+                    </div>
+                    <Link
+                      className="button secondary inline"
+                      href={`/inspections/${item.id}`}
+                    >
+                      查看详情
+                    </Link>
+                  </article>
+                ))
+              ) : (
+                <div className="empty">当前还没有关联检测记录。</div>
+              )}
+            </div>
+
+            <div className="action-row">
+              <Link
+                className="button inline"
+                href={`/inspections/new?customerId=${customer.id}`}
+              >
+                新建检测
+              </Link>
+              <Link
+                className="button secondary inline"
+                href={`/inspections?customerId=${customer.id}`}
+              >
+                查看全部检测
+              </Link>
+            </div>
+          </section>
+
+          <section className="panel stack">
+            <div className="section-heading">
               <h3>快捷操作</h3>
               <p>在右侧直接发起跟进、提醒和后续业务动作，不用离开详情页。</p>
             </div>
 
             <div className="focus-list">
-              <button
-                className="button secondary"
-                onClick={() => {
-                  setComposerKind("schedule");
-                  setComposerOpen(true);
-                }}
-                type="button"
+              <Link
+                className="button secondary inline"
+                href={buildScheduleCreateHref({
+                  customerId: customer.id,
+                  sourceModule: "客户跟进",
+                  title: `跟进 ${customer.name}`,
+                })}
               >
                 新增日程
-              </button>
+              </Link>
               <button
                 className="button secondary"
                 onClick={() => {
@@ -1060,6 +1536,12 @@ export default function CustomerDetailPage() {
                 href={`/quotes/general?customerId=${customer.id}`}
               >
                 新建报价
+              </Link>
+              <Link
+                className="button secondary inline"
+                href={`/orders?customerId=${customer.id}`}
+              >
+                新建订单
               </Link>
               <Link
                 className="button inline"

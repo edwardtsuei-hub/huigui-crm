@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { WorkspacePageHeader } from "../../../../components/dashboard/WorkspacePageHeader";
 import { ProductFormFields } from "../../../../components/products/ProductFormFields";
@@ -13,6 +13,7 @@ import {
   toProductPayload,
   type IndustryGroupOption,
   type ProductFormValues,
+  type ProductParseQueueDetail,
 } from "../../../../components/products/types";
 import {
   apiFetch,
@@ -22,6 +23,8 @@ import {
 
 export default function ProductNewPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const parseLogId = searchParams.get("parseLogId")?.trim() || "";
   const currentUser = getCurrentUser();
   const canEdit = hasAnyPermission(currentUser, [
     "action.product.create",
@@ -33,6 +36,8 @@ export default function ProductNewPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [importedQueueItem, setImportedQueueItem] =
+    useState<ProductParseQueueDetail | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,6 +70,41 @@ export default function ProductNewPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!parseLogId || !canEdit) {
+      setImportedQueueItem(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadQueueItem() {
+      try {
+        const response = await apiFetch<ProductParseQueueDetail>(
+          `/products/parse-queue/${parseLogId}`,
+        );
+
+        if (!cancelled) {
+          setImportedQueueItem(response);
+        }
+      } catch (requestError) {
+        if (!cancelled) {
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "加载解析记录失败",
+          );
+        }
+      }
+    }
+
+    void loadQueueItem();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canEdit, parseLogId]);
 
   const selectedIndustryName = useMemo(
     () =>
@@ -125,11 +165,22 @@ export default function ProductNewPage() {
     <div className="workspace-stack">
       <WorkspacePageHeader
         actions={
-          <Link className="button secondary inline" href="/products">
-            返回产品列表
-          </Link>
+          <>
+            <Link className="button ghost inline" href="/products/ai-import">
+              待确认队列
+            </Link>
+            <Link className="button secondary inline" href="#smart-parser">
+              定位解析辅助
+            </Link>
+            <Link className="button ghost inline" href="/products-new-preview">
+              公开预览
+            </Link>
+            <Link className="button ghost inline" href="/products">
+              返回产品列表
+            </Link>
+          </>
         }
-        description="新建页保留完整产品表单和 AI 解析辅助入口，适合把标签、卖点、规格和模板信息一次沉淀进产品库。"
+        description="新建页保留完整产品表单和 AI 解析辅助入口，适合先吸收标签与文案，再把规格、售价和模板信息一次沉淀进产品库。"
         eyebrow="产品录入"
         meta={[
           { label: "所属行业", value: selectedIndustryName },
@@ -148,6 +199,7 @@ export default function ProductNewPage() {
           <div id="smart-parser">
             <ProductSmartParser
               form={form}
+              importedQueueItem={importedQueueItem}
               industries={industries}
               onApplyParsedData={(patch) =>
                 setForm((prev) => ({ ...prev, ...patch }))
@@ -157,9 +209,9 @@ export default function ProductNewPage() {
 
           <section className="panel stack">
             <div className="section-heading">
-              <h3>新增产品</h3>
+              <h3>正式产品表单</h3>
               <p>
-                先用解析器吸收标签和文案，再补成本、售价与输出模板，后续报价页就能直接复用。
+                这一版把录入表单改成了分区式卡片，先沉淀基础识别、再确定报价模板，最后补齐文案和展示资料。
               </p>
             </div>
 
@@ -184,6 +236,9 @@ export default function ProductNewPage() {
                 >
                   重置表单
                 </button>
+                <Link className="button ghost inline" href="#smart-parser">
+                  回到解析辅助
+                </Link>
               </div>
             </form>
           </section>
@@ -192,7 +247,7 @@ export default function ProductNewPage() {
         <aside className="editor-side sticky-side">
           <section className="panel stack">
             <div className="section-heading">
-              <h3>产品摘要</h3>
+              <h3>录入摘要</h3>
               <p>行业、售价与模板类型决定了这个产品在后续报价中的呈现方式。</p>
             </div>
 
@@ -218,10 +273,24 @@ export default function ProductNewPage() {
 
             <div className="summary-card">
               <div className="section-heading">
-                <h3>录入提醒</h3>
+                <h3>解析辅助提醒</h3>
                 <p>
-                  标签文字会被用于后续生成标签说明，建议在正式入库前再确认一次对外展示语气。
+                  解析器只负责先提建议值，正式写入前仍建议你检查标签语气、规格单位和模板类型。
                 </p>
+              </div>
+              <div className="summary-list">
+                <div className="summary-row">
+                  <span>混合输入</span>
+                  <strong>文字 + 图片</strong>
+                </div>
+                <div className="summary-row">
+                  <span>冲突处理</span>
+                  <strong>先选候选值再写入</strong>
+                </div>
+                <div className="summary-row">
+                  <span>覆盖策略</span>
+                  <strong>已有值默认保留</strong>
+                </div>
               </div>
             </div>
           </section>

@@ -1,0 +1,1150 @@
+.page {
+  position: relative;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  padding: clamp(16px, 2.4vw, 30px);
+  background:
+    radial-gradient(circle at top left, rgba(255, 188, 213, 0.32), transparent 28%),
+    radial-gradient(circle at top right, rgba(255, 221, 122, 0.28), transparent 22%),
+    linear-gradient(180deg, #fff9f1 0%, #f8ffe8 46%, #edf8ec 100%);
+}
+
+.pageManagement {
+  background:
+    radial-gradient(circle at 16% 12%, rgba(255, 245, 179, 0.34), transparent 24%),
+    radial-gradient(circle at 84% 14%, rgba(255, 215, 132, 0.32), transparent 26%),
+    linear-gradient(180deg, #fffbea 0%, #fff5d8 38%, #eef7d0 74%, #dff1ca 100%);
+}
+
+.pageManagement .glowOne {
+  background: rgba(255, 232, 152, 0.4);
+}
+
+.pageManagement .glowTwo {
+  background: rgba(255, 194, 124, 0.34);
+}
+
+.pageManagement .glowThree {
+  background: rgba(126, 214, 145, 0.24);
+}
+
+.pageManagement .panel::before {
+  background:
+    radial-gradient(circle at top left, rgba(255, 215, 123, 0.16), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(146, 205, 108, 0.16), transparent 30%);
+}
+
+.pageManagement .panelBadge {
+  background: linear-gradient(135deg, rgba(255, 251, 234, 0.96), rgba(255, 236, 190, 0.92));
+  border-color: rgba(216, 175, 79, 0.28);
+  color: #926d16;
+}
+
+.pageManagement .submitButton {
+  background: linear-gradient(135deg, #e9bf58 0%, #f5d87d 34%, #79af48 100%);
+  box-shadow: 0 18px 30px rgba(173, 145, 53, 0.24);
+}
+
+.pageManagement .submitButton:hover {
+  box-shadow: 0 22px 36px rgba(173, 145, 53, 0.3);
+}
+
+.pageManagement .input:focus {
+  box-shadow:
+    inset 0 0 0 1px rgba(114, 97, 35, 0.16),
+    0 0 0 5px rgba(239, 205, 117, 0.18),
+    0 18px 34px rgba(255, 255, 255, 0.48);
+}
+
+.pageGlow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(64px);
+  opacity: 0.7;
+  animation: glowPulse 9s ease-in-out infinite;
+}
+
+.glowOne {
+  top: -10%;
+  left: -4%;
+  width: 320px;
+  height: 320px;
+  background: rgba(255, 145, 191, 0.4);
+}
+
+.glowTwo {
+  top: 18%;
+  right: -6%;
+  width: 380px;
+  height: 380px;
+  background: rgba(255, 209, 118, 0.34);
+  animation-delay: -2s;
+}
+
+.glowThree {
+  bottom: -14%;
+  left: 28%;
+  width: 420px;
+  height: 280px;
+  background: rgba(113, 219, 150, 0.28);
+  animation-delay: -4.3s;
+}
+
+.shell {
+  position: relative;
+  z-index: 1;
+  width: min(1360px, 100%);
+  height: 100%;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.28fr) minmax(340px, 420px);
+  gap: clamp(16px, 1.8vw, 24px);
+}
+
+.hero,
+.panel {
+  min-height: 0;
+  border-radius: 38px;
+  overflow: hidden;
+}
+
+.hero {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: clamp(12px, 2vw, 22px);
+  padding: clamp(26px, 3.1vw, 42px);
+  background:
+    radial-gradient(circle at 14% 16%, rgba(255, 255, 255, 0.26), transparent 18%),
+    radial-gradient(circle at 82% 18%, rgba(255, 223, 132, 0.22), transparent 18%),
+    linear-gradient(138deg, rgba(18, 78, 49, 0.95) 0%, rgba(52, 154, 92, 0.88) 38%, rgba(255, 137, 171, 0.56) 74%, rgba(255, 201, 103, 0.58) 100%);
+  box-shadow: 0 24px 70px rgba(27, 63, 34, 0.18);
+}
+
+.heroManagement {
+  background:
+    radial-gradient(circle at 12% 16%, rgba(255, 255, 255, 0.3), transparent 20%),
+    radial-gradient(circle at 82% 16%, rgba(255, 236, 146, 0.3), transparent 22%),
+    linear-gradient(145deg, rgba(93, 138, 53, 0.92) 0%, rgba(143, 185, 84, 0.86) 28%, rgba(255, 216, 135, 0.82) 64%, rgba(255, 244, 214, 0.86) 100%);
+  box-shadow: 0 28px 78px rgba(94, 113, 42, 0.2);
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)),
+    radial-gradient(circle at bottom left, rgba(255, 255, 255, 0.1), transparent 22%);
+  pointer-events: none;
+}
+
+.heroCopy,
+.storyStage {
+  position: relative;
+  z-index: 1;
+}
+
+.heroCopy {
+  display: grid;
+  gap: 14px;
+  max-width: 760px;
+}
+
+.companyName {
+  width: fit-content;
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.titleBlock {
+  display: grid;
+  gap: 14px;
+}
+
+.sloganLabel {
+  color: rgba(255, 248, 237, 0.78);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.heroTitle {
+  margin: 0;
+  display: grid;
+  gap: clamp(4px, 0.8vw, 12px);
+  max-width: none;
+  color: #fffef7;
+  font-family: "Iowan Old Style", "Baskerville", "Songti SC", "Noto Serif SC", serif;
+  font-size: clamp(44px, 5vw, 78px);
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+  text-shadow: 0 14px 32px rgba(18, 45, 25, 0.16);
+}
+
+.heroTitleLine {
+  display: block;
+}
+
+.heroLead {
+  margin: 0;
+  max-width: 35ch;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: clamp(15px, 1.3vw, 18px);
+  line-height: 1.75;
+}
+
+.companyPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.companyPill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 253, 243, 0.78);
+  color: #6f5716;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 10px 18px rgba(114, 98, 34, 0.12);
+}
+
+.heroManagement .heroLead {
+  max-width: 42ch;
+  color: rgba(88, 71, 23, 0.88);
+}
+
+.storyStage {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  align-content: end;
+}
+
+.managementFooter {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.managementFooterLabel {
+  color: rgba(96, 78, 22, 0.72);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.managementFooterText {
+  margin: 0;
+  color: rgba(92, 72, 18, 0.82);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.storyScene {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border-radius: 32px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 18px 34px rgba(25, 64, 31, 0.08);
+}
+
+.managementScene {
+  background: rgba(255, 250, 224, 0.24);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+    0 24px 42px rgba(94, 111, 42, 0.14);
+}
+
+.cloudDrift {
+  animation: cloudDrift 14s ease-in-out infinite;
+}
+
+.flowerBob {
+  animation: flowerBob 4.8s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+.grandmaFocus {
+  animation: grandmaGlow 4.6s ease-in-out infinite;
+  transform-origin: 512px 242px;
+}
+
+.orbitTrail {
+  animation: orbitDash 9.2s linear infinite;
+}
+
+.orbitTrailOuter {
+  opacity: 0.92;
+}
+
+.orbitTrailInner {
+  animation-duration: 7.8s;
+  opacity: 0.74;
+}
+
+.grandpaSway {
+  animation: figureSway 5.8s ease-in-out infinite;
+  transform-origin: 242px 320px;
+  opacity: 0.94;
+}
+
+.grandmaSway {
+  animation: figureSway 5.6s ease-in-out infinite;
+  animation-delay: -1.2s;
+  transform-origin: 510px 338px;
+}
+
+.butterflyOrbit {
+  animation: butterflyOrbit 9.6s linear infinite;
+  transform-origin: 0px 0px;
+}
+
+.butterflyFloat {
+  animation: butterflyFlutter 0.84s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.managementHorizonGlow {
+  animation: horizonGlowPulse 6.4s ease-in-out infinite;
+}
+
+.managementCloudDrift {
+  animation: cloudDrift 18s ease-in-out infinite;
+}
+
+.managementSunAura {
+  animation: sunAuraPulse 3.6s ease-in-out infinite;
+  transform-origin: 576px 96px;
+}
+
+.managementSunRays {
+  animation: sunRayRotate 18s linear infinite;
+  transform-origin: 576px 96px;
+  stroke: rgba(255, 233, 162, 0.82);
+  stroke-linecap: round;
+  stroke-width: 8;
+}
+
+.managementSunCore {
+  animation: sunCoreFlicker 2.8s ease-in-out infinite;
+  transform-origin: 576px 96px;
+}
+
+.managementSparkles circle {
+  fill: rgba(255, 255, 241, 0.9);
+  animation: sparklePulse 3.2s ease-in-out infinite;
+}
+
+.managementSparkles circle:nth-child(2n) {
+  animation-delay: -1.2s;
+}
+
+.managementSparkles circle:nth-child(3n) {
+  animation-delay: -2.1s;
+}
+
+.managementGrassBack {
+  animation: grassWaveBack 8.6s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+.managementGrassFront {
+  animation: grassWaveFront 6.8s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+.managementFigureDrift {
+  animation: figureReachFloat 5.4s ease-in-out infinite;
+  transform-origin: 380px 300px;
+}
+
+.managementFigure {
+  transform-origin: 380px 260px;
+}
+
+.managementFigureCore {
+  animation: figureLightPulse 4.2s ease-in-out infinite;
+}
+
+.managementFigureArmLeft,
+.managementFigureArmRight {
+  animation: figureArmReach 6.1s ease-in-out infinite;
+  transform-origin: 380px 214px;
+}
+
+.managementFigureArmRight {
+  animation-delay: -3s;
+}
+
+.managementHeartGlow {
+  animation: heartGlowBeat 3.1s ease-in-out infinite;
+  transform-origin: 380px 248px;
+}
+
+.panel {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: clamp(18px, 2.4vw, 26px);
+  padding: clamp(24px, 3vw, 34px);
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid rgba(255, 255, 255, 0.74);
+  box-shadow:
+    0 24px 68px rgba(67, 89, 54, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.84);
+  backdrop-filter: blur(24px);
+}
+
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top left, rgba(255, 162, 196, 0.14), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(122, 233, 164, 0.14), transparent 30%);
+  pointer-events: none;
+}
+
+.panelHeading,
+.loginStack,
+.form,
+.panelFooter {
+  position: relative;
+  z-index: 1;
+}
+
+.panelHeading {
+  display: grid;
+  gap: 12px;
+}
+
+.panelBadge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(255, 235, 243, 0.88));
+  border: 1px solid rgba(230, 166, 194, 0.34);
+  color: #9a4664;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.panelHeading h2 {
+  margin: 0;
+  color: #234835;
+  font-family: "Iowan Old Style", "Baskerville", "Songti SC", "Noto Serif SC", serif;
+  font-size: clamp(36px, 3.4vw, 48px);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+}
+
+.panelHeading p {
+  margin: 0;
+  color: #627566;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.panelHeading strong {
+  color: #284f39;
+}
+
+.form {
+  align-self: center;
+  display: grid;
+  gap: 16px;
+}
+
+.loginStack {
+  align-self: center;
+  display: grid;
+  gap: 16px;
+}
+
+.returningSessionCard {
+  align-self: center;
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.56);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.48),
+    0 18px 34px rgba(85, 103, 72, 0.12);
+}
+
+.returningSessionEyebrow {
+  color: #7d8b58;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.returningSessionTitle {
+  margin: 0;
+  color: #234835;
+  font-family: "Iowan Old Style", "Baskerville", "Songti SC", "Noto Serif SC", serif;
+  font-size: clamp(28px, 2.6vw, 34px);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+.returningSessionDescription {
+  margin: 0;
+  color: #627566;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.returningSessionActions {
+  display: grid;
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field span {
+  color: #557160;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.input {
+  width: 100%;
+  border: none;
+  border-radius: 18px;
+  padding: 16px 18px;
+  color: #183526;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow:
+    inset 0 0 0 1px rgba(44, 92, 58, 0.12),
+    0 12px 28px rgba(255, 255, 255, 0.38);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.input::placeholder {
+  color: rgba(74, 104, 85, 0.58);
+}
+
+.input:hover {
+  transform: translateY(-1px);
+}
+
+.input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow:
+    inset 0 0 0 1px rgba(44, 92, 58, 0.18),
+    0 0 0 5px rgba(255, 141, 181, 0.14),
+    0 18px 34px rgba(255, 255, 255, 0.48);
+}
+
+.errorMessage {
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(255, 237, 242, 0.82);
+  border: 1px solid rgba(229, 129, 162, 0.22);
+  color: #b0496f;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.submitButton {
+  min-height: 54px;
+  border: none;
+  border-radius: 18px;
+  padding: 14px 18px;
+  color: #fffef8;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  background: linear-gradient(135deg, #ff84aa 0%, #ffb34f 42%, #2db36d 100%);
+  box-shadow: 0 18px 30px rgba(255, 128, 170, 0.28);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+}
+
+.submitButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 36px rgba(255, 128, 170, 0.32);
+  filter: saturate(1.04);
+}
+
+.submitButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+  transform: none;
+  box-shadow: 0 10px 18px rgba(255, 128, 170, 0.18);
+  filter: none;
+}
+
+.wecomButton {
+  min-height: 54px;
+  border: none;
+  border-radius: 18px;
+  padding: 14px 18px;
+  color: #fffef8;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  background: linear-gradient(135deg, #1aad19 0%, #55c463 48%, #238b3b 100%);
+  box-shadow: 0 18px 30px rgba(35, 139, 59, 0.22);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+}
+
+.wecomButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 36px rgba(35, 139, 59, 0.28);
+  filter: saturate(1.04);
+}
+
+.wecomButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+  transform: none;
+  box-shadow: 0 10px 18px rgba(35, 139, 59, 0.16);
+  filter: none;
+}
+
+.loginDivider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  color: rgba(85, 113, 96, 0.7);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.loginDivider::before,
+.loginDivider::after {
+  content: "";
+  height: 1px;
+  background: rgba(85, 113, 96, 0.16);
+}
+
+.secondaryButton {
+  min-height: 50px;
+  border: 1px solid rgba(92, 126, 78, 0.18);
+  border-radius: 18px;
+  padding: 13px 18px;
+  color: #365543;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.4),
+    0 12px 24px rgba(81, 112, 77, 0.1);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.secondaryButton:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5),
+    0 16px 28px rgba(81, 112, 77, 0.14);
+}
+
+.panelFooter {
+  margin: 0;
+  color: #67796b;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.wecomBindOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(14, 24, 16, 0.44);
+  backdrop-filter: blur(16px);
+}
+
+.wecomBindModal {
+  width: min(500px, 100%);
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border-radius: 24px;
+  background: rgba(255, 255, 248, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  box-shadow:
+    0 26px 80px rgba(17, 36, 22, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
+.wecomBindBadge {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 7px 12px;
+  color: #2f6f42;
+  background: rgba(226, 245, 223, 0.84);
+  border: 1px solid rgba(61, 125, 77, 0.18);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.wecomBindHeading {
+  display: grid;
+  gap: 10px;
+}
+
+.wecomBindHeading h3 {
+  margin: 0;
+  color: #234835;
+  font-family: "Iowan Old Style", "Baskerville", "Songti SC", "Noto Serif SC", serif;
+  font-size: clamp(28px, 3vw, 36px);
+  line-height: 1.08;
+}
+
+.wecomBindHeading p {
+  margin: 0;
+  color: #627566;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.wecomBindActions {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 12px;
+}
+
+@keyframes glowPulse {
+  0%,
+  100% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: scale(1.08) translate3d(0, -10px, 0);
+  }
+}
+
+@keyframes cloudDrift {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(10px);
+  }
+}
+
+@keyframes flowerBob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes grandmaGlow {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.92;
+  }
+
+  50% {
+    transform: scale(1.03);
+    opacity: 1;
+  }
+}
+
+@keyframes orbitDash {
+  0% {
+    stroke-dashoffset: 0;
+    opacity: 0.55;
+  }
+
+  100% {
+    stroke-dashoffset: -68;
+    opacity: 0.96;
+  }
+}
+
+@keyframes figureSway {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  50% {
+    transform: rotate(1.5deg);
+  }
+}
+
+@keyframes butterflyOrbit {
+  0% {
+    transform: rotate(8deg);
+  }
+
+  20% {
+    transform: rotate(104deg);
+  }
+
+  42% {
+    transform: rotate(182deg);
+  }
+
+  66% {
+    transform: rotate(282deg);
+  }
+
+  100% {
+    transform: rotate(368deg);
+  }
+}
+
+@keyframes butterflyFlutter {
+  0%,
+  100% {
+    transform: translateY(0) scale(1) rotate(-14deg);
+  }
+
+  35% {
+    transform: translateY(-10px) scale(1.08) rotate(12deg);
+  }
+
+  70% {
+    transform: translateY(4px) scale(0.94) rotate(-4deg);
+  }
+}
+
+@keyframes horizonGlowPulse {
+  0%,
+  100% {
+    opacity: 0.56;
+  }
+
+  50% {
+    opacity: 0.94;
+  }
+}
+
+@keyframes sunAuraPulse {
+  0%,
+  100% {
+    transform: scale(0.96);
+    opacity: 0.72;
+  }
+
+  50% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+}
+
+@keyframes sunRayRotate {
+  0% {
+    transform: rotate(0deg);
+    opacity: 0.72;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: rotate(360deg);
+    opacity: 0.74;
+  }
+}
+
+@keyframes sunCoreFlicker {
+  0%,
+  100% {
+    transform: scale(0.98);
+    filter: saturate(1);
+  }
+
+  20% {
+    transform: scale(1.04);
+    filter: saturate(1.08);
+  }
+
+  52% {
+    transform: scale(0.97);
+  }
+
+  72% {
+    transform: scale(1.08);
+    filter: saturate(1.12);
+  }
+}
+
+@keyframes sparklePulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+
+  50% {
+    opacity: 0.95;
+    transform: scale(1.24);
+  }
+}
+
+@keyframes grassWaveBack {
+  0%,
+  100% {
+    transform: translateY(0) scaleX(1);
+  }
+
+  50% {
+    transform: translateY(4px) scaleX(1.02);
+  }
+}
+
+@keyframes grassWaveFront {
+  0%,
+  100% {
+    transform: translateY(0) scaleX(1);
+  }
+
+  50% {
+    transform: translateY(-3px) scaleX(0.99);
+  }
+}
+
+@keyframes figureReachFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes figureLightPulse {
+  0%,
+  100% {
+    opacity: 0.76;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes figureArmReach {
+  0%,
+  100% {
+    stroke-opacity: 0.76;
+  }
+
+  50% {
+    stroke-opacity: 1;
+  }
+}
+
+@keyframes heartGlowBeat {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: scale(0.9);
+  }
+
+  35% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+
+  70% {
+    opacity: 0.84;
+    transform: scale(0.96);
+  }
+}
+
+@media (max-width: 1100px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr) 380px;
+  }
+
+  .heroTitle {
+    font-size: clamp(38px, 4.2vw, 60px);
+  }
+}
+
+@media (max-width: 960px) {
+  .page {
+    padding: 12px;
+  }
+
+  .shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) minmax(0, auto);
+  }
+
+  .hero {
+    gap: 10px;
+    padding: 20px;
+  }
+
+  .panel {
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .storyStage {
+    gap: 0;
+  }
+
+  .storyScene {
+    min-height: 220px;
+  }
+
+  .heroTitle {
+    font-size: clamp(32px, 8.2vw, 50px);
+    gap: 8px;
+  }
+
+  .heroLead,
+  .returningSessionDescription,
+  .panelHeading p,
+  .panelFooter {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100svh;
+    overflow: auto;
+  }
+
+  .shell {
+    height: auto;
+  }
+
+  .storyStage {
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .storyScene {
+    min-height: 180px;
+  }
+
+  .companyName {
+    max-width: 100%;
+  }
+
+  .returningSessionCard {
+    padding: 18px;
+  }
+
+  .wecomBindOverlay {
+    padding: 16px;
+  }
+
+  .wecomBindModal {
+    border-radius: 20px;
+    padding: 20px;
+  }
+
+  .wecomBindActions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow,
+  .cloudDrift,
+  .flowerBob,
+  .grandmaFocus,
+  .orbitTrail,
+  .grandpaSway,
+  .grandmaSway,
+  .butterflyOrbit,
+  .butterflyFloat,
+  .managementHorizonGlow,
+  .managementCloudDrift,
+  .managementSunAura,
+  .managementSunRays,
+  .managementSunCore,
+  .managementSparkles circle,
+  .managementGrassBack,
+  .managementGrassFront,
+  .managementFigureDrift,
+  .managementFigureCore,
+  .managementFigureArmLeft,
+  .managementFigureArmRight,
+  .managementHeartGlow {
+    animation: none;
+  }
+
+  .input,
+  .submitButton,
+  .secondaryButton {
+    transition: none;
+  }
+}

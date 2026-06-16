@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { StepStrip } from "../../../components/dashboard/StepStrip";
 import { WorkspacePageHeader } from "../../../components/dashboard/WorkspacePageHeader";
+import { FirstRunGuide } from "../../../components/system/FirstRunGuide";
 import { apiFetch } from "../../../lib/api";
 import { formatMoney } from "../../../lib/workspace";
 
@@ -105,7 +106,7 @@ export default function AgriculturePage() {
   useEffect(() => {
     let cancelled = false;
 
-    apiFetch<CustomerListResponse>("/customers")
+    apiFetch<CustomerListResponse>("/meta/solution-customers")
       .then((response) => {
         if (cancelled) {
           return;
@@ -228,7 +229,7 @@ export default function AgriculturePage() {
                 返回客户
               </Link>
             ) : null}
-            <Link className="button secondary inline" href="/quotations">
+            <Link className="button secondary inline" href="/files">
               查看档案
             </Link>
             <button
@@ -248,6 +249,38 @@ export default function AgriculturePage() {
           { label: "作物数", value: String(form.crops.length) },
         ]}
         title="农业方案"
+      />
+
+      <FirstRunGuide
+        actions={[
+          {
+            label: loading ? "预览中..." : "更新预览",
+            onClick: () => void handlePreview(),
+            disabled: loading || !form.customerId,
+          },
+          {
+            label: "返回客户",
+            href: selectedCustomer ? `/customers/${selectedCustomer.id}` : "/customers",
+            variant: "secondary",
+          },
+        ]}
+        description="农业方案建议先补基础信息，再配置作物周期和桶数，最后检查优惠与金额后生成正式报价。"
+        guideKey="agriculture-plan"
+        steps={[
+          {
+            label: "先补基础信息",
+            description: "先选客户、方案名称和折扣方式，后面所有金额预览都会基于这些基础条件计算。",
+          },
+          {
+            label: "再配置作物与周期",
+            description: "逐条补作物类别、面积和生长周期，系统才有办法计算桶数和方案阶段。",
+          },
+          {
+            label: "最后再生成正式报价",
+            description: "先点更新预览确认金额和未命中项，确认无误后再生成正式报价，会更稳妥。",
+          },
+        ]}
+        title="先选客户和作物，再生成方案预览"
       />
 
       <StepStrip

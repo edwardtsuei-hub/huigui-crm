@@ -18,8 +18,9 @@ export class CalculateGeneralQuoteDto {
   @IsString()
   customerId?: string;
 
+  @IsOptional()
   @IsString()
-  industryGroupId!: string;
+  industryGroupId?: string;
 
   @IsArray()
   @ValidateNested({ each: true })

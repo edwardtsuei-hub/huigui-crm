@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch, emitNotificationsChanged } from "../../lib/api";
 import {
+  buildNotificationHref,
   notificationTypeLabel,
   type WorkspaceNotification,
 } from "../../lib/workspace";
+import { useSiteBrandKey } from "../system/SiteBrandContext";
 import { RightDrawer, StatusBadge } from "../system/primitives";
 
 type NotificationDrawerProps = {
@@ -26,8 +28,9 @@ export function NotificationDrawer({
   open,
   unreadCount,
 }: NotificationDrawerProps) {
+  const brandKey = useSiteBrandKey();
   const [activeTab, setActiveTab] = useState<
-    "all" | "pending" | "reminders" | "approvals"
+    "all" | "pending" | "reminders" | "special"
   >("all");
   const [actionError, setActionError] = useState("");
   const [markAllPending, setMarkAllPending] = useState(false);
@@ -85,21 +88,46 @@ export function NotificationDrawer({
         (item) =>
           item.type === "FOLLOW_UP_REMINDER" ||
           item.type === "TASK_REMINDER" ||
-          item.type === "CONTRACT_EXPIRY_REMINDER",
+          item.type === "CONTRACT_EXPIRY_REMINDER" ||
+          item.type === "TASK_ASSIGNED" ||
+          item.type === "TASK_REASSIGNED",
       ),
-      approvals: items.filter(
-        (item) =>
-          item.type === "QUOTATION_REMINDER" ||
-          /审批|折扣|导出/i.test(`${item.title} ${item.content}`),
-      ),
+      special:
+        brandKey === "management"
+          ? items.filter(
+              (item) =>
+                item.type === "DISCUSSION_COMMENT" ||
+                item.type === "APPROVAL_REQUEST_CREATED" ||
+                item.type === "CUSTOMER_APPROVAL_REQUEST_CREATED" ||
+                item.type === "APPROVAL_REQUEST_DECIDED" ||
+                item.type === "CUSTOMER_APPROVAL_REQUEST_DECIDED" ||
+                item.type === "WEEKLY_REPORT_SUBMITTED" ||
+                item.type === "WEEKLY_REPORT_REVIEWED" ||
+                item.type === "MONTHLY_GOAL_SUBMITTED" ||
+                item.type === "QUOTATION_REMINDER",
+            )
+          : items.filter(
+              (item) =>
+                item.type === "APPROVAL_REQUEST_CREATED" ||
+                item.type === "CUSTOMER_APPROVAL_REQUEST_CREATED" ||
+                item.type === "APPROVAL_REQUEST_DECIDED" ||
+                item.type === "CUSTOMER_APPROVAL_REQUEST_DECIDED" ||
+                item.type === "QUOTATION_REMINDER" ||
+                /审批|折扣|导出/i.test(`${item.title} ${item.content}`),
+            ),
     };
-  }, [items]);
+  }, [brandKey, items]);
 
   const visibleItems = tabItems[activeTab];
+  const specialTabLabel = brandKey === "management" ? "协作" : "审批";
 
   return (
     <RightDrawer
-      description="轻量查看待处理提醒，完整筛选与历史操作交给独立通知页。"
+      description={
+        brandKey === "management"
+          ? "轻量查看待处理提醒与协作消息，完整筛选与历史操作交给独立通知页。"
+          : "轻量查看待处理提醒，完整筛选与历史操作交给独立通知页。"
+      }
       eyebrow="通知"
       footer={
         <>
@@ -135,14 +163,14 @@ export function NotificationDrawer({
           { key: "all", label: "全部" },
           { key: "pending", label: "待处理" },
           { key: "reminders", label: "提醒" },
-          { key: "approvals", label: "审批" },
+          { key: "special", label: specialTabLabel },
         ].map((tab) => (
           <button
             className={`segmented-control__item ${activeTab === tab.key ? "active" : ""}`}
             key={tab.key}
             onClick={() =>
               setActiveTab(
-                tab.key as "all" | "pending" | "reminders" | "approvals",
+                tab.key as "all" | "pending" | "reminders" | "special",
               )
             }
             type="button"
@@ -164,7 +192,7 @@ export function NotificationDrawer({
             visibleItems.map((item) => (
               <Link
                 className="drawer-notice"
-                href="/notifications"
+                href={buildNotificationHref(item)}
                 key={item.id}
                 onClick={onClose}
               >
@@ -176,7 +204,7 @@ export function NotificationDrawer({
                 </div>
                 <p>{item.content}</p>
                 <div className="small muted">
-                  {notificationTypeLabel(item.type)} · {item.createdAtLabel}
+                  {notificationTypeLabel(item.type, brandKey)} · {item.createdAtLabel}
                 </div>
               </Link>
             ))

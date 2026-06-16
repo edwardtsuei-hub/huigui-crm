@@ -1,0 +1,110 @@
+{
+  "report": "parallel-collab-weekly-reports-formal-orphan-pagecheck-2026-06-16",
+  "date": "2026-06-16",
+  "executed_at": "2026-06-16 17:19:47 +0800",
+  "status": "ready_for_review",
+  "constraints": {
+    "readonly": true,
+    "code_modified": false,
+    "database_written": false,
+    "deployed": false,
+    "restarted": false,
+    "ui_write_actions_clicked": false
+  },
+  "runtime": {
+    "url": "https://management.hui-health.com/work-management/weekly-reports",
+    "html_status": 200,
+    "server": "nginx/1.27.5",
+    "last_modified": "Tue, 16 Jun 2026 01:02:39 GMT",
+    "html_sha256": "c8e29d9010208ed689be0fdc4e8eedf46359607b2256327be452dc01d7a9bc0d",
+    "main_js": "/assets/index-C20sRqov.js",
+    "main_css": "/assets/index-DUmE3prg.css",
+    "local_release_assets": "apps/web/public/employee-frontend/releases/20260616090241/assets",
+    "route_component_symbol": "UL",
+    "route_label": "周报工作台"
+  },
+  "codegraph": {
+    "repo_has_codegraph_directory": false,
+    "used": false
+  },
+  "formal_weekly_report_chain": {
+    "frontend_api_function": "QD",
+    "frontend_api_call": "GET /work-management/weekly-reports",
+    "parsed_fields": [
+      "pendingWeeklyReport",
+      "items",
+      "teamItems"
+    ],
+    "merge_function": "XD",
+    "mapper_function": "JD",
+    "mapper_behavior": [
+      "DRAFT returns null",
+      "non-draft teamItems become team view rows tagged 正式周报",
+      "metricSummary uses 正式周报：... or 正式周报已提交；计划 ..."
+    ],
+    "backend_controller": "apps/api/src/work-management/work-management.controller.ts:51-54",
+    "backend_service": "apps/api/src/work-management/work-management.service.ts:566-594",
+    "backend_where": "apps/api/src/work-management/work-management.service.ts:2992-2999"
+  },
+  "shared_orphan_support": {
+    "workspace_shared_query_param_seen": true,
+    "workspace_shared_effect": "switches the Vite page into team/shared workspace mode",
+    "separate_shared_data_source_found": false,
+    "separate_orphan_data_source_found": false,
+    "bundle_orphan_string_count": 0,
+    "api_fields_missing": [
+      "sharedItems",
+      "orphanItems",
+      "unmatchedItems",
+      "unmatchedReports"
+    ],
+    "controller_endpoint_missing": [
+      "weekly-reports/shared",
+      "weekly-reports/orphan",
+      "weekly-reports/unmatched"
+    ]
+  },
+  "page_observation": {
+    "opened_url": "https://management.hui-health.com/work-management/weekly-reports?view=team&workspace=shared&from=mobile-management",
+    "auth_state": "logged_in",
+    "identity": "综合办公室 / 办公室管理员 / 创办人 · edwardtsuei",
+    "page_title": "6 月第 3 周 周报",
+    "visible_mode": "团队视角",
+    "primary_section": "跨团队周报阅读",
+    "counts_seen": {
+      "current_people": 16,
+      "submitted": 1,
+      "pending_submit": 15,
+      "needs_help": 15
+    },
+    "formal_row_example": {
+      "member": "lisa",
+      "status": "已提交",
+      "text_contains": "正式周报：本周完成：Submit smoke restored formal DB status. 重点进展：Wait for five-person resubmission acceptance."
+    },
+    "missing_placeholder_examples": [
+      "阿蕊 待提交 / 本期未交",
+      "程程 待提交 / 本期未交",
+      "申琦 待提交 / 本期未交"
+    ]
+  },
+  "missing_shared_orphan_manifestation": [
+    "URL includes workspace=shared, but the visible page does not show a 共享周报/shared workspace source list.",
+    "No orphan/unmatched/未归属周报 tab, count, card, drawer, or claim/match action is visible.",
+    "The main list title is 命中 16 位需提交成员, not shared/orphan reports.",
+    "Missing members render as 待提交 / 本期未交 placeholders generated from member requirements.",
+    "The 阿蕊 drawer keeps the URL unchanged and opens a client-side member drawer, not a reportId detail page.",
+    "The 阿蕊 drawer mixes current missing status with previous-cycle text: 本期未提交 plus 阿蕊 已提交熊抱大地 · 门店经营周报.",
+    "名单规则 shows 需提交 16 / 17 but does not explain or expose the missing one as orphan/unmatched.",
+    "各部门周报统一汇总 only lists pending/confirmation names and does not include shared/orphan sources."
+  ],
+  "answer": {
+    "only_formal_weekly_report": "partially_true",
+    "explanation": "Actual formal report content merged from the backend comes only from formal WeeklyReport teamItems. The page also displays generated member placeholders for missing submissions, but it does not display shared/orphan report records.",
+    "shared_orphan_missing": true
+  },
+  "artifacts": {
+    "markdown": "docs/parallel-collab-weekly-reports-formal-orphan-pagecheck-2026-06-16.md",
+    "json": "output/employee-data-migration/2026-06-16/parallel-collab-weekly-reports-formal-orphan-pagecheck.json"
+  }
+}

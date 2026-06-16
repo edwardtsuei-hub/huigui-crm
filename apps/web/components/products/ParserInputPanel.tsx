@@ -1,8 +1,12 @@
 "use client";
 
+import { useEffect, useId, useRef } from "react";
+import styles from "./ProductParserPanels.module.css";
+
 type ParserInputPanelProps = {
   rawText: string;
   imagePreview: string;
+  selectedFileName: string;
   loading: boolean;
   error: string;
   statusMessage: string;
@@ -16,67 +20,127 @@ export function ParserInputPanel(props: ParserInputPanelProps) {
   const {
     rawText,
     imagePreview,
+    selectedFileName,
     loading,
     error,
     statusMessage,
     onRawTextChange,
     onImageSelect,
     onRemoveImage,
-    onParse
+    onParse,
   } = props;
+  const inputId = useId();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!selectedFileName && fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, [selectedFileName]);
 
   return (
-    <section className="panel stack">
-      <div>
-        <h3>产品信息智能解析</h3>
-        <p className="muted">
-          支持粘贴产品说明文字或上传标签截图，先生成解析建议，再人工确认后填入正式表单。
-        </p>
+    <section className={`panel ${styles.panelShell}`}>
+      <div className={styles.panelHeader}>
+        <div className={styles.panelHeaderMain}>
+          <span className={styles.stepTag}>Step 1</span>
+          <h3>输入产品资料</h3>
+          <p>
+            支持贴入标签全文、宣传文案和产品说明，也可以直接上传标签截图。
+            先把资料集中给解析器，再进入结构化确认。
+          </p>
+        </div>
+        <div className={styles.headerMeta}>
+          {selectedFileName ? "已选择图片" : rawText.trim() ? "文本待解析" : "等待输入"}
+        </div>
       </div>
 
-      <div className="form-grid">
-        <div className="field full">
-          <label>文本粘贴框</label>
+      <div className={styles.composerGrid}>
+        <div className={styles.surfaceCard}>
+          <div className={styles.surfaceHeading}>
+            <strong>文本粘贴框</strong>
+            <span>适合贴标签全文、产品介绍、企业标准说明、成分或使用方法。</span>
+          </div>
+
           <textarea
+            className={styles.textArea}
             value={rawText}
             onChange={(event) => onRawTextChange(event.target.value)}
             placeholder="可粘贴标签全文、宣传文案、产品介绍、企业标准说明、成分说明、使用方法等"
-            style={{ minHeight: 180 }}
           />
         </div>
 
-        <div className="field full">
-          <label>标签图片上传</label>
+        <div className={styles.surfaceCard}>
+          <div className={styles.surfaceHeading}>
+            <strong>标签图片上传</strong>
+            <span>支持 jpg / png / webp，当前版本先解析单张图片。</span>
+          </div>
+
           <input
+            id={inputId}
+            ref={fileInputRef}
             type="file"
             accept="image/jpeg,image/png,image/webp"
             onChange={(event) => onImageSelect(event.target.files?.[0] ?? null)}
+            className={styles.hiddenInput}
           />
-          <div className="small muted">支持 jpg / png / webp，第一版仅支持单张图片。</div>
+
+          <div className={styles.uploadToolbar}>
+            <button
+              type="button"
+              className="button secondary inline"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {selectedFileName ? "重新选择图片" : "选择标签图片"}
+            </button>
+            <div className={styles.fileMeta}>
+              {selectedFileName || "尚未选择文件"}
+            </div>
+          </div>
+
           {imagePreview ? (
-            <div className="quote-card" style={{ marginTop: 12 }}>
+            <div className={styles.previewBlock}>
               <img
+                className={styles.previewImage}
                 src={imagePreview}
                 alt="产品标签预览"
-                style={{ width: 180, maxWidth: "100%", borderRadius: 12, display: "block" }}
               />
-              <div className="toolbar" style={{ marginTop: 12 }}>
-                <button type="button" className="button secondary inline" onClick={onRemoveImage}>
+
+              <div className={styles.fieldActions}>
+                <button
+                  type="button"
+                  className="button ghost inline"
+                  onClick={onRemoveImage}
+                >
                   删除图片
                 </button>
               </div>
             </div>
-          ) : null}
+          ) : (
+            <div className={styles.helperText}>
+              上传后会先抽取图片文字，再和文本输入一起进入混合解析。
+            </div>
+          )}
         </div>
       </div>
 
-      {error ? <div className="danger-text small">{error}</div> : null}
-      {statusMessage ? <div className="small muted">{statusMessage}</div> : null}
+      <div className={styles.statusRow}>
+        <div>
+          {error ? (
+            <div className={styles.statusError}>{error}</div>
+          ) : statusMessage ? (
+            <div className={styles.statusNeutral}>{statusMessage}</div>
+          ) : (
+            <div className={styles.statusText}>
+              你可以只贴文字、只传图片，或把两者一起交给解析器。
+            </div>
+          )}
+        </div>
 
-      <div className="toolbar">
-        <button type="button" onClick={onParse} disabled={loading}>
-          {loading ? "解析中..." : "开始解析"}
-        </button>
+        <div className={styles.footerBar}>
+          <button type="button" onClick={onParse} disabled={loading}>
+            {loading ? "解析中..." : "开始解析"}
+          </button>
+        </div>
       </div>
     </section>
   );

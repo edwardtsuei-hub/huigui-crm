@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { StepStrip } from "../../../../components/dashboard/StepStrip";
+import { type ProductRecord } from "../../../../components/products/types";
 import { WorkspacePageHeader } from "../../../../components/dashboard/WorkspacePageHeader";
 import { apiFetch } from "../../../../lib/api";
 import { formatMoney } from "../../../../lib/workspace";
@@ -49,6 +50,66 @@ type PreviewResponse = {
   remark?: string;
 };
 
+const OTHER_INDUSTRY_NAMES = new Set(["工业", "服务业", "养殖业"]);
+
+function mapProductRecordToOption(product: ProductRecord): ProductOption {
+  return {
+    id: product.id,
+    displayName: product.displayName,
+    suggestedPrice: product.suggestedPrice ?? "",
+    unit: product.unit ?? null,
+    specification: product.specification ?? null,
+  };
+}
+
+function normalizeErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message.trim()
+    ? error.message
+    : fallback;
+}
+
+async function loadProductOptions() {
+  const productMap = new Map<string, ProductOption>();
+  let solutionProductsError: unknown = null;
+  let productListError: unknown = null;
+
+  try {
+    const solutionProducts = await apiFetch<ProductOption[]>(
+      "/meta/solution-products",
+    );
+    for (const product of solutionProducts) {
+      productMap.set(product.id, product);
+    }
+  } catch (error) {
+    solutionProductsError = error;
+  }
+
+  try {
+    const productRecords = await apiFetch<ProductRecord[]>(
+      "/products?status=ENABLED",
+    );
+    for (const product of productRecords) {
+      if (product.quoteEnabled === false) {
+        continue;
+      }
+      productMap.set(product.id, mapProductRecordToOption(product));
+    }
+  } catch (error) {
+    productListError = error;
+  }
+
+  if (productMap.size) {
+    return Array.from(productMap.values());
+  }
+
+  throw new Error(
+    normalizeErrorMessage(
+      solutionProductsError ?? productListError,
+      "加载产品列表失败",
+    ),
+  );
+}
+
 export default function GeneralQuotationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -72,40 +133,70 @@ export default function GeneralQuotationPage() {
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([
-      apiFetch<CustomerListResponse>("/customers"),
-      apiFetch<ProductOption[]>("/products?status=ENABLED"),
-      apiFetch<Array<{ id: string; name: string }>>("/meta/industries"),
-    ])
-      .then(([customerResponse, productResponse, industryResponse]) => {
-        if (cancelled) {
-          return;
-        }
+    async function loadBootstrap() {
+      const [customerResult, productResult, industryResult] =
+        await Promise.allSettled([
+          apiFetch<CustomerListResponse>("/meta/solution-customers"),
+          loadProductOptions(),
+          apiFetch<IndustryGroup[]>("/meta/industries"),
+        ]);
 
-        setCustomers(customerResponse.items);
-        setProducts(productResponse);
-        setIndustries(industryResponse);
-        if (!form.customerId && customerResponse.items[0]) {
+      if (cancelled) {
+        return;
+      }
+
+      const warnings: string[] = [];
+
+      if (customerResult.status === "fulfilled") {
+        setCustomers(customerResult.value.items);
+        if (customerResult.value.items.length) {
           setForm((prev) => ({
             ...prev,
-            customerId: customerResponse.items[0].id,
+            customerId: prev.customerId || customerResult.value.items[0].id,
           }));
         }
-      })
-      .catch((requestError) => {
-        if (!cancelled) {
-          setError(
-            requestError instanceof Error
-              ? requestError.message
-              : "加载通用报价数据失败",
-          );
-        }
-      });
+      } else {
+        setCustomers([]);
+        warnings.push(
+          normalizeErrorMessage(customerResult.reason, "客户列表加载失败"),
+        );
+      }
+
+      if (productResult.status === "fulfilled") {
+        setProducts(productResult.value);
+      } else {
+        setProducts([]);
+        warnings.push(
+          normalizeErrorMessage(productResult.reason, "产品列表加载失败"),
+        );
+      }
+
+      if (industryResult.status === "fulfilled") {
+        setIndustries(
+          industryResult.value.filter((industry) =>
+            OTHER_INDUSTRY_NAMES.has(industry.name),
+          ),
+        );
+      } else {
+        setIndustries([]);
+        warnings.push(
+          normalizeErrorMessage(industryResult.reason, "行业列表加载失败"),
+        );
+      }
+
+      setError(
+        warnings.length
+          ? `部分基础数据加载失败：${warnings.join("；")}`
+          : "",
+      );
+    }
+
+    void loadBootstrap();
 
     return () => {
       cancelled = true;
     };
-  }, [form.customerId]);
+  }, []);
 
   const selectedCustomer = useMemo(
     () => customers.find((customer) => customer.id === form.customerId),

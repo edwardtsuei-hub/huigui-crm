@@ -12,10 +12,18 @@
     "dev": "concurrently \"npm run dev -w @huigui/api\" \"npm run dev -w @huigui/web\"",
     "build": "npm run build -w @huigui/api && npm run build -w @huigui/web",
     "lint": "npm run lint -w @huigui/api && npm run lint -w @huigui/web",
-    "db:generate": "prisma generate",
-    "db:migrate:dev": "prisma migrate dev",
-    "db:migrate:sql": "prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/20260415130000_init/migration.sql",
-    "db:seed": "tsx prisma/seed/seed.ts"
+    "test:wecom": "tsx tests/wecom-regression.test.ts",
+    "test:products": "tsx tests/product-parser-regression.test.ts",
+    "test:files": "tsx tests/files-regression.test.ts",
+    "test:work-management": "tsx tests/work-management-regression.test.ts",
+    "test:notifications": "tsx tests/notification-actions-regression.test.ts",
+    "deploy:status": "node scripts/ops/show-production-sync-status.mjs",
+    "db:generate": "node scripts/with-local-db-env.mjs prisma generate",
+    "db:migrate:dev": "node scripts/with-local-db-env.mjs prisma migrate dev",
+    "db:migrate:deploy": "node scripts/with-local-db-env.mjs prisma migrate deploy",
+    "db:migrate:sql": "node scripts/with-local-db-env.mjs sh -lc \"prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/20260415130000_init/migration.sql\"",
+    "db:seed": "node scripts/with-local-db-env.mjs tsx prisma/seed/seed.ts",
+    "permissions:sync-solutions": "node scripts/with-local-db-env.mjs node scripts/local/sync-solution-permissions.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

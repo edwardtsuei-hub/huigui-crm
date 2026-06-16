@@ -1,0 +1,186 @@
+{
+  "date": "2026-06-16",
+  "workstream": "second_phase_archive_plan",
+  "status": "ready_for_review",
+  "generated_at": "2026-06-16T11:02:38.748Z",
+  "safety": {
+    "production_database_writes": false,
+    "executable_production_sql_generated": false,
+    "code_changes": false,
+    "prisma_changes": false,
+    "api_changes": false,
+    "deployment": false
+  },
+  "inputs": [
+    "docs/parallel-collaboration-control-2026-06-16.md",
+    "docs/parallel-collab-second-phase-dryrun-v2-2026-06-16.md",
+    "output/employee-data-migration/2026-06-16/parallel-collab-second-phase-dryrun-v2.json"
+  ],
+  "business_decision": {
+    "decision": "TEST_AUDIT_ONLY",
+    "decision_text": "4 条 Phase2 实票测试报销单只作为 TEST / 审计证据保留，不进入正式报销。",
+    "formal_reimbursement_records_to_create": 0
+  },
+  "source_fingerprints": [
+    {
+      "name": "finance.json",
+      "sha16": "ca3fc6f74b4720b9",
+      "sizeBytes": 8165
+    },
+    {
+      "name": "ocr-tasks.json",
+      "sha16": "f5778a33f59cbd49",
+      "sizeBytes": 38516
+    },
+    {
+      "name": "platform.json",
+      "sha16": "9aaf13d5b6a98cb2",
+      "sizeBytes": 53387
+    }
+  ],
+  "archive_matrix": [
+    {
+      "category": "phase2_finance_claims",
+      "count": 4,
+      "disposition": "TEST_AUDIT_ONLY",
+      "keep_method": "new_table_recommended_for_db_backed_archive_or_freeze_json_minimum",
+      "recommended_target": "EmployeeLaunchEvidenceArchive or ExpenseClaimAuditArchive; not REAL ExpenseClaim",
+      "reuse_existing_table": false,
+      "freeze_json_fingerprint_required": true,
+      "ids": [
+        "EX-MQBHZYOV-IM808",
+        "EX-MQBGMQ6B-1TVDK",
+        "EX-MQBG4UCE-J375P",
+        "EX-MQAXBSDG-WRNXA"
+      ]
+    },
+    {
+      "category": "finance_linked_ocr_tasks",
+      "count": 8,
+      "disposition": "TEST_AUDIT_WITH_PHASE2_CLAIM",
+      "keep_method": "new_table_recommended_or_same_evidence_archive",
+      "recommended_target": "EmployeeLaunchEvidenceArchive/OcrEvidenceArchive with link to legacyClaimId and legacyAttachmentId",
+      "reuse_existing_table": false,
+      "freeze_json_fingerprint_required": true,
+      "ids": [
+        "ocr-mqaxbwxr-3kw78u",
+        "ocr-mqaxbwyy-n6qhio",
+        "ocr-mqbg4wal-uat6iq",
+        "ocr-mqbg4wf2-xt01p2",
+        "ocr-mqbgmt27-yja64d",
+        "ocr-mqbgmt13-w1ih9d",
+        "ocr-mqbi02ef-fj1hqn",
+        "ocr-mqbi02ei-h4nnio"
+      ]
+    },
+    {
+      "category": "historical_ocr_tasks",
+      "count": 20,
+      "disposition": "HISTORICAL_AUDIT_ARCHIVE",
+      "keep_method": "freeze_json_first_optional_new_table_later",
+      "recommended_target": "OCR archive table only after historical claim ownership is resolved",
+      "reuse_existing_table": false,
+      "freeze_json_fingerprint_required": true,
+      "ids": [
+        "ocr-mprqtsig-capt08",
+        "ocr-mprr6ibg-gg22ue",
+        "ocr-mprrc5dp-pw8g81",
+        "ocr-mprroxsg-bay6gg",
+        "ocr-mprstxv8-lbnp8j",
+        "ocr-mprsz6au-6j0f5a",
+        "ocr-mprt3cc8-2fo1fr",
+        "ocr-mprt6fpb-gd3pnw",
+        "ocr-mprtdtkt-69wlyi",
+        "ocr-mprtiv2f-poei0n",
+        "ocr-mprtorjt-ne63jt",
+        "ocr-mprtu64u-xtg1gb",
+        "ocr-mprtzdxy-fou1qi",
+        "ocr-mpru53eq-nr2299",
+        "ocr-mpruddr9-uq78dg",
+        "ocr-mpruhbla-saieoq",
+        "ocr-mpruijq6-6sg3kt",
+        "ocr-mqbh1ufk-dgad6a",
+        "ocr-mqbh2h8n-heokbb",
+        "ocr-mqbh6qfk-3p38l8"
+      ]
+    },
+    {
+      "category": "phase2_reimbursement_attachments",
+      "count": 8,
+      "disposition": "TEST_AUDIT_ATTACHMENT_EVIDENCE",
+      "keep_method": "mixed_reuse_file_record_after_metadata_and_uploader_mapping_else_new_attachment_archive",
+      "recommended_target": "FileRecord TEST partition only after storageKey/sourceFile/legacyAttachmentId/uploaderUserId are available; otherwise LegacyAttachmentArchive",
+      "reuse_existing_table": "conditional_FileRecord",
+      "freeze_json_fingerprint_required": true,
+      "ids": [
+        "attachment-mqbi01nk-rbxkg4",
+        "attachment-mqbi029j-00xqvj",
+        "attachment-mqbgmsbo-f4j4vj",
+        "attachment-mqbgmscf-b8xf87",
+        "attachment-mqbg4vl4-kv4m5q",
+        "attachment-mqbg4vl5-ei479c",
+        "attachment-mqaxbvah-k2n0u3",
+        "attachment-mqaxbvah-4yj32z"
+      ]
+    },
+    {
+      "category": "meeting_attachments",
+      "count": 4,
+      "disposition": "MEETING_FILE_ARCHIVE_CANDIDATE",
+      "keep_method": "reuse_file_record_candidate_after_uploader_mapping_and_storageKey_strategy",
+      "recommended_target": "FileRecord businessType=meeting_minutes after mapping",
+      "reuse_existing_table": "conditional_FileRecord",
+      "freeze_json_fingerprint_required": true,
+      "ids": [
+        "attachment-mqbr6yc0-ufxl79",
+        "attachment-mqbn5oac-rxbzou",
+        "attachment-mqbl7bif-i69nq1",
+        "attachment-mqbl6hfa-k064dk"
+      ]
+    },
+    {
+      "category": "platform_messages",
+      "count": 13,
+      "disposition": "DEFER_DEDUPE_WITH_WEEKLY_NOTIFICATION_CHAIN",
+      "keep_method": "freeze_json_fingerprint_only_for_now",
+      "recommended_target": "Notification only after recipient mapping and weekly notification dedupe",
+      "reuse_existing_table": "conditional_Notification",
+      "freeze_json_fingerprint_required": true
+    },
+    {
+      "category": "platform_audit_items",
+      "count": 24,
+      "disposition": "AUDIT_ARCHIVE_PENDING_USER_MAPPING",
+      "keep_method": "freeze_json_fingerprint_only_for_now_or_audit_archive_after_actor_mapping",
+      "recommended_target": "AuditLog only after actor to User.id mapping; otherwise evidence archive",
+      "reuse_existing_table": "conditional_AuditLog",
+      "freeze_json_fingerprint_required": true
+    }
+  ],
+  "table_strategy": {
+    "freeze_only_now": [
+      "platform_messages_13",
+      "platform_audit_items_24_until_actor_mapping",
+      "historical_ocr_20_until_legacy_claim_ownership",
+      "local_enterprise_cloud_attachment_metadata_until_file_access_mapping"
+    ],
+    "new_table_recommended": [
+      "phase2_finance_claims_4_as_test_audit_evidence",
+      "finance_linked_ocr_8_as_test_audit_evidence",
+      "legacy_attachment_archive_for_blocked_local_attachments_if_FileRecord_is_not_extended"
+    ],
+    "existing_table_reuse_candidates": {
+      "FileRecord": "2 COS reimbursement attachments and 4 meeting attachments only after storageKey/sourceFile/legacyAttachmentId/uploaderUserId are available; 6 local reimbursement attachments remain blocked",
+      "AuditLog": "24 auditItems only after actor/user mapping and action/module normalization",
+      "Notification": "13 messages only after weekly dedupe and recipient user mapping"
+    }
+  },
+  "blockers": [
+    "local 附件文件不可达：6 条 local/enterprise-cloud 报销附件没有 fileUrl/previewUrl，精确 blob-key 搜索未在 /opt/huigui-crm/storage 下找到文件。",
+    "FileRecord 缺少 storageKey/sourceFile/legacyAttachmentId 等长期追溯字段，不能直接承接完整 legacy 附件证据链。",
+    "FileRecord 必填 uploaderUserId，但 platform 附件只有中文上传人/owner 文本，用户映射不完整。",
+    "AuditLog 必填 userId；platform auditItems 的 actor 也需要映射。",
+    "Notification 必填 userId；13 条周报消息还需和现有周报/通知链路去重。"
+  ],
+  "stop_point": "Archive plan ready. No database writes, no production SQL, no code/schema/API/deploy changes."
+}

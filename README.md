@@ -18,19 +18,34 @@
 
 ## 当前状态
 
-第一阶段可用模块已经落库并接通基础接口：
+截至 `2026-04-20`，项目已经不是“只有第一阶段可用模块”的状态，当前代码与生产环境已覆盖以下主要能力：
 
-- 账号密码登录与 `/api/auth/me`
+- 登录认证、`/api/auth/me` 与首页工作台
 - 客户管理
-- 产品管理
-- 农业方案报价
-- 通用报价
-- 报价记录与 PDF 导出
-- `/api/health` 健康检查
+- 产品管理与产品解析
+- 农业方案、通用报价、报价记录与详情页
+- 档案中心与 `Files Workbench`
+- 检测管理
+- 订单总览、收款、发货、渠道结算
+- 管理中心、成员、角色、审批与日志
+- 工作管理、周报、月目标与团队视图
+- 日程、通知、设置与财务账户
+- `/api/health` 健康检查、Prisma 迁移、部署脚本与生产同步记录
+
+当前阶段判断：
+
+- `Sprint 1`、`Sprint 2` 已基本落地
+- `Sprint 3` 的主要模块已进入代码与生产环境，但部分页面仍在持续做 UI 收口与 preview 闭环
+- 最新一次生产同步为 `2026-04-19 20:07:28`
+- 已于 `2026-04-20` 本地确认 `@huigui/api` 与 `@huigui/web` 的 `lint`、`build` 均通过
+
+最新阶段盘点见 [docs/project-status-2026-04-20.md](./docs/project-status-2026-04-20.md)。
 
 ## 项目结构
 
 项目结构说明见 [docs/project-structure.md](./docs/project-structure.md)。
+
+如果要看最近两天的进度结论、未完成项与收尾建议，可直接看 [docs/project-status-2026-04-20.md](./docs/project-status-2026-04-20.md)。
 
 ## 本地开发
 
@@ -93,10 +108,24 @@ npm run dev
 - 工作台：`http://localhost:3000/dashboard`
 - API 健康检查：`http://localhost:3001/api/health`
 
+如果需要把“方案”入口与相关创建权限补齐给所有角色，可执行：
+
+```bash
+npm run permissions:sync-solutions
+```
+
+这条命令会使用当前环境里的 `DATABASE_URL`，为所有现有角色补齐：
+
+- `menu.solutions`
+- `page.solutions.workspace`
+- `action.solution.create`
+- `action.quotation.create`
+
 ## 默认账号
 
-- 用户名：`admin`
-- 密码：`Huigui@123`
+- 开发环境 seed 默认用户名：`admin`
+- 开发环境 seed 默认密码：`HuiguiDev123`
+- 生产环境执行 seed 前必须设置 `DEFAULT_ADMIN_PASSWORD`，密码至少 8 位并同时包含字母和数字。
 
 ## 生产部署
 
@@ -111,3 +140,19 @@ npm run dev
 - Nginx 示例：`deploy/nginx/huigui.conf`
 - PM2 配置：`deploy/pm2/ecosystem.config.cjs`
 - 生产同步脚本：`scripts/ops/deploy-local-to-production.sh`
+
+推荐发布方式：
+
+```bash
+bash ./scripts/ops/deploy-local-to-production.sh --note "填写本次上线范围"
+```
+
+发布前先看本地与正式机之间还有哪些差异：
+
+```bash
+npm run deploy:status
+```
+
+这条状态命令会直接对比本地工作区与 `root@49.232.57.98:/opt/huigui-crm`，列出还没同步到服务器的文件差异。
+
+正式发布脚本会自动执行本地源码备份、远端源码备份、`rsync` 同步、`docker compose build`、`npx prisma migrate deploy`、可选 `db:seed`、API 健康检查、HTTPS 回归检查，并在 `docs/deployment-log.md`、`docs/deployments/` 与 `docs/deploy-sync-state.json` 下写入同步记录，再把这些记录回写到服务器，保证两边台账一致。

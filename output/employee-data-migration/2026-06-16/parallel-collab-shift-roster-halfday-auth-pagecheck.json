@@ -1,0 +1,190 @@
+{
+  "report": "parallel-collab-shift-roster-halfday-auth-pagecheck",
+  "date": "2026-06-16",
+  "executedAt": "2026-06-16 16:22:44 +0800",
+  "workflow": "B",
+  "status": "ready_for_review_with_findings",
+  "readonlyConstraints": {
+    "codeModified": false,
+    "databaseWritten": false,
+    "deployed": false,
+    "restarted": false,
+    "credentialsSubmitted": false,
+    "clickedSaveDraft": false,
+    "clickedPublishRoster": false,
+    "clickedSaveNote": false,
+    "copiedImage": false,
+    "downloadedImage": false
+  },
+  "requestedInputDocs": [
+    {
+      "path": "/opt/huigui-crm/docs/parallel-collaboration-control-2026-06-16.md",
+      "status": "missing_at_requested_path",
+      "fallbackRead": "docs/parallel-collaboration-control-2026-06-16.md"
+    },
+    {
+      "path": "/opt/huigui-crm/docs/parallel-collab-shift-roster-halfday-time-bridge-2026-06-16.md",
+      "status": "missing_at_requested_path_and_no_repo_copy_found",
+      "fallbackRead": null
+    }
+  ],
+  "requestedOutputs": {
+    "markdown": "/opt/huigui-crm/docs/parallel-collab-shift-roster-halfday-auth-pagecheck-2026-06-16.md",
+    "json": "/opt/huigui-crm/output/employee-data-migration/2026-06-16/parallel-collab-shift-roster-halfday-auth-pagecheck.json"
+  },
+  "actualOutputs": {
+    "markdown": "docs/parallel-collab-shift-roster-halfday-auth-pagecheck-2026-06-16.md",
+    "json": "output/employee-data-migration/2026-06-16/parallel-collab-shift-roster-halfday-auth-pagecheck.json",
+    "requestedPathWriteError": {
+      "path": "/opt/huigui-crm",
+      "mkdir": "Permission denied"
+    }
+  },
+  "authAndRoute": {
+    "hasManagementSession": true,
+    "observedIdentity": {
+      "department": "综合办公室",
+      "role": "办公室管理员",
+      "account": "edwardtsuei",
+      "identityText": "创办人 · edwardtsuei"
+    },
+    "requestedUrl": "https://management.hui-health.com/schedule/shifts",
+    "requestedUrlResult": "did_not_remain_on_schedule_shifts_after_login",
+    "actualVisibleRosterUrl": "https://management.hui-health.com/calendar/roster",
+    "homeEntry": {
+      "label": "排班 设置下一周班表",
+      "href": "https://management.hui-health.com/calendar/roster"
+    }
+  },
+  "sourceChecks": {
+    "codegraph": "no_codegraph_directory",
+    "scheduleShiftsLocalSource": {
+      "path": "apps/web/app/(dashboard)/schedule/shifts/page.tsx",
+      "component": "ShiftSchedulerNative",
+      "status": "confirmed_local_source"
+    },
+    "visibleProductionRosterSource": {
+      "route": "/calendar/roster",
+      "status": "not_confirmed_in_current_repo",
+      "reason": "current repository did not contain an app route or component matching /calendar/roster"
+    },
+    "shiftLocalStandaloneV9": {
+      "shiftSchedulerNativeReadsKey": false,
+      "foundIn": [
+        "apps/web/components/shift-roster/ShiftSchedulerEmbedded.tsx",
+        "apps/web/public/embedded/shift-scheduler-v9.html"
+      ],
+      "conclusion": "old /schedule/shifts local source is not directly influenced by shift_local_standalone_v9; visible /calendar/roster route requires separate source/bundle trace"
+    }
+  },
+  "pageContext": {
+    "route": "/calendar/roster",
+    "scope": "熊抱前厅 / 前厅",
+    "week": "06/15-06/21",
+    "publishedState": "已发布",
+    "syncState": "发布版已同步",
+    "lastObservedSyncText": "最近 06/16 16:16"
+  },
+  "targetEmployeeChecks": [
+    {
+      "employee": "迦迦",
+      "department": "前厅",
+      "position": "前厅兼职",
+      "date": "2026-06-15",
+      "desktopButtonLabel": "半天",
+      "fullHalfDayLabelVisibleInCell": false,
+      "time": "09:50-14:00",
+      "notEarlyShift": true,
+      "status": "partial_short_label"
+    },
+    {
+      "employee": "迦迦",
+      "department": "前厅",
+      "position": "前厅兼职",
+      "date": "2026-06-16",
+      "desktopButtonLabel": "半天",
+      "fullHalfDayLabelVisibleInCell": false,
+      "time": "09:50-14:00",
+      "notEarlyShift": true,
+      "status": "partial_short_label"
+    },
+    {
+      "employee": "迦迦",
+      "department": "前厅",
+      "position": "前厅兼职",
+      "date": "2026-06-17",
+      "desktopButtonLabel": "半天",
+      "fullHalfDayLabelVisibleInCell": false,
+      "time": "09:50-14:00",
+      "notEarlyShift": true,
+      "status": "partial_short_label"
+    },
+    {
+      "employee": "迦迦",
+      "department": "前厅",
+      "position": "前厅兼职",
+      "date": "2026-06-20",
+      "desktopButtonLabel": "半天",
+      "fullHalfDayLabelVisibleInCell": false,
+      "time": "09:50-14:00",
+      "notEarlyShift": true,
+      "status": "partial_short_label"
+    },
+    {
+      "employee": "迦迦",
+      "department": "前厅",
+      "position": "前厅兼职",
+      "date": "2026-06-21",
+      "desktopButtonLabel": "半天",
+      "fullHalfDayLabelVisibleInCell": false,
+      "time": "09:50-14:00",
+      "notEarlyShift": true,
+      "status": "partial_short_label"
+    }
+  ],
+  "surfaceChecks": [
+    {
+      "surface": "desktop_table",
+      "status": "partial",
+      "observed": "迦迦 five target dates show 半天 and 09:50-14:00; no 早班 observed",
+      "finding": "cell/button label is short 半天, not full 半天班"
+    },
+    {
+      "surface": "mobile_narrow_width_button_or_card",
+      "status": "partial",
+      "observed": "Chrome narrowed to about 430px; page remained a horizontally scrollable roster table/button layout; target visible cells show 半天 and 09:50-14:00",
+      "finding": "no separate mobile card with full 半天班 was observed; labels are short 半天"
+    },
+    {
+      "surface": "shift_picker_popup",
+      "status": "not_matched_current_ui",
+      "observed": "current /calendar/roster page exposes native selection controls; focused 迦迦 2026-06-15 selection shows selected 半天",
+      "finding": "no full 选择班次 modal with 半天班 was captured; no selection was changed"
+    },
+    {
+      "surface": "shift_settings_or_templates",
+      "status": "pass",
+      "observed": "班次模板 shows 半天班 and 09:50-14:00 · 前厅兼职, plus short badge 半天",
+      "finding": null
+    },
+    {
+      "surface": "export_preview",
+      "status": "fail_readability",
+      "observed": "生成图片 opened 班表图片 modal with preview image, 复制图片 and 下载图片 buttons; neither copy nor download was clicked",
+      "finding": "preview image Chinese text appeared mojibake, so 半天班 and 09:50-14:00 could not be verified as readable in export preview"
+    }
+  ],
+  "summary": {
+    "allTargetDatesHaveHalfDayTime": true,
+    "allTargetDatesAvoidEarlyShiftLabel": true,
+    "allRequestedSurfacesShowFullHalfDayLabel": false,
+    "blockingFindings": [
+      "desktop and narrow-width roster controls use short label 半天 instead of full 半天班",
+      "current visible production route is /calendar/roster, not /schedule/shifts",
+      "current /calendar/roster source/package could not be confirmed as ShiftSchedulerNative from this repository",
+      "export preview text is not readable due to mojibake"
+    ]
+  },
+  "stopPoint": "Completed read-only page review after login; did not perform save, publish, note save, image copy/download, database write, deploy, or restart.",
+  "nextStep": "If the acceptance standard requires full 半天班 everywhere, adjust or trace the current /calendar/roster implementation; fix export preview Chinese rendering, then rerun read-only UI verification."
+}

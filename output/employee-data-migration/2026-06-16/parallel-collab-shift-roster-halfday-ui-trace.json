@@ -1,0 +1,117 @@
+{
+  "report": "parallel-collab-shift-roster-halfday-ui-trace-2026-06-16",
+  "date": "2026-06-16",
+  "executed_at": "2026-06-16 16:51:16 +0800",
+  "status": "ready_for_review",
+  "constraints": {
+    "readonly_source_and_runtime_trace": true,
+    "code_modified": false,
+    "database_written": false,
+    "deployed": false,
+    "restarted": false
+  },
+  "input_report": {
+    "requested_path": "/opt/huigui-crm/docs/parallel-collab-shift-roster-halfday-auth-pagecheck-2026-06-16.md",
+    "requested_path_found": false,
+    "fallback_path": "docs/parallel-collab-shift-roster-halfday-auth-pagecheck-2026-06-16.md",
+    "fallback_read": true,
+    "key_findings_from_input": [
+      "production visible route was https://management.hui-health.com/calendar/roster",
+      "迦迦 target dates showed 09:50-14:00 and did not show 早班",
+      "desktop and narrow UI showed short label 半天",
+      "template panel showed 半天班 09:50-14:00 · 前厅兼职",
+      "export preview had unreadable Chinese/mojibake"
+    ]
+  },
+  "codegraph": {
+    "repo_has_codegraph_directory": false,
+    "used": false
+  },
+  "production_runtime": {
+    "route_checked": "https://management.hui-health.com/calendar/roster",
+    "html_status": 200,
+    "server": "nginx/1.27.5",
+    "last_modified": "Tue, 16 Jun 2026 01:02:39 GMT",
+    "cache_control": "no-store, no-cache, must-revalidate",
+    "main_js": "/assets/index-C20sRqov.js",
+    "main_css": "/assets/index-DUmE3prg.css",
+    "local_release_dir": "apps/web/public/employee-frontend/releases/20260616090241/assets",
+    "hashes": {
+      "online_index_js_sha256": "4f46b12ebd38da79d656e0e6c823fc00d3adb79699f58feb3b67e3c75cf984fc",
+      "local_index_js_sha256": "4f46b12ebd38da79d656e0e6c823fc00d3adb79699f58feb3b67e3c75cf984fc",
+      "online_index_css_sha256": "cd2dd643d6db76a15500221d800df81a232d91fda280b49cccfcf9a95b15c6c6",
+      "local_index_css_sha256": "cd2dd643d6db76a15500221d800df81a232d91fda280b49cccfcf9a95b15c6c6"
+    },
+    "same_html_for_schedule_shifts": true,
+    "calendar_roster_html_sha256": "c8e29d9010208ed689be0fdc4e8eedf46359607b2256327be452dc01d7a9bc0d",
+    "schedule_shifts_html_sha256": "c8e29d9010208ed689be0fdc4e8eedf46359607b2256327be452dc01d7a9bc0d",
+    "sourcemaps": {
+      "index_js_map_status": 404,
+      "index_css_map_status": 404
+    }
+  },
+  "route_mapping": {
+    "online_route": "/calendar/roster",
+    "bundle_component_symbol": "dP",
+    "bundle_route_evidence": "path:\"calendar/roster\" with routeLabel:\"排班\" and allowedIdentities office_admin/daochong_manager/bearhug_manager",
+    "is_shift_scheduler_native": false,
+    "local_next_schedule_shifts_page": "apps/web/app/(dashboard)/schedule/shifts/page.tsx",
+    "local_next_schedule_shifts_component": "ShiftSchedulerNative",
+    "note": "The local Next route still returns ShiftSchedulerNative, but production /schedule/shifts and /calendar/roster both return the same Vite SPA shell."
+  },
+  "standalone_v9_impact": {
+    "active_bundle_contains_shift_local_standalone_v9": false,
+    "active_bundle_contains_shift_scheduler_native": false,
+    "local_occurrences": [
+      "apps/web/components/shift-roster/ShiftSchedulerEmbedded.tsx",
+      "apps/web/public/embedded/shift-scheduler-v9.html"
+    ],
+    "conclusion": "/calendar/roster is not affected by shift_local_standalone_v9 in the current active bundle."
+  },
+  "short_label_root_cause": {
+    "team": "bearhug-front",
+    "template_entry": {
+      "value": "半天班",
+      "label": "半天",
+      "title": "半天班",
+      "time": "09:50-14:00",
+      "detail": "前厅兼职"
+    },
+    "normalization": "rr(teamId, shift) preserves exact 半天班 when present in templates.",
+    "display_logic": [
+      "table/narrow select options render Ae.label",
+      "template side panel uses title for title and label for badge",
+      "export canvas renders ce.label"
+    ],
+    "conclusion": "Short 半天 is caused by the UI choosing the short label field, not by database truncation or 早班 fallback."
+  },
+  "export_mojibake_root_cause": {
+    "export_function_symbol": "O2",
+    "rendering_method": "manual frontend canvas rendering",
+    "canvas_text_method": "fillText",
+    "font_stack": "\"PingFang SC\", \"Microsoft YaHei\", Inter, sans-serif",
+    "blob_method": "toBlob(..., \"image/png\", .96)",
+    "preview_method": "URL.createObjectURL(blob) shown in an img inside roster-image-modal",
+    "not_found_in_bundle": [
+      "html2canvas",
+      "dom-to-image",
+      "toPng",
+      "document.fonts.ready"
+    ],
+    "conclusion": "Chinese mojibake is most consistent with the canvas export font fallback/rendering path. Bundle strings and DOM text remain normal Unicode, so source HTML/API/database encoding is not the primary evidence."
+  },
+  "source_trace_gaps": [
+    "No sourcemap is available for the production Vite bundle.",
+    "The unminified TSX source for dP was not located in the current checkout.",
+    "Current checkout does contain the exact release bundle used online."
+  ],
+  "recommendations_readonly": [
+    "If full wording is required everywhere, render title or a dedicated displayLabel instead of label in table/select/export/mobile surfaces.",
+    "For export readability, use a CJK-stable export path: wait for fonts, embed a CJK webfont, or switch to DOM/server-side image generation with controlled fonts.",
+    "To continue source-level tracing, locate the Vite SPA source repository or provide sourcemaps for release 20260616090241."
+  ],
+  "artifacts": {
+    "markdown": "docs/parallel-collab-shift-roster-halfday-ui-trace-2026-06-16.md",
+    "json": "output/employee-data-migration/2026-06-16/parallel-collab-shift-roster-halfday-ui-trace.json"
+  }
+}

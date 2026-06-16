@@ -1,0 +1,20 @@
+{
+  "targets": {
+    "production": {
+      "workflow": "local-first-confirm-before-sync",
+      "host": "root@49.232.57.98",
+      "path": "/opt/huigui-crm",
+      "domain": "crm.hui-health.com",
+      "recordsPendingSync": false,
+      "lastKnownSync": {
+        "date": "2026-05-12",
+        "time": "20:40:18",
+        "label": "production-sync-20260512-204018",
+        "method": "scripts/ops/deploy-local-to-production.sh",
+        "recordPath": "docs/deployments/2026-05-12-204018-production-sync.md",
+        "logPath": "docs/deployment-log.md",
+        "gitRevision": "cd6fb7b"
+      }
+    }
+  }
+}

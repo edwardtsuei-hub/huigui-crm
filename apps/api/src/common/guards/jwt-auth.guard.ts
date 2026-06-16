@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
-import { UserStatus } from "@prisma/client";
+import { RecordDataScope, UserStatus } from "@prisma/client";
 import type { Request } from "express";
 import { PrismaService } from "../../prisma/prisma.service";
 import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
@@ -10,6 +10,37 @@ import type { AuthenticatedUser } from "../types/authenticated-user";
 type RequestWithUser = Request & {
   user: AuthenticatedUser;
 };
+
+function normalizeRecordScopeHeader(value: unknown) {
+  if (typeof value !== "string") {
+    return RecordDataScope.REAL;
+  }
+
+  return value.trim().toUpperCase() === RecordDataScope.TEST
+    ? RecordDataScope.TEST
+    : RecordDataScope.REAL;
+}
+
+function normalizeBatchHeader(value: unknown) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim();
+  return normalized ? normalized : null;
+}
+
+function canUseTestDataMode(user: {
+  role: {
+    code: string;
+    rolePermissions: Array<{ permission: { code: string } }>;
+  };
+}) {
+  return (
+    user.role.code === "SUPER_ADMIN" ||
+    user.role.rolePermissions.some((item) => item.permission.code === "menu.management")
+  );
+}
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -31,16 +62,12 @@ export class JwtAuthGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest<RequestWithUser>();
     const header = request.headers.authorization;
-    const tokenFromQuery =
-      typeof request.query?.token === "string" ? request.query.token : undefined;
 
-    if (!header?.startsWith("Bearer ") && !tokenFromQuery) {
+    if (!header?.startsWith("Bearer ")) {
       throw new UnauthorizedException("请先登录");
     }
 
-    const token = header?.startsWith("Bearer ")
-      ? header.replace("Bearer ", "")
-      : tokenFromQuery;
+    const token = header.replace("Bearer ", "");
 
     if (!token) {
       throw new UnauthorizedException("请先登录");
@@ -67,6 +94,14 @@ export class JwtAuthGuard implements CanActivate {
         throw new UnauthorizedException("账号不可用");
       }
 
+      const requestedRecordScope = normalizeRecordScopeHeader(
+        request.headers["x-huigui-record-scope"],
+      );
+      const recordDataScope =
+        requestedRecordScope === RecordDataScope.TEST && canUseTestDataMode(user)
+          ? RecordDataScope.TEST
+          : RecordDataScope.REAL;
+
       request.user = {
         id: user.id,
         name: user.name,
@@ -77,6 +112,11 @@ export class JwtAuthGuard implements CanActivate {
         title: user.title,
         managerUserId: user.managerUserId,
         dataScope: user.dataScope,
+        recordDataScope,
+        testBatchId:
+          recordDataScope === RecordDataScope.TEST
+            ? normalizeBatchHeader(request.headers["x-huigui-test-batch-id"])
+            : null,
         roleCode: user.role.code,
         roleName: user.role.name,
         permissions: user.role.rolePermissions.map((item) => item.permission.code),

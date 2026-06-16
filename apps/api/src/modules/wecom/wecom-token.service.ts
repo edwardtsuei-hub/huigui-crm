@@ -4,6 +4,7 @@ import {
   ServiceUnavailableException
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { resolveWecomAppConfig } from "./wecom-app-config";
 
 type WecomTokenResponse = {
   errcode: number;
@@ -19,21 +20,25 @@ type CachedToken = {
 
 @Injectable()
 export class WecomTokenService {
-  private cache: CachedToken | null = null;
+  private cache = new Map<string, CachedToken>();
 
   constructor(private readonly configService: ConfigService) {}
 
-  async getAccessToken(forceRefresh = false) {
-    if (!forceRefresh && this.cache && this.cache.expiresAt > Date.now()) {
-      return this.cache.value;
+  async getAccessToken(forceRefresh = false, origin?: string) {
+    const appConfig = resolveWecomAppConfig(this.configService, origin);
+    const cacheKey = appConfig.appKey;
+    const cached = this.cache.get(cacheKey);
+
+    if (!forceRefresh && cached && cached.expiresAt > Date.now()) {
+      return cached.value;
     }
 
-    return this.refreshAccessToken();
+    return this.refreshAccessToken(origin);
   }
 
-  private async refreshAccessToken() {
-    const corpId = this.configService.get<string>("WECOM_CORP_ID")?.trim();
-    const secret = this.configService.get<string>("WECOM_SECRET")?.trim();
+  private async refreshAccessToken(origin?: string) {
+    const appConfig = resolveWecomAppConfig(this.configService, origin);
+    const { corpId, secret } = appConfig;
 
     if (!corpId || !secret) {
       throw new ServiceUnavailableException("企业微信接入尚未配置完整");
@@ -56,10 +61,10 @@ export class WecomTokenService {
     }
 
     const expiresInSeconds = Math.max(payload.expires_in - 300, 60);
-    this.cache = {
+    this.cache.set(appConfig.appKey, {
       value: payload.access_token,
       expiresAt: Date.now() + expiresInSeconds * 1000
-    };
+    });
 
     return payload.access_token;
   }
