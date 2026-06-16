@@ -3,8 +3,9 @@
 日期：2026-06-16
 系统：management.hui-health.com / `/opt/huigui-crm`
 工作流：D，发布、回滚与验收总控
-当前状态：`ready_for_review`
-执行状态：仅准备 runbook，未部署，未重启服务，未改代码，未写数据库。
+当前状态：`readonly_check_passed_with_shared_monitoring`
+部署门禁：`deploymentAllowed=false`
+执行状态：已完成一次只读发布前检查；未部署，未重启服务，未改代码，未写数据库。
 
 ## 范围与边界
 
@@ -37,18 +38,25 @@
 
 ## 当前生产基线
 
-来自迁移执行记录：
+班表仍使用硬基线；周报 payload 不再使用总数 `6` 作为硬基线，改为按 `source / migrationStatus` 分组验收。
 
-| 项目 | 基线 |
+| 项目 | 当前验收口径 |
 | --- | ---: |
-| `WeeklyReportPayload` | 6 |
-| `WeeklyReportPayload.IMPORTED` | 3 |
-| `WeeklyReportPayload.NEEDS_REVIEW` | 3 |
 | `RosterWeek` | 6 |
 | `RosterShift` | 210 |
 | orphan `RosterShift` | 0 |
 | `RosterAuditLog` | 0 |
 | `AttendancePeriod` | 0 |
+
+周报迁移基线与新增监控项：
+
+| source | migrationStatus | 数量 | 口径 |
+| --- | --- | ---: | --- |
+| `legacy_weekly_workspace` | `IMPORTED` | 3 | 迁移基线，必须保持 |
+| `legacy_weekly_workspace` | `NEEDS_REVIEW` | 3 | 迁移基线，必须保持 |
+| `api_db_first_bridge` | `IMPORTED` | 13 | A 线桥接后新增风险项，需监控增长 |
+
+`api_db_first_bridge / shared/shared / draft` 当前为 13 条，distinct `sourceSha16=13`。这不是部署许可，只是允许进入只读发布前检查的风险监控基线；当前 `deploymentAllowed=false`。
 
 班表团队分布：
 
@@ -66,15 +74,15 @@
 
 发布前必须确认该目录仍存在，并且不得覆盖原备份。
 
-## 等待 API DB-first 交接门槛
+## API DB-first 交接状态
 
-在以下文件出现且状态为 `ready_for_review` 或 `done` 前，D 不进入发布检查：
+A 线已完成 API DB-first 桥上线并通过只读验收，交接记录位于：
 
 ```text
 /opt/huigui-crm/docs/parallel-collab-api-db-first-2026-06-16.md
 ```
 
-该交接文档至少需要包含：
+该交接文档至少需要包含，后续复核时以服务器版本为准：
 
 - 实际改动文件清单，预期只包含 `employee-launch.service.ts`、`employee-launch.controller.ts` 和必要 API 检查文件。
 - API build/lint 或等价检查结果。
@@ -100,8 +108,8 @@ cd /opt/huigui-crm
 ```bash
 test -f docs/parallel-collab-api-db-first-2026-06-16.md
 test -d /opt/huigui-backups/employee-data-migration-20260616-113142
-git status --short
-git diff -- apps/api/src/employee-launch/employee-launch.service.ts apps/api/src/employee-launch/employee-launch.controller.ts
+git -c safe.directory=/opt/huigui-crm status --short
+git -c safe.directory=/opt/huigui-crm diff -- apps/api/src/employee-launch/employee-launch.service.ts apps/api/src/employee-launch/employee-launch.controller.ts
 ```
 
 检查规则：
@@ -115,13 +123,21 @@ git diff -- apps/api/src/employee-launch/employee-launch.service.ts apps/api/src
 ```bash
 mkdir -p /opt/huigui-crm/output/employee-data-migration/2026-06-16
 date '+%Y-%m-%d %H:%M:%S %Z'
-git rev-parse HEAD
+git -c safe.directory=/opt/huigui-crm rev-parse HEAD
 docker compose ps
 docker compose images api
 docker inspect huigui-api --format '{{.Image}} {{json .Config.Image}}'
 ```
 
-建议将当前 API 镜像打只读回滚标签：
+如果 `docker compose` 被 `.env` 权限阻断，使用只读 fallback：
+
+```bash
+docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
+docker inspect huigui-api --format '{{.Image}} {{json .State}}'
+docker logs --tail=200 huigui-api
+```
+
+将当前 API 镜像打回滚标签不是只读动作；只有用户明确确认进入发布准备后才执行：
 
 ```bash
 PRE_API_IMAGE="$(docker inspect -f '{{.Image}}' huigui-api)"
@@ -154,24 +170,34 @@ docker compose logs --tail=120 api
 不打印 `.env`。如需查库，只通过容器环境变量引用密码。
 
 ```bash
-docker compose exec mysql sh -lc 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" -N -B -e "
-SELECT \"WeeklyReportPayload\", COUNT(*) FROM WeeklyReportPayload
-UNION ALL SELECT \"WeeklyReportPayload.IMPORTED\", COUNT(*) FROM WeeklyReportPayload WHERE status = \"IMPORTED\"
-UNION ALL SELECT \"WeeklyReportPayload.NEEDS_REVIEW\", COUNT(*) FROM WeeklyReportPayload WHERE status = \"NEEDS_REVIEW\"
-UNION ALL SELECT \"RosterWeek\", COUNT(*) FROM RosterWeek
+docker exec huigui-mysql sh -lc 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" -N -B -e "
+SELECT \"RosterWeek\", COUNT(*) FROM RosterWeek
 UNION ALL SELECT \"RosterShift\", COUNT(*) FROM RosterShift
-UNION ALL SELECT \"orphan.RosterShift\", COUNT(*) FROM RosterShift rs LEFT JOIN RosterWeek rw ON rw.id = rs.weekId WHERE rw.id IS NULL;
+UNION ALL SELECT \"orphan.RosterShift\", COUNT(*) FROM RosterShift rs LEFT JOIN RosterWeek rw ON rw.id = rs.rosterWeekId WHERE rw.id IS NULL
+UNION ALL SELECT \"WeeklyReportPayload\", COUNT(*) FROM WeeklyReportPayload;
+
+SELECT source, migrationStatus, COUNT(*) AS count
+FROM WeeklyReportPayload
+GROUP BY source, migrationStatus
+ORDER BY source, migrationStatus;
+
+SELECT sourceUserKey, canonicalUserKey, reportState, source, migrationStatus,
+       COUNT(*) AS count,
+       COUNT(DISTINCT sourceSha16) AS distinctSourceSha16
+FROM WeeklyReportPayload
+GROUP BY sourceUserKey, canonicalUserKey, reportState, source, migrationStatus
+ORDER BY count DESC;
 "'
 ```
 
 必须匹配生产基线：
 
-- `WeeklyReportPayload=6`
-- `WeeklyReportPayload.IMPORTED=3`
-- `WeeklyReportPayload.NEEDS_REVIEW=3`
 - `RosterWeek=6`
 - `RosterShift=210`
 - `orphan.RosterShift=0`
+- `legacy_weekly_workspace / IMPORTED=3`
+- `legacy_weekly_workspace / NEEDS_REVIEW=3`
+- `api_db_first_bridge / shared/shared/draft` 在只读检查窗口内不得继续异常增长。当前监控值为 13 条、distinct `sourceSha16=13`。
 
 ## 发布步骤
 
@@ -249,10 +275,12 @@ docker compose logs --tail=200 api
 
 通过条件：
 
-- `WeeklyReportPayload=6`
 - `RosterWeek=6`
 - `RosterShift=210`
 - `orphan.RosterShift=0`
+- `legacy_weekly_workspace / IMPORTED=3`
+- `legacy_weekly_workspace / NEEDS_REVIEW=3`
+- `api_db_first_bridge / shared/shared/draft` 没有在无写入窗口内继续增长。
 
 若发布动作本身改变这些计数，立即暂停并准备回滚。
 
@@ -264,7 +292,7 @@ docker compose logs --tail=200 api
 
 - 班表 GET 返回数据库数据。
 - 班表返回数量与数据库一致：6 个周记录、210 个班次。
-- 周报 workspace GET 能读取 `WeeklyReportPayload` 中的 6 条 payload。
+- 周报 workspace GET 能读取 `WeeklyReportPayload`；legacy 迁移基线为 6 条，`api_db_first_bridge` 新增行单独作为风险监控项。
 - DB 缺失或异常时的 JSON fallback 已由 A 在非生产破坏性环境或测试中证明。
 - 返回格式与前端原有调用兼容。
 
@@ -385,10 +413,12 @@ docker compose logs --tail=200 api
 
 同时重复数据库只读计数，确认回滚没有触碰数据：
 
-- `WeeklyReportPayload=6`
 - `RosterWeek=6`
 - `RosterShift=210`
 - `orphan.RosterShift=0`
+- `legacy_weekly_workspace / IMPORTED=3`
+- `legacy_weekly_workspace / NEEDS_REVIEW=3`
+- shared/shared bridge payload 未因回滚动作继续增长。
 
 ## 故障分级与处理
 
@@ -421,9 +451,9 @@ DB-first 接口验收：
 
 ## 当前停止点
 
-本 runbook 已准备完成，但不进入发布检查。下一步等待：
+本 runbook 已刷新为 v2 口径，并已完成一次只读发布前复核。当前结果允许继续观察和整理证据，但不自动进入部署；`deploymentAllowed=false`。
 
-1. A 完成 `/opt/huigui-crm/docs/parallel-collab-api-db-first-2026-06-16.md`。
-2. 用户明确要求 D 协助检查或进入发布。
-3. D 再按本 runbook 做只读检查，并在用户确认后才允许发布或回滚动作。
-
+1. A 线交接文档存在，API health 正常。
+2. 班表硬基线保持：`RosterWeek=6`、`RosterShift=210`、orphan `RosterShift=0`。
+3. 周报分组保持：`legacy 3/3`，`api_db_first_bridge / shared/shared/draft=13`，distinct `sourceSha16=13`。
+4. 任何发布、回滚、重启、写库、Docker rollback tag 动作仍必须等待用户明确确认。
