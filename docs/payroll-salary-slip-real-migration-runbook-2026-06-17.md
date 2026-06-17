@@ -7,9 +7,10 @@
 当前状态：
 
 - 后端代码、schema、migration、mock 回归、UAT payload/API 工具和审计留档工具已完成。
-- 未写生产数据库。
+- 本机隔离 MySQL 测试库已完成 migration、只读验收、后端 UAT API execute 和审计包生成。
+- 上一授权流程已完成生产 schema migration `20260617110000_payroll_publish_batch_identity`；本次收口只做只读确认和证据归档，未重复执行新的 `db:migrate:deploy`。
 - 未部署。
-- 未执行真实 migration。
+- 未执行历史薪资身份回填、未发送企业微信通知、未重启线上服务。
 - 员工端 Vite 源码仍未恢复，前端 UI 修复仍阻塞。
 
 ## 安全边界
@@ -36,7 +37,12 @@ npm run build
 当前已验证：
 
 - `npm run db:generate` 通过。
-- `npm run preflight:payroll` 通过，当前状态为 `passed_with_blockers`。
+- `npm run preflight:payroll` 通过，当前状态为 `passed_with_blockers`；blockers 为 `blocked_waiting_for_vite_source` 和 `blocked_waiting_for_local_docker`。
+- `npm run db:migrate:deploy` 已在本机隔离 MySQL 测试库 `huigui_crm_test` 通过。
+- `npm run verify:payroll-db -- --strict` 空库验收通过：`output/payroll/test-db-verify-20260617.md`。
+- 后端 UAT API execute 通过：`output/payroll/uat-resolved-2026-06/api-submit-result.json`。
+- UAT 审计包 ready：`output/payroll/uat-resolved-2026-06/audit-package/manifest.json`。
+- UAT 后只读验收为 `passed_with_warnings`，无 blockers/failures；warning 来自 UAT 样例刻意覆盖的无企微账号和同名身份隔离场景。
 - `npm run test:payroll` 通过：48/48。
 - `npm run lint -w @huigui/api` 通过。
 - `npm run build` 通过。
@@ -62,12 +68,13 @@ node scripts/migrations/payroll/salary-slip-migration-readiness-gate.mjs \
   --markdown-out docs/payroll-salary-slip-migration-readiness-gate-2026-06-17.md
 ```
 
-当前 readiness gate 结果：
+迁移前 readiness gate 结果：
 
 - `status=ready_for_test_db_migration_authorization`
 - `productionMigrationAllowed=false`
-- production migration 尚未执行，且生产库仍处于迁移前状态。
-- 下一步只允许申请测试库 / staging migration 授权，不允许直接执行生产 migration。
+- 当时 production migration 尚未执行，且生产库仍处于迁移前状态。
+- 本机隔离 MySQL 已完成一次测试库 rehearsal；如换外部测试库或 staging 库，仍需重新跑 migration、只读验收和 UAT 证据。
+- 后续已在用户明确授权下执行生产 schema migration；该 readiness gate 作为执行前证据保留，当前状态以生产迁移结果报告为准。
 
 ## 结构迁移
 
@@ -86,7 +93,7 @@ prisma/migrations/20260617110000_payroll_publish_batch_identity/migration.sql
 - `SalaryNotifyLog.publishBatchId`
 - `PayrollDraftBatch.publishBatchId`
 
-建议执行顺序：
+标准执行顺序：
 
 1. 备份数据库。
 2. 在测试库执行 `npm run db:migrate:deploy`。
@@ -102,6 +109,24 @@ npm run verify:payroll-db -- \
 
 6. 跑 API / 上传 / 发布 / 查询联调。
 7. 测试库通过后，再安排生产变更窗口。
+
+生产执行与本轮收口结果：
+
+- 原授权流程已执行生产 `db:migrate:deploy`，Prisma transcript 显示 `All migrations have been successfully applied.`。
+- 本次收口重新跑生产 SELECT-only precheck 时，目标 migration、6 个目标字段和 6 个目标索引已经存在，因此未重复执行新的生产 `db:migrate:deploy`。
+- `_prisma_migrations` 只读记录显示目标 migration 已完成，`finishedAt=2026-06-17T15:04:24.177Z`，未 rollback。
+- 生产薪资 postcheck：`output/payroll/production-schema-migration-20260617-231344/payroll-postcheck.md`，状态 `passed_with_warnings`，无 blockers、无 failures。
+- database 100 global precheck：`output/payroll/production-schema-migration-20260617-231344/database-100-global-precheck-post-verify.md`，38 行、29 个 hard gates、0 mismatch。
+- 本轮仍未执行历史薪资身份回填、未发送企业微信通知、未部署、未重启。
+- 生产 `verify:payroll-db` 状态为 `passed_with_warnings`，无 blockers、无 failures。
+- warning 仅来自历史旧数据：1 条 `SalarySlip` 身份字段不完整，1 条历史通知记录缺 `publishBatchId`。
+- 迁移后 database 100 global precheck 通过：38 行、29 个 hard gates、0 mismatch。
+- `/api/health` 返回 `status=ok`，容器没有重启。
+
+本轮收口报告：
+
+- `docs/payroll-salary-slip-production-migration-result-2026-06-17.md`
+- `output/payroll/production-schema-migration-20260617-231344/`
 
 ## 身份回填 dry-run
 
@@ -260,6 +285,15 @@ npm run audit:payroll-package -- \
 - `salary-slips.csv` 和 `notify-log-readback.json` 使用同一 `publishBatchId`。
 - `manifest.json` 中输出文件 SHA256 完整。
 
+本机隔离 MySQL 本轮执行结果：
+
+- `summary.json`：month `2026-06`，发布批次 `salary-publish-2026-06-uat-fixture`，4 行薪资条，2 人可通知，2 人跳过。
+- `salary-slips/sync`：HTTP 201，创建 4 条，返回 `teacherIds` 和同一 `publishBatchId`。
+- `salary-notify-logs`：HTTP 201，写入通知日志 1 条。
+- `GET /salary-slips` read-back：返回 4 条，无错批次、缺身份、金额不一致或身份不一致。
+- `GET /salary-notify-logs` read-back：同批次匹配 1 条，delivered 2、skipped 2、failed 0。
+- 审计包：`status=ready`，`sourceMode=api_readback`。
+
 安全规则：
 
 - 默认不写数据库。
@@ -300,6 +334,7 @@ npm run audit:payroll-package -- \
 - 不修改 `apps/web/public/employee-frontend/releases/20260616090241/**`。
 - 不直接 patch 压缩 JS。
 - 源码恢复后再补 `/payroll/batch` 上传入口、导入中心深链预填、上传后返回。
+- 2026-06-17 续查：桌面范围未发现员工端 `vite.config.*`、对应 sourcemap 或可维护源码目录；当前仍只定位到多个历史压缩 release。
 
 ## 回滚思路
 

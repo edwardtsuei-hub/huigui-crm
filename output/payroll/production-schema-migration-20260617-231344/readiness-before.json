@@ -1,0 +1,173 @@
+{
+  "generatedAt": "2026-06-17T15:13:59.385Z",
+  "status": "blocked",
+  "nextAllowedAction": "fix_failed_gate",
+  "scope": "payroll salary slip migration readiness gate",
+  "inputs": {
+    "preflight": "output/payroll/salary-slip-preflight-current.json",
+    "globalPrecheckVerify": "output/employee-data-migration/2026-06-16/database-100-global-precheck-verify-result.json",
+    "productionPrecheck": "output/payroll/production-schema-migration-20260617-231344/precheck-before.tsv",
+    "migrationSql": "prisma/migrations/20260617110000_payroll_publish_batch_identity/migration.sql"
+  },
+  "safety": {
+    "writesDatabase": false,
+    "readsProductionFromCapturedSelectOutput": true,
+    "executesMigration": false,
+    "productionMigrationAllowed": false,
+    "deploys": false,
+    "restarts": false,
+    "rollbackTagCreated": false
+  },
+  "decision": {
+    "canRequestTestDbMigrationAuthorization": false,
+    "canRequestProductionMigrationAuthorization": false,
+    "productionMigrationAllowed": false,
+    "reason": "One or more hard readiness checks failed."
+  },
+  "summary": {
+    "hardFailures": 1,
+    "softBlockers": 2,
+    "preflightStatus": "passed_with_blockers",
+    "globalPrecheckStatus": "passed",
+    "globalPrecheckMismatches": 0,
+    "migrationStaticPassed": true,
+    "productionPrecheckMismatches": 13,
+    "productionMigrationApplied": true
+  },
+  "hardFailures": [
+    "production_pre_migration_state_not_clean"
+  ],
+  "softBlockers": [
+    "frontend_vite_source_missing_blocks_full_ui_release_not_test_db_migration",
+    "local_docker_missing_blocks_local_db_rehearsal"
+  ],
+  "migrationStatic": {
+    "requiredMigration": "20260617110000_payroll_publish_batch_identity",
+    "statementCount": 9,
+    "alterStatements": 3,
+    "createIndexStatements": 6,
+    "missingSnippets": [],
+    "forbiddenKeywords": [],
+    "containsDestructiveDdl": false,
+    "passed": true
+  },
+  "production": {
+    "rows": 16,
+    "hardRows": 13,
+    "observations": 3,
+    "mismatches": [
+      {
+        "checkName": "migration.applied",
+        "actualValue": "1",
+        "expectedValue": "0",
+        "line": 1
+      },
+      {
+        "checkName": "column.PayrollDraftBatch.publishBatchId",
+        "actualValue": "1",
+        "expectedValue": "0",
+        "line": 2
+      },
+      {
+        "checkName": "column.SalaryNotifyLog.publishBatchId",
+        "actualValue": "1",
+        "expectedValue": "0",
+        "line": 3
+      },
+      {
+        "checkName": "column.SalarySlip.loginAccount",
+        "actualValue": "1",
+        "expectedValue": "0",
+        "line": 4
+      },
+      {
+        "checkName": "column.SalarySlip.publishBatchId",
+        "actualValue": "1",
+        "expectedValue": "0",
+        "line": 5
+      },
+      {
+        "checkName": "column.SalarySlip.userId",
+        "actualValue": "1",
+        "expectedValue": "0",
+        "line": 6
+      },
+      {
+        "checkName": "column.SalarySlip.wecomUserId",
+        "actualValue": "1",
+        "expectedValue": "0",
+        "line": 7
+      },
+      {
+        "checkName": "index.PayrollDraftBatch_publishBatchId_idx",
+        "actualValue": "1",
+        "expectedValue": "0",
+        "line": 8
+      },
+      {
+        "checkName": "index.SalaryNotifyLog_publishBatchId_idx",
+        "actualValue": "1",
+        "expectedValue": "0",
+        "line": 9
+      },
+      {
+        "checkName": "index.SalarySlip_loginAccount_idx",
+        "actualValue": "1",
+        "expectedValue": "0",
+        "line": 10
+      },
+      {
+        "checkName": "index.SalarySlip_publishBatchId_idx",
+        "actualValue": "1",
+        "expectedValue": "0",
+        "line": 11
+      },
+      {
+        "checkName": "index.SalarySlip_userId_idx",
+        "actualValue": "1",
+        "expectedValue": "0",
+        "line": 12
+      },
+      {
+        "checkName": "index.SalarySlip_wecomUserId_idx",
+        "actualValue": "1",
+        "expectedValue": "0",
+        "line": 13
+      }
+    ],
+    "migrationApplied": true,
+    "migrationAppliedActual": "1",
+    "missingPreMigrationColumns": 0,
+    "existingPreMigrationColumns": [
+      "column.PayrollDraftBatch.publishBatchId",
+      "column.SalaryNotifyLog.publishBatchId",
+      "column.SalarySlip.loginAccount",
+      "column.SalarySlip.publishBatchId",
+      "column.SalarySlip.userId",
+      "column.SalarySlip.wecomUserId"
+    ],
+    "missingPreMigrationIndexes": 0,
+    "existingPreMigrationIndexes": [
+      "index.PayrollDraftBatch_publishBatchId_idx",
+      "index.SalaryNotifyLog_publishBatchId_idx",
+      "index.SalarySlip_loginAccount_idx",
+      "index.SalarySlip_publishBatchId_idx",
+      "index.SalarySlip_userId_idx",
+      "index.SalarySlip_wecomUserId_idx"
+    ],
+    "tableCounts": {
+      "table.SalarySlip.count": 1,
+      "table.SalaryNotifyLog.count": 1,
+      "table.PayrollDraftBatch.count": 1
+    }
+  },
+  "requiredBeforeProduction": [
+    "Run the migration in a test or staging database first.",
+    "Run salary-slip-db-verify against that migrated test database.",
+    "Run payroll UAT API execute mode only against an explicitly confirmed test database.",
+    "Generate and review payroll audit package from API readback evidence.",
+    "Take a production database backup.",
+    "Get a separate explicit production migration authorization.",
+    "Run production migration in a controlled window, then run salary-slip-db-verify and database-100 global precheck."
+  ]
+}

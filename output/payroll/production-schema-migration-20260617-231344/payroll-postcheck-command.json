@@ -1,0 +1,9 @@
+{
+  "status": "passed_with_warnings",
+  "blockers": [],
+  "failures": [],
+  "warnings": [
+    "salary_slips_with_incomplete_identity",
+    "salary_slips_missing_publish_batch_id"
+  ]
+}

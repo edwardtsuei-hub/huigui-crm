@@ -1,8 +1,14 @@
 {
-  "generatedAt": "2026-06-17T14:27:25.320Z",
+  "generatedAt": "2026-06-17T14:56:42.983Z",
   "status": "ready_for_test_db_migration_authorization",
   "nextAllowedAction": "request_test_db_migration_authorization",
   "scope": "payroll salary slip migration readiness gate",
+  "artifactRole": "pre_production_readiness_snapshot",
+  "supersededBy": {
+    "status": "production_schema_migration_completed",
+    "document": "docs/payroll-salary-slip-production-migration-result-2026-06-17.md",
+    "resultJson": "output/payroll/salary-slip-production-migration-result-20260617230204.json"
+  },
   "inputs": {
     "preflight": "output/payroll/salary-slip-preflight-current.json",
     "globalPrecheckVerify": "output/employee-data-migration/2026-06-16/database-100-global-precheck-verify-result.json",
@@ -26,7 +32,7 @@
   },
   "summary": {
     "hardFailures": 0,
-    "softBlockers": 3,
+    "softBlockers": 2,
     "preflightStatus": "passed_with_blockers",
     "globalPrecheckStatus": "passed",
     "globalPrecheckMismatches": 0,
@@ -37,8 +43,7 @@
   "hardFailures": [],
   "softBlockers": [
     "frontend_vite_source_missing_blocks_full_ui_release_not_test_db_migration",
-    "local_docker_missing_blocks_local_db_rehearsal",
-    "local_mysql_client_missing_blocks_local_db_rehearsal"
+    "local_docker_missing_blocks_local_db_rehearsal"
   ],
   "migrationStatic": {
     "requiredMigration": "20260617110000_payroll_publish_batch_identity",

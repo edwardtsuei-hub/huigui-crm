@@ -1,0 +1,6 @@
+Prisma schema loaded from ../tmp/payroll-prisma-20260617230204/prisma/schema.prisma
+Datasource "db": MySQL database "huigui_crm" at "mysql:3306"
+
+28 migrations found in prisma/migrations
+
+Database schema is up to date!

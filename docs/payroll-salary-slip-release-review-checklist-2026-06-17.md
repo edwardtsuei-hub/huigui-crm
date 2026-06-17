@@ -2,19 +2,20 @@
 
 ## 当前结论
 
-本地代码层面可以进入测试库验收；不能直接进入生产发布。
+本地代码层面、本机隔离 MySQL 后端 UAT 和生产 schema postcheck 已完成；仍不能直接进入完整生产发布。
 
-当前 migration readiness gate：
+迁移前 readiness gate 留档：
 
 - `status=ready_for_test_db_migration_authorization`
 - `productionMigrationAllowed=false`
-- 生产库仍为迁移前状态，测试库 migration 和 UAT 证据完成前不得申请生产 migration。
+- 该 gate 是生产执行前证据；上一授权流程已完成生产 schema migration，本次收口只做只读确认和证据归档，未重复执行新的 `db:migrate:deploy`。
+- 当前主口径以 `docs/payroll-salary-slip-production-migration-result-2026-06-17.md` 为准。
 
 必须继续拦截的事项：
 
 - `blocked_waiting_for_vite_source`：员工端 Vite 源码未恢复，前端 UI 修复不能做。
-- `blocked_waiting_for_database_connection`：当前本机无法连接真实 MySQL，不能完成真实闭环联调。
-- `blocked_waiting_for_real_migration`：migration 尚未在测试库执行。
+- `blocked_waiting_for_local_docker`：本机 Docker 不存在；仅阻塞 Docker 标准演练路径。
+- `blocked_waiting_for_history_identity_backfill_review`：旧薪资条和旧通知记录的 `publishBatchId / 身份字段` 仍需 dry-run 与人工复核。
 
 ## 允许进入评审的内容
 
@@ -35,9 +36,9 @@
 
 - 员工端上传入口 UI 已修复。
 - 导入中心深链预填和上传后返回已修复。
-- 真实登录、上传、发布、通知、员工查看闭环已通过。
-- 生产数据库已经迁移。
+- 前端真实登录、上传、发布、通知、员工查看闭环已通过。
 - 历史薪资条身份字段已经回填。
+- 企业微信真实通知已经发布。
 
 ## 评审前命令
 
@@ -55,13 +56,23 @@ git diff --name-only -- apps/web/public/employee-frontend/releases/2026061609024
 期望结果：
 
 - `npm run test:payroll` 为 48/48 passed。
-- `npm run preflight:payroll` 可以是 `passed_with_blockers`，但不能有 `failures`。
+- `npm run preflight:payroll` 可以是 `passed_with_blockers`，但不能有 `failures`；当前预期 blockers 为前端源码和 Docker 环境。
 - 压缩发布包 diff 必须为空。
 - 预检输出应包含 release route evidence，说明当前仅在压缩 release 中命中 `/payroll/batch`、`/finance/imports` 和“上传薪资表”，且没有 `.map` 或 `sourceMappingURL` 可还原源码。
 
 ## 测试库验收清单
 
-测试库可达后执行：
+已在本机隔离 MySQL 测试库完成一次后端演练：
+
+- 测试库：`huigui_crm_test`。
+- migration：`20260617110000_payroll_publish_batch_identity` 已应用。
+- 空库只读验收：`output/payroll/test-db-verify-20260617.md`，状态 `passed`。
+- UAT API execute：`output/payroll/uat-resolved-2026-06/api-submit-result.json`，状态 `executed`，blockers 为空。
+- UAT read-back：正式薪资条 4 条、通知记录 1 条，金额和身份字段校验通过。
+- 审计包：`output/payroll/uat-resolved-2026-06/audit-package/manifest.json`，状态 `ready`，`sourceMode=api_readback`。
+- UAT 后只读验收：`output/payroll/test-db-verify-after-uat-20260617.md`，状态 `passed_with_warnings`；warning 对应 UAT 故意覆盖的无企微账号跳过通知和同名身份隔离场景。
+
+如换外部测试库或 staging 库，仍需重新执行：
 
 ```bash
 npm run db:migrate:deploy
@@ -69,6 +80,23 @@ npm run verify:payroll-db -- \
   --out output/payroll/salary-slip-db-verify.json \
   --markdown-out output/payroll/salary-slip-db-verify.md
 ```
+
+## 生产 schema postcheck 结果
+
+上一授权流程已完成生产 schema migration；本次收口只读确认目标 migration 已在生产库完成：
+
+- migration：`20260617110000_payroll_publish_batch_identity`。
+- `_prisma_migrations.finished_at=2026-06-17T15:04:24.177Z`。
+- 本次收口未重复执行新的生产 `db:migrate:deploy`。
+- 结构验收：6 个目标字段、6 个目标索引均存在。
+- 生产只读验收：`output/payroll/production-schema-migration-20260617-231344/payroll-postcheck.md`，状态 `passed_with_warnings`，无 blockers、无 failures。
+- database 100：`output/payroll/production-schema-migration-20260617-231344/database-100-global-precheck-post-verify.md`，38 行、29 个 hard gates、0 mismatch。
+
+生产 warning 不阻断 schema migration，但阻断“宣称历史数据完全整理完成”：
+
+- `salary_slips_with_incomplete_identity`：1 条旧薪资条身份字段不完整。
+- `salary_slips_missing_publish_batch_id`：1 条旧薪资条或相关旧通知链路缺发布批次字段。
+- 旧通知记录 `recentNotifyLogs[0].publishBatchId=null`，需要纳入历史数据复核。
 
 必须确认：
 
@@ -179,6 +207,14 @@ npm run audit:payroll-package -- \
 - 如果传入 API submit result 但缺少薪资条或通知记录 read-back 行，审计包必须是 blocked manifest，不能退回 payload 证据。
 - 差异阻断样例只允许生成 blocked manifest。
 
+本机测试库本轮结果：
+
+- `salary-slips/sync`：HTTP 201，创建 4 条，`publishBatchId=salary-publish-2026-06-uat-fixture`。
+- `salary-notify-logs`：HTTP 201，写入通知日志 1 条。
+- `GET /salary-slips` read-back：返回 4 条，无 missing teacher、wrong batch、identity missing、amount mismatch 或 identity mismatch。
+- `GET /salary-notify-logs` read-back：同批次匹配 1 条，delivered 2、skipped 2、failed 0。
+- 审计包 manifest：`status=ready`，`sourceMode=api_readback`，薪资条 4 行、通知送达 2 行、跳过 2 行、失败 0 行。
+
 ## 权限验收清单
 
 需要人工确认：
@@ -224,10 +260,11 @@ node scripts/migrations/payroll/salary-identity-backfill-dryrun.mjs \
 
 可以继续推进的条件：
 
-- 测试库 migration 通过。
+- 测试库 migration 已通过。
 - 测试库 `verify:payroll-db` 无失败。
-- 后端 UAT payload 发布验证通过。
+- 后端 UAT payload 发布验证已通过。
 - UAT 审计包 manifest 为 ready，且 SHA256 留档完整。
+- 生产 schema migration 已通过，并有 postcheck 证据。
 - 权限账号清单确认完成。
 - 企业微信通知先在测试应用或 dry-run 模式确认。
 - 压缩发布包 diff 为空。
@@ -235,7 +272,7 @@ node scripts/migrations/payroll/salary-identity-backfill-dryrun.mjs \
 必须 No-Go 的条件：
 
 - 员工端源码仍未恢复但要求发布 UI 修复。
-- 真实数据库验收未跑但要求生产上线。
+- 生产 warning 未处理却宣称历史数据已完整回填。
 - 权限清单未确认。
 - 同名员工隔离未验证。
 - 历史回填 SQL 未人工复核。

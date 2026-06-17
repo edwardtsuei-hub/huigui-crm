@@ -1,0 +1,89 @@
+{
+  "generatedAt": "2026-06-17T15:17:22Z",
+  "status": "production_schema_migration_completed_with_warnings",
+  "scope": "payroll salary slip production schema migration result",
+  "migration": {
+    "name": "20260617110000_payroll_publish_batch_identity",
+    "finishedAt": "2026-06-17T15:04:24.177Z",
+    "rolledBackAt": null,
+    "pendingBeforeDeploy": [
+      "20260617110000_payroll_publish_batch_identity"
+    ]
+  },
+  "backup": {
+    "path": "/opt/huigui-crm/backups/huigui_crm_before_payroll_schema_20260617230204.sql.gz",
+    "sha256": "c7decc1960dc11c280fa4461e5dbba7fdba82d5b6483897f11be4c8af7cf0d06"
+  },
+  "safety": {
+    "originalMigrationWritesProductionDatabase": true,
+    "currentClosureWritesProductionDatabase": false,
+    "schemaOnly": true,
+    "historyBackfillExecuted": false,
+    "wecomNotificationsSent": false,
+    "deployed": false,
+    "serviceRestarted": false,
+    "rollbackTagCreated": false
+  },
+  "postcheck": {
+    "prismaStatus": "database_schema_up_to_date",
+    "structure": {
+      "missingColumns": [],
+      "missingIndexes": [],
+      "targetColumnsPresent": 6,
+      "targetIndexesPresent": 6
+    },
+    "payrollDbVerify": {
+      "status": "passed_with_warnings",
+      "blockers": [],
+      "failures": [],
+      "warnings": [
+        "salary_slips_with_incomplete_identity",
+        "salary_slips_missing_publish_batch_id"
+      ],
+      "tableCounts": {
+        "salarySlips": 1,
+        "salaryNotifyLogs": 1,
+        "payrollDraftBatches": 1
+      },
+      "identityIncomplete": 1,
+      "publishBatchMissing": 1
+    },
+    "database100GlobalPrecheck": {
+      "status": "passed",
+      "totalRows": 38,
+      "hardGates": 29,
+      "mismatches": 0,
+      "payrollColumnObservations": {
+        "loginAccount": 1,
+        "publishBatchId": 1,
+        "userId": 1,
+        "wecomUserId": 1
+      }
+    },
+    "health": {
+      "apiHealthStatus": "ok",
+      "containerRestarted": false
+    }
+  },
+  "evidence": {
+    "deployTranscript": "output/payroll/salary-slip-production-migration-deploy-transcript-20260617230204.txt",
+    "prismaStatusAfter": "output/payroll/salary-slip-production-migration-status-after-20260617230204.txt",
+    "structureCheck": "output/payroll/salary-slip-production-post-migration-structure-check-20260617230204.tsv",
+    "payrollDbVerifyMarkdown": "output/payroll/salary-slip-production-db-verify-20260617230204.md",
+    "payrollDbVerifyJson": "output/payroll/salary-slip-production-db-verify-20260617230204.json",
+    "closurePrecheckBefore": "output/payroll/production-schema-migration-20260617-231344/precheck-before.tsv",
+    "closureMigrationRecord": "output/payroll/production-schema-migration-20260617-231344/migration-record.tsv",
+    "closurePayrollPostcheckMarkdown": "output/payroll/production-schema-migration-20260617-231344/payroll-postcheck.md",
+    "closurePayrollPostcheckJson": "output/payroll/production-schema-migration-20260617-231344/payroll-postcheck.json",
+    "closureDatabase100Tsv": "output/payroll/production-schema-migration-20260617-231344/database-100-global-precheck-post.tsv",
+    "closureDatabase100VerifyMarkdown": "output/payroll/production-schema-migration-20260617-231344/database-100-global-precheck-post-verify.md",
+    "closureDatabase100VerifyJson": "output/payroll/production-schema-migration-20260617-231344/database-100-global-precheck-post-verify.json"
+  },
+  "remainingWork": [
+    "Restore employee frontend Vite source before UI upload flow changes.",
+    "Run separate dry-run and human review before any historical salary identity or publishBatchId backfill.",
+    "Review payroll publisher permissions for FINANCE or action.payroll.publish.",
+    "Keep real WeCom notification sending blocked until test app or dry-run confirmation.",
+    "Run full frontend login, upload, publish, notification, and employee self-view acceptance before release."
+  ]
+}
