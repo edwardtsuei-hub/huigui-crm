@@ -2,7 +2,7 @@
 
 ## 当前结论
 
-本地代码层面、本机隔离 MySQL 后端 UAT 和生产 schema postcheck 已完成；仍不能直接进入完整生产发布。
+本地代码层面、本机隔离 MySQL 后端 UAT、生产 schema postcheck、历史回填和员工端 Vite 重建候选已完成；仍不能直接进入完整生产发布。
 
 迁移前 readiness gate 留档：
 
@@ -13,8 +13,8 @@
 
 必须继续拦截的事项：
 
-- `blocked_waiting_for_vite_source`：员工端 Vite 源码未恢复，前端 UI 修复不能做。
 - `blocked_waiting_for_local_docker`：本机 Docker 不存在；仅阻塞 Docker 标准演练路径。
+- `blocked_waiting_for_employee_frontend_release_plan`：`apps/employee-frontend` 已可构建，但尚未完成静态 release 接入、真账号验收和部署评审。
 
 ## 允许进入评审的内容
 
@@ -30,11 +30,13 @@
 - UAT CSV 样例与 payload 生成工具。
 - UAT API dry-run / submit 工具。
 - UAT 审计包导出工具。
+- `apps/employee-frontend` 员工端 Vite 重建候选。
+- `/payroll/batch` 上传入口、空状态入口、发布核对和通知记录追溯。
+- `/finance/imports` 薪资表深链预填、上传解析和返回核对。
 
 ## 不允许本次提交宣称完成的内容
 
-- 员工端上传入口 UI 已修复。
-- 导入中心深链预填和上传后返回已修复。
+- 员工端新 Vite 工程已正式替换线上静态 release。
 - 前端真实登录、上传、发布、通知、员工查看闭环已通过。
 - 企业微信真实通知已经发布。
 
@@ -46,7 +48,7 @@
 npm run db:generate
 npm run test:payroll
 npm run preflight:payroll
-npm run lint -w @huigui/api
+npm run lint
 npm run build
 git diff --name-only -- apps/web/public/employee-frontend/releases/20260616090241
 ```
@@ -54,9 +56,9 @@ git diff --name-only -- apps/web/public/employee-frontend/releases/2026061609024
 期望结果：
 
 - `npm run test:payroll` 为 48/48 passed。
-- `npm run preflight:payroll` 可以是 `passed_with_blockers`，但不能有 `failures`；当前预期 blockers 为前端源码和 Docker 环境。
+- `npm run preflight:payroll` 可以是 `passed_with_blockers`，但不能有 `failures`；当前预期 blocker 仅为本机 Docker 环境。
 - 压缩发布包 diff 必须为空。
-- 预检输出应包含 release route evidence，说明当前仅在压缩 release 中命中 `/payroll/batch`、`/finance/imports` 和“上传薪资表”，且没有 `.map` 或 `sourceMappingURL` 可还原源码。
+- 预检输出应包含 release route evidence，说明当前线上仍是压缩 release；同时应识别 `apps/employee-frontend/src/App.tsx` 和 `apps/employee-frontend/src/lib/payroll.ts` 作为可维护前端候选。
 
 ## 测试库验收清单
 
@@ -132,7 +134,7 @@ npm run verify:payroll-db -- \
 
 ## 后端 UAT 验收清单
 
-前端源码恢复前，可以先用 payload 工具验证后端链路：
+在员工端 Vite 候选完成测试账号验收前，仍可先用 payload 工具验证后端链路：
 
 ```bash
 npm run fixture:payroll-payload -- \
@@ -280,9 +282,9 @@ node scripts/migrations/payroll/salary-identity-backfill-dryrun.mjs \
 - SQL 默认 `ROLLBACK`，测试库确认后才能人工改为 `COMMIT`。
 - SQL 文件必须记录 SHA256。
 
-## 前端源码恢复后的验收清单
+## 员工端 Vite 候选验收清单
 
-源码恢复后再做这些项：
+`apps/employee-frontend` 已实现本地候选，正式发布前还需要：
 
 - `/payroll/batch` 有明确上传薪资表入口。
 - 空状态能引导去上传或导入中心。
@@ -290,6 +292,8 @@ node scripts/migrations/payroll/salary-identity-backfill-dryrun.mjs \
 - 上传完成后能回到 `/payroll/batch`。
 - `.csv / .xlsx / .xls` 提示清楚，`.xls` 不承诺浏览器内预览。
 - 差异未处理时发布按钮不可用。
+- 用测试账号完成登录、上传、发布、通知记录和员工本人查看。
+- 明确新 Vite dist 如何进入现有静态 release 机制或灰度路径。
 
 ## 生产前 Go / No-Go
 
@@ -303,10 +307,11 @@ node scripts/migrations/payroll/salary-identity-backfill-dryrun.mjs \
 - 权限账号清单确认完成。
 - 企业微信通知先在测试应用或 dry-run 模式确认。
 - 压缩发布包 diff 为空。
+- 新员工端静态 release 方案已评审，不直接覆盖旧 release。
 
 必须 No-Go 的条件：
 
-- 员工端源码仍未恢复但要求发布 UI 修复。
+- `apps/employee-frontend` 未通过测试账号端到端验收却要求替换线上 release。
 - 生产 warning 未处理却宣称历史数据已完整回填。
 - 权限清单未确认。
 - 同名员工隔离未验证。

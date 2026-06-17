@@ -1,10 +1,9 @@
 {
-  "generatedAt": "2026-06-17T14:56:27.351Z",
+  "generatedAt": "2026-06-17T22:14:09.652Z",
   "writesDatabase": false,
   "deploys": false,
   "status": "passed_with_blockers",
   "blockers": [
-    "blocked_waiting_for_vite_source",
     "blocked_waiting_for_local_docker"
   ],
   "failures": [],
@@ -48,7 +47,10 @@
       "sourceMapFiles": [],
       "sourceMappingUrlFiles": []
     },
-    "frontendSourceCandidates": [],
+    "frontendSourceCandidates": [
+      "apps/employee-frontend/src/App.tsx",
+      "apps/employee-frontend/src/lib/payroll.ts"
+    ],
     "protectedReleaseDiffLines": 0,
     "dockerAvailable": false,
     "mysqlClientAvailable": true,

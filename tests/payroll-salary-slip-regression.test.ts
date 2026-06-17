@@ -2551,7 +2551,10 @@ test("salary slip preflight passes code safety checks and reports environmental 
     assert.equal(report.status, "passed_with_blockers");
     assert.deepEqual(report.failures, []);
     assert.equal(report.checks.protectedReleaseDiffLines, 0);
-    assert.deepEqual(report.checks.frontendSourceCandidates, []);
+    assert.equal(report.checks.frontendSourceCandidates.some((file) => {
+      return file.startsWith("apps/employee-frontend/src/")
+        && (file.endsWith("App.tsx") || file.endsWith("lib/payroll.ts"));
+    }), true);
     assert.equal(report.checks.frontendReleaseEvidence.routeHits.some((hit) => {
       return hit.file.endsWith("assets/payroll-batch-page-CXA8ZBid.js")
         && hit.matchedTokens.includes("上传薪资表");
@@ -2567,7 +2570,7 @@ test("salary slip preflight passes code safety checks and reports environmental 
     assert.deepEqual(report.checks.frontendReleaseEvidence.sourceMappingUrlFiles, []);
     assert.deepEqual(report.checks.serviceForbiddenTokens, []);
     assert.deepEqual(report.checks.destructiveMigrationTokens, []);
-    assert.ok(report.blockers.includes("blocked_waiting_for_vite_source"));
+    assert.equal(report.blockers.includes("blocked_waiting_for_vite_source"), false);
     assert.ok(report.blockers.includes("blocked_waiting_for_local_docker"));
     assert.ok(markdown.includes("Regression coverage checks: pass"));
     assert.ok(markdown.includes("Release Route Evidence"));

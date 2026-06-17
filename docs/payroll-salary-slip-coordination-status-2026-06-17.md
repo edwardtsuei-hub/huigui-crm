@@ -13,12 +13,12 @@
 
 ## 当前总状态
 
-整体状态：后端线、mock 回归、后端 UAT 工具、本机隔离 MySQL 演练、审计留档工具、payroll 生产 schema postcheck、历史身份回填 dry-run、方案 A 真实回填、方案 B publishBatchId dry-run 和方案 B 主方案真实回填已完成；前端源码恢复线和发布前业务确认仍阻塞。
+整体状态：后端线、mock 回归、后端 UAT 工具、本机隔离 MySQL 演练、审计留档工具、payroll 生产 schema postcheck、历史身份回填 dry-run、方案 A 真实回填、方案 B publishBatchId dry-run、方案 B 主方案真实回填和员工端 Vite 源码本地重建已完成；员工端真实发布接入、Docker 标准演练和发布前业务确认仍阻塞。
 
 仍保留的阻塞标记：
 
-- `blocked_waiting_for_vite_source`：员工端 Vite 源码或 sourcemap/build artifacts 尚未恢复。
 - `blocked_waiting_for_local_docker`：本机 Docker 仍不存在；如必须走 Docker 标准演练路径，仍需补齐 Docker。
+- `blocked_waiting_for_employee_frontend_release_plan`：新员工端 Vite 工程已本地重建，但尚未评审如何替换现有静态 release，未部署。
 
 本轮已完成：
 
@@ -26,7 +26,7 @@
 - 将薪资 mock/服务/UAT 工具回归扩展到 48 个场景。
 - 新增薪资身份字段回填 dry-run 脚本、真实迁移运行手册、上线前预检脚本和只读数据库验收脚本。
 - 新增真实联调 UAT 薪资上传 CSV 样例和预期说明。
-- 新增 UAT CSV 转后端 API payload 工具，便于前端源码恢复前先测后端链路。
+- 新增 UAT CSV 转后端 API payload 工具，便于员工端 Vite 候选正式验收前先测后端链路。
 - UAT CSV 转 payload 工具会在生成发布 payload 前检查必要表头；缺少 `姓名 / 应发 / 实发` 或整组身份表头时只生成 `blocked_missing_required_headers` summary。
 - UAT CSV 转 payload 工具会在生成发布 payload 前阻断缺失或非法的必填金额，避免异常金额被静默转成 0。
 - UAT CSV 转 payload 工具会阻断缺少明确身份字段的薪资行，避免回退到姓名生成临时 ID。
@@ -48,6 +48,10 @@
 - 2026-06-18 已继续做员工端源码恢复排查：本地仓库、完整 Git 历史、GitHub 账号仓库与 code search、本机用户目录、生产 `/opt/huigui-crm`、生产 `/opt/hui-health-management`、生产 `/opt/hui-health/employee-frontend`、生产 `/tmp/hui-health-employee-frontend`、`/tmp/hui-employee-frontend-20260613103340.tar.gz` 和 `/opt/huigui-backups/*.tar.gz` 均未找到员工端 Vite 源码或 sourcemap。
 - 服务器 `/tmp/hui-health-employee-frontend/employee-frontend-deploy-20260616090200` 确认为可部署交付包，只包含 `dist/`、manifest、校验和与部署脚本；脚本只负责上传、校验、拷贝 dist 和切换 symlink，不包含源码构建步骤。
 - 服务器 `/opt/hui-health-management` 确认为 `/opt/huigui-crm` 与员工端静态 release 的软链别名，不是独立源码目录。
+- 已新增可维护员工端 Vite 工程 `apps/employee-frontend`，实现 `/payroll/batch` 和 `/finance/imports`。
+- `/finance/imports` 支持 `type=salary_slip&month=YYYY-MM&returnTo=/payroll/batch` 深链预填，CSV/XLSX 解析、旧版 XLS 转换提示、草稿保存和上传后返回。
+- `/payroll/batch` 支持上传入口、空状态入口、草稿读取、原始薪资表核对、通知名单确认、发布 `salary-slips/sync`、记录 `salary-notify-logs` 和发布追溯读取。
+- 员工端 Vite build 已开启 sourcemap，后续不再只依赖压缩 bundle 排查问题。
 - `npm run db:generate` 通过。
 - `npm run preflight:payroll` 通过，状态为 `passed_with_blockers`。
 - Homebrew `mysql@8.4` 已安装；MySQL client 可用。
@@ -78,7 +82,7 @@
 
 ### 线 1：前端上传入口与导入中心返回闭环
 
-结果：阻塞，等待可维护员工端 Vite 源码。
+结果：本地源码重建已完成；等待评审后接入静态发布流程，当前未部署。
 
 已确认：
 
@@ -92,18 +96,21 @@
 - GitHub `edwardtsuei-hub` 账号下未发现独立员工端仓库；`huigui-crm` 完整历史中也没有员工端 Vite 源码、对应 sourcemap 或可维护 `/payroll/batch`、`/finance/imports` 源文件。
 - 生产服务器的员工端目录与临时发布包均是静态构建结果；`/tmp/hui-employee-frontend-20260613103340.tar.gz` 也只包含 `index.html`、assets 和校验文件。
 - 生产备份包只命中旧静态 release，例如 `huigui-crm-ops-source-20260516-085102.tar.gz` 里的 `apps/web/public/employee-frontend/releases/20260516080126/**`，没有源码级 `vite.config.*`、`src/`、`.map` 或 `sourceMappingURL`。
+- 新建 `apps/employee-frontend` 作为可维护 Vite 源码，不修改旧压缩 release。
+- 新源码已包含 `/payroll/batch` 与 `/finance/imports`，并保留 `上传薪资表`、`去导入中心` 和深链返回逻辑。
+- 构建产物输出到 `apps/employee-frontend/dist`，该目录被 `.gitignore` 排除；真实替换线上 release 前仍需单独生成交付包和评审。
 
 未执行：
 
 - 未修改压缩 JS。
 - 未部署新员工端。
 
-恢复条件：
+上线接入条件：
 
-1. 提供员工端 Vite 源码仓库、源码目录或可还原 sourcemap/build artifacts。
-2. 确认 `/payroll/batch` 与 `/finance/imports` 源文件位置。
-3. 在源码中实现上传入口、空状态入口、深链预填、上传后返回和 `.xls` 格式提示。
-4. 若源码确认遗失，需要另起一个可维护员工端 Vite 工程重建对应页面，再通过正式评审替换静态 release；不建议直接反编译或修改压缩 bundle。
+1. 评审 `apps/employee-frontend` 的页面行为和权限边界。
+2. 确认是否用新 Vite 工程替换现有 `apps/web/public/employee-frontend/releases/**` 发布流程。
+3. 以测试账号完成登录、上传、返回、发布、通知记录和员工本人查看。
+4. 生成新的静态交付包前必须走 Go / No-Go，不直接覆盖旧 release。
 
 ### 线 2：后端权限、查询、发布批次、通知记录
 
@@ -146,7 +153,7 @@
 
 ### 线 3：本地 mock 与自动化回归
 
-结果：已完成；后端本机测试库 UAT 已通过，前端真实登录/上传闭环仍等待员工端源码。
+结果：已完成；后端本机测试库 UAT 已通过，员工端 Vite 候选已可构建；前端真实登录、上传、发布和员工本人查看闭环仍需测试账号验收。
 
 已覆盖：
 
@@ -200,21 +207,23 @@
 | 检查项 | 结果 |
 | --- | --- |
 | `.codegraph/` | 不存在 |
-| 员工端 Vite 源码 | 未定位到 |
+| 员工端 Vite 源码 | 已本地重建：`apps/employee-frontend` |
 | 当前 release sourcemap | 未发现 |
 | Git/GitHub 源码恢复 | 完整 Git 历史、远端分支、GitHub 仓库列表和 code search 均未找到员工端 Vite 源码 |
 | 服务器源码恢复 | `/opt/huigui-crm`、`/opt/hui-health-management`、`/opt/hui-health/employee-frontend`、`/tmp/hui-health-employee-frontend` 均只定位到静态 release 或部署交付包 |
 | 服务器临时压缩包 | `/tmp/hui-employee-frontend-20260613103340.tar.gz` 只包含 dist 静态文件，无源码或 sourcemap |
 | 服务器备份包 | `/opt/huigui-backups/*.tar.gz` 未命中员工端 Vite 源码或 sourcemap；仅有旧静态 release |
 | `npm run db:generate` | 通过 |
-| `npm run preflight:payroll` | 通过，`passed_with_blockers`；当前 blockers 为 `blocked_waiting_for_vite_source`、`blocked_waiting_for_local_docker` |
+| `npm run preflight:payroll` | 通过，`passed_with_blockers`；当前 blocker 仅为 `blocked_waiting_for_local_docker` |
+| `npm run lint:employee` | 通过 |
+| `npm run build:employee` | 通过，生成 sourcemap，dist 未纳入 git |
 | `npm run verify:payroll-db` | 空测试库：`passed`；UAT 后：`passed_with_warnings`，无 blockers/failures |
 | 本机 MySQL 测试库 migration | 通过，已应用 `20260617110000_payroll_publish_batch_identity` |
 | UAT API execute | 通过，正式薪资条 read-back 4 条，通知记录 read-back 1 条 |
 | `/me/salary-slips` 同名隔离 | 通过，两个同名测试账号各自只返回 1 条本人工资条 |
 | UAT 审计包 | `ready`，`sourceMode=api_readback` |
 | `npm run test:payroll` | 通过，48/48 |
-| `npm run lint -w @huigui/api` | 通过 |
+| `npm run lint` | 通过 |
 | `npm run build` | 通过 |
 | Docker | 不存在；仅阻塞 Docker 标准演练路径 |
 | 员工端压缩 release diff | 为空 |
@@ -240,10 +249,21 @@
 
 测试与构建：
 
+- `apps/employee-frontend/package.json`
+- `apps/employee-frontend/index.html`
+- `apps/employee-frontend/tsconfig.json`
+- `apps/employee-frontend/vite.config.ts`
+- `apps/employee-frontend/src/App.tsx`
+- `apps/employee-frontend/src/main.tsx`
+- `apps/employee-frontend/src/styles.css`
+- `apps/employee-frontend/src/vite-env.d.ts`
+- `apps/employee-frontend/src/lib/api.ts`
+- `apps/employee-frontend/src/lib/payroll.ts`
 - `tests/payroll-salary-slip-regression.test.ts`
 - `tests/fixtures/payroll/salary-upload-uat-resolved-2026-06.csv`
 - `tests/fixtures/payroll/salary-upload-uat-unresolved-2026-06.csv`
 - `package.json`
+- `package-lock.json`
 
 记录文档：
 
@@ -259,29 +279,27 @@
 
 ## 阻塞项
 
-1. `blocked_waiting_for_vite_source`
-   - 需要员工端 Vite 源码或 sourcemap/build artifacts，才能安全完成前端 UI 优化。
-   - 2026-06-18 已完成本地、Git/GitHub、生产服务器、临时发布包和服务器备份包排查，当前仍未恢复。
-   - 下一步只能从原构建工作机、原开发者本地目录、未公开源码仓库、CI artifact 或外部备份中找回；如确认找不回，需重建可维护员工端 Vite 源码。
-
-2. `blocked_waiting_for_local_docker`
+1. `blocked_waiting_for_local_docker`
    - 当前机器没有 Docker CLI。
    - 本机 MySQL 路径已完成后端演练；如后续要求 Docker compose 标准环境，仍需补 Docker。
 
+2. `blocked_waiting_for_employee_frontend_release_plan`
+   - `apps/employee-frontend` 已可构建，但还没有纳入正式静态 release 打包、评审和部署流程。
+   - 当前线上仍指向旧 release；本次未修改 `apps/web/public/employee-frontend/releases/20260616090241/**`。
+
 ## 还需要人工确认的事项
 
-1. 员工端 Vite 源码在哪个仓库、目录或构建机上；如果源码已遗失，是否授权按当前静态页面行为重建一个可维护 Vite 工程。
+1. 是否接受以 `apps/employee-frontend` 作为新的员工端源码基线。
 2. 是否接受本次权限收紧策略：不再允许文本像“财务/办公室/人事”或 `action.management.member.update` 维护薪资。
 3. 哪些账号需要补 `FINANCE` 角色或 `action.payroll.publish` 权限。
 4. 是否还需要补 Docker 标准演练，或接受本机 MySQL + 本机 API execute 演练作为后端 UAT 证据。
 5. 真实企业微信通知是否先在测试应用 / dry-run 模式验证。
+6. 新员工端上线时是复用现有 `/opt/hui-health/employee-frontend` 静态 release 机制，还是先做并行灰度路径。
 
 ## 下一步
 
-1. 恢复员工端 Vite 源码后，补前端上传入口和导入中心返回闭环。
-2. 若源码无法恢复，先立项重建员工端 Vite 工程和发布流程，再补 `/payroll/batch` 与 `/finance/imports`。
-3. 复核 `docs/payroll-salary-slip-history-backfill-result-2026-06-18.md` 和 `docs/payroll-salary-slip-publish-batch-backfill-result-2026-06-18.md`，确认历史回填结果。
-4. 确认权限清单：哪些账号需要 `FINANCE` 或 `action.payroll.publish`。
-5. 恢复源码后用测试账号验证完整链路：登录、上传薪资表、复核差异、发布薪资条、通知记录、员工本人查看。
-6. 用 `tests/fixtures/payroll` 的 UAT 样例验证同名隔离、合作老师跳过、无企微账号跳过和差异阻断。
-7. 合并前按 `docs/payroll-salary-slip-release-review-checklist-2026-06-17.md` 做 Go / No-Go 评审。
+1. 用测试账号验证新员工端完整链路：登录、上传薪资表、复核差异、发布薪资条、通知记录、员工本人查看。
+2. 确认权限清单：哪些账号需要 `FINANCE` 或 `action.payroll.publish`。
+3. 设计新员工端静态交付包流程，不直接覆盖旧 release。
+4. 用 `tests/fixtures/payroll` 的 UAT 样例验证同名隔离、合作老师跳过、无企微账号跳过和差异阻断。
+5. 合并前按 `docs/payroll-salary-slip-release-review-checklist-2026-06-17.md` 做 Go / No-Go 评审。
