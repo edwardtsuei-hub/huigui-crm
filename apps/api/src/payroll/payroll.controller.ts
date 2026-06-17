@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, Req } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Put, Query, Req } from "@nestjs/common";
 import type { Request } from "express";
 import type { AuthenticatedUser } from "../common/types/authenticated-user";
 import { PayrollService } from "./payroll.service";
@@ -10,6 +10,14 @@ type RequestWithUser = Request & {
 @Controller()
 export class SalarySlipsController {
   constructor(private readonly payrollService: PayrollService) {}
+
+  @Get("salary-slips")
+  listSalarySlips(
+    @Query() query: Record<string, unknown>,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.payrollService.listSalarySlips(query, req.user);
+  }
 
   @Post("salary-slips/sync")
   syncSalarySlips(
@@ -28,6 +36,14 @@ export class SalarySlipsController {
 @Controller()
 export class SalaryNotifyLogsController {
   constructor(private readonly payrollService: PayrollService) {}
+
+  @Get("salary-notify-logs")
+  listSalaryNotifyLogs(
+    @Query() query: Record<string, unknown>,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.payrollService.listSalaryNotifyLogs(query, req.user);
+  }
 
   @Post("salary-notify-logs")
   recordSalaryNotifyLog(

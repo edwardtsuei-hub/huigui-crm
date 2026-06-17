@@ -1,0 +1,5 @@
+姓名,企业微信账号,员工ID,用户ID,登录账号,部门,岗位,应发,提成,分润,扣款,实发,人员类型,差异状态
+程程,chengcheng,teacher-chengcheng,user-chengcheng,chengcheng,道冲元气,主理人,12000,2000,500,100,12400,正式,resolved
+程程,chengcheng-2,teacher-chengcheng-2,user-chengcheng-2,chengcheng-2,道冲元气,老师,8000,0,0,0,8000,正式,resolved
+外部老师,partner-teacher,teacher-partner,user-partner,partner-teacher,道冲元气,合作老师,3000,0,300,0,3300,合作老师,resolved
+未绑定员工,,teacher-no-wecom,user-no-wecom,no-wecom,熊抱大地,门店员工,5200,100,0,0,5300,正式,resolved

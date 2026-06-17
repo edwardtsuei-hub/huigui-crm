@@ -1982,8 +1982,12 @@ model EcotechInspectionRecord {
 model SalarySlip {
   id                  String   @id @db.VarChar(120)
   month               String   @db.VarChar(7)
+  publishBatchId      String?  @db.VarChar(160)
   teacherId           String   @db.VarChar(120)
   teacherName         String   @db.VarChar(120)
+  userId              String?  @db.VarChar(120)
+  wecomUserId         String?  @db.VarChar(128)
+  loginAccount        String?  @db.VarChar(64)
   grossAmount         Decimal  @db.Decimal(12, 2)
   commissionAmount    Decimal? @db.Decimal(12, 2)
   profitSharingAmount Decimal? @db.Decimal(12, 2)
@@ -1999,34 +2003,41 @@ model SalarySlip {
 
   @@unique([month, teacherId])
   @@index([month])
+  @@index([publishBatchId])
   @@index([teacherId])
   @@index([teacherName])
+  @@index([userId])
+  @@index([wecomUserId])
+  @@index([loginAccount])
   @@index([syncedAt])
 }
 
 model SalaryNotifyLog {
-  id          String   @id @db.VarChar(160)
-  month       String   @db.VarChar(7)
-  at          DateTime
-  actionLabel String   @db.VarChar(80)
-  modeLabel   String   @db.VarChar(80)
-  status      String   @db.VarChar(32)
-  tone        String?  @db.VarChar(32)
-  message     String   @db.Text
-  delivered   Json
-  skipped     Json
-  failed      Json
-  notifyUrl   String?  @db.VarChar(500)
-  createdBy   String   @db.VarChar(120)
-  createdAt   DateTime @default(now())
+  id             String   @id @db.VarChar(160)
+  month          String   @db.VarChar(7)
+  publishBatchId String?  @db.VarChar(160)
+  at             DateTime
+  actionLabel    String   @db.VarChar(80)
+  modeLabel      String   @db.VarChar(80)
+  status         String   @db.VarChar(32)
+  tone           String?  @db.VarChar(32)
+  message        String   @db.Text
+  delivered      Json
+  skipped        Json
+  failed         Json
+  notifyUrl      String?  @db.VarChar(500)
+  createdBy      String   @db.VarChar(120)
+  createdAt      DateTime @default(now())
 
   @@index([month, at])
+  @@index([publishBatchId])
   @@index([status])
   @@index([createdAt])
 }
 
 model PayrollDraftBatch {
   month           String    @id @db.VarChar(7)
+  publishBatchId  String?   @db.VarChar(160)
   drafts          Json
   publishedAt     DateTime?
   notifyStatus    String?   @db.VarChar(32)
@@ -2034,4 +2045,6 @@ model PayrollDraftBatch {
   updatedBy       String    @db.VarChar(120)
   updatedAt       DateTime  @updatedAt
   createdAt       DateTime  @default(now())
+
+  @@index([publishBatchId])
 }
