@@ -1,0 +1,132 @@
+{
+  "generatedAt": "2026-06-17T17:45:00+08:00",
+  "status": "readiness_matrix_ready_for_review",
+  "scope": "database 100-point readiness matrix",
+  "safety": {
+    "writesDatabase": false,
+    "productionSqlGenerated": false,
+    "productionSqlExecuted": false,
+    "schemaChanged": false,
+    "migrationGenerated": false,
+    "apiChanged": false,
+    "frontendChanged": false,
+    "deployed": false,
+    "restarted": false,
+    "rollbackTagCreated": false,
+    "deploymentAllowed": false
+  },
+  "productionReadOnlyBaseline": {
+    "RosterWeek": 6,
+    "RosterShift": 210,
+    "RosterShiftOrphan": 0,
+    "WeeklyReport": 10,
+    "WeeklyReportPayload": 19,
+    "WeeklyReportPayloadGroups": {
+      "api_db_first_bridge/IMPORTED": 13,
+      "legacy_weekly_workspace/IMPORTED": 3,
+      "legacy_weekly_workspace/NEEDS_REVIEW": 3
+    },
+    "FileRecord": 0,
+    "AuditLog": 27,
+    "Notification": 214,
+    "SalarySlip": 1,
+    "SalaryNotifyLog": 1,
+    "PayrollDraftBatch": 1
+  },
+  "readinessScore": {
+    "stableStorage": 70,
+    "stableSync": 65,
+    "stableQuery": 70,
+    "traceability": 75,
+    "rollback": 75,
+    "idempotentRerun": 70,
+    "releaseGate": 85,
+    "overall": 73
+  },
+  "lanes": [
+    {
+      "lane": "weekly_reports_correction",
+      "status": "waiting_for_explicit_rollback_rehearsal_authorization",
+      "readyForRollbackRehearsal": true,
+      "readyForCommit": false,
+      "nextStep": "user_authorizes_apply_draft_with_final_rollback",
+      "blockers": ["no_explicit_user_authorization_for_rollback_rehearsal"]
+    },
+    {
+      "lane": "weekly_report_payload_gate",
+      "status": "stable_gate",
+      "nextStep": "continue_readonly_shared_shared_monitoring",
+      "blockers": ["deploymentAllowed_false_until_real_write_postcheck"]
+    },
+    {
+      "lane": "roster",
+      "status": "db_stable_ui_blocked",
+      "nextStep": "wait_for_vite_source_or_sourcemap",
+      "blockers": ["blocked_waiting_for_vite_source"]
+    },
+    {
+      "lane": "employee_launch_evidence_archive",
+      "status": "schema_draft_only",
+      "wouldCreateEvidence": 81,
+      "nextStep": "authorize_prisma_schema_formal_design",
+      "blockers": [
+        "no_schema_change_authorized",
+        "local_attachments_unreachable",
+        "user_mapping_incomplete"
+      ]
+    },
+    {
+      "lane": "file_record_archive",
+      "status": "blocked_metadata_mapping",
+      "nextStep": "use_evidence_archive_before_FileRecord_promotion",
+      "blockers": [
+        "missing_storageKey_sourceFile_legacyAttachmentId",
+        "uploaderUserId_mapping_incomplete",
+        "local_files_unreachable"
+      ]
+    },
+    {
+      "lane": "notifications",
+      "status": "deferred_mapping",
+      "nextStep": "freeze_source_fingerprints_then_map_user_and_dedupe",
+      "blockers": ["Notification.userId_mapping_incomplete", "weekly_message_dedupe_incomplete"]
+    },
+    {
+      "lane": "audit_logs",
+      "status": "archive_pending_user_mapping",
+      "nextStep": "archive_actorText_then_map_user",
+      "blockers": ["AuditLog.userId_mapping_incomplete"]
+    },
+    {
+      "lane": "payroll_salary_slips",
+      "status": "local_changes_pending_test_db",
+      "nextStep": "separate_payroll_pr_test_db_migrate_verify_uat",
+      "blockers": [
+        "payroll_changes_uncommitted",
+        "test_database_migration_not_verified",
+        "employee_frontend_vite_source_blocked"
+      ]
+    }
+  ],
+  "recommendedOrder": [
+    "weekly_reports_rollback_rehearsal",
+    "weekly_reports_commit_if_second_authorized",
+    "weekly_reports_postcheck",
+    "employee_launch_evidence_archive_schema_design",
+    "employee_launch_evidence_archive_migration_draft_and_dryrun",
+    "payroll_test_db_migration_and_uat",
+    "roster_vite_source_patch",
+    "global_precheck_postcheck_rollback_gate"
+  ],
+  "currentForbiddenActions": [
+    "run_weekly_report_update_sql_without_explicit_authorization",
+    "replace_rollback_with_commit_without_second_authorization",
+    "mix_payroll_schema_uncommitted_changes_into_weekly_or_matrix_pr",
+    "patch_minified_vite_release_bundle",
+    "force_test_audit_evidence_into_real_business_tables",
+    "deploy",
+    "restart",
+    "create_rollback_tag"
+  ],
+  "nextClosestDataClosureStep": "authorize_ROLLBACK_transaction_rehearsal"
+}
