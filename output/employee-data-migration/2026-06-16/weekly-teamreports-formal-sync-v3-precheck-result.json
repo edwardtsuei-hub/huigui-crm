@@ -1,0 +1,159 @@
+{
+  "generatedAt": "2026-06-17T14:10:00+08:00",
+  "status": "blocked_existing_rows_precheck",
+  "scope": "weekly teamReports formal sync v3 write-plan SELECT-only precheck result",
+  "safety": {
+    "readOnlyPrecheck": true,
+    "writesDatabase": false,
+    "executedApply": false,
+    "productionSqlGenerated": false,
+    "executableWriteSqlGenerated": false,
+    "writeScriptGenerated": false,
+    "deployed": false,
+    "restarted": false,
+    "rollbackTagCreated": false,
+    "deploymentAllowed": false
+  },
+  "summary": {
+    "targetUsersFound": 4,
+    "targetWeeklyReportsAlreadyExist": 6,
+    "targetNaturalKeysAlreadyExist": 6,
+    "weeklyReportReviewItemsOnTargets": 7,
+    "weeklyReportPlanItemsOnTargets": 6,
+    "weeklyReportPayloadLinksOnTargets": 0,
+    "writePlanAllowed": false,
+    "nextRecommendedStage": "existing_sync_acceptance_and_diff_review"
+  },
+  "targetUsers": [
+    {
+      "loginAccount": "ChengCheng",
+      "id": "manual-chengcheng-dc9ce6815b1411f19d0d56ca918eaa42",
+      "status": "ACTIVE",
+      "managerUserId": null
+    },
+    {
+      "loginAccount": "greatchef",
+      "id": "manual-user-greatchef-20260529",
+      "status": "ACTIVE",
+      "managerUserId": "employee-lisali-user"
+    },
+    {
+      "loginAccount": "Han",
+      "id": "manual-han-672d26ec5b6511f19d0d56ca918eaa42",
+      "status": "ACTIVE",
+      "managerUserId": "employee-lisali-user"
+    },
+    {
+      "loginAccount": "lisali",
+      "id": "employee-lisali-user",
+      "status": "ACTIVE",
+      "managerUserId": null
+    }
+  ],
+  "existingWeeklyReports": [
+    {
+      "id": "wr_f6d96e2ecf408970676e6808",
+      "loginAccount": "greatchef",
+      "status": "SUBMITTED",
+      "dataScope": "REAL",
+      "partitionKey": "REAL",
+      "weekStartDate": "2026-05-24 16:00:00.000",
+      "weekEndDate": "2026-05-30 16:00:00.000",
+      "submittedAt": "2026-05-30 05:19:38.000",
+      "completedLength": 91,
+      "focusLength": 177,
+      "managerCommentLength": 0,
+      "reviewItems": 2,
+      "planItems": 1,
+      "payloadLinks": 0
+    },
+    {
+      "id": "wr_b3f18d418c27145ced5e627c",
+      "loginAccount": "Han",
+      "status": "SUBMITTED",
+      "dataScope": "REAL",
+      "partitionKey": "REAL",
+      "weekStartDate": "2026-05-24 16:00:00.000",
+      "weekEndDate": "2026-05-30 16:00:00.000",
+      "submittedAt": "2026-05-30 05:23:15.000",
+      "completedLength": 110,
+      "focusLength": 106,
+      "managerCommentLength": 0,
+      "reviewItems": 1,
+      "planItems": 1,
+      "payloadLinks": 0
+    },
+    {
+      "id": "wr_3e8fad063c44a5bba1ee02f4",
+      "loginAccount": "lisali",
+      "status": "SUBMITTED",
+      "dataScope": "REAL",
+      "partitionKey": "REAL",
+      "weekStartDate": "2026-05-24 16:00:00.000",
+      "weekEndDate": "2026-05-30 16:00:00.000",
+      "submittedAt": "2026-05-30 05:19:00.000",
+      "completedLength": 88,
+      "focusLength": 55,
+      "managerCommentLength": 0,
+      "reviewItems": 1,
+      "planItems": 1,
+      "payloadLinks": 0
+    },
+    {
+      "id": "wr_c681a1d1666dd11fde497046",
+      "loginAccount": "lisali",
+      "status": "SUBMITTED",
+      "dataScope": "REAL",
+      "partitionKey": "REAL",
+      "weekStartDate": "2026-05-31 16:00:00.000",
+      "weekEndDate": "2026-06-06 16:00:00.000",
+      "submittedAt": "2026-06-06 09:59:58.000",
+      "completedLength": 86,
+      "focusLength": 36,
+      "managerCommentLength": 131,
+      "reviewItems": 1,
+      "planItems": 1,
+      "payloadLinks": 0
+    },
+    {
+      "id": "wr_b361a1934ab724cd56c5da14",
+      "loginAccount": "ChengCheng",
+      "status": "SUBMITTED",
+      "dataScope": "REAL",
+      "partitionKey": "REAL",
+      "weekStartDate": "2026-06-07 16:00:00.000",
+      "weekEndDate": "2026-06-13 16:00:00.000",
+      "submittedAt": "2026-06-13 20:36:27.000",
+      "completedLength": 262,
+      "focusLength": 34,
+      "managerCommentLength": 35,
+      "reviewItems": 1,
+      "planItems": 1,
+      "payloadLinks": 0
+    },
+    {
+      "id": "wr_6bf6e9ba0d49a18000a3fb7a",
+      "loginAccount": "lisali",
+      "status": "SUBMITTED",
+      "dataScope": "REAL",
+      "partitionKey": "REAL",
+      "weekStartDate": "2026-06-07 16:00:00.000",
+      "weekEndDate": "2026-06-13 16:00:00.000",
+      "submittedAt": "2026-06-12 08:01:46.000",
+      "completedLength": 249,
+      "focusLength": 26,
+      "managerCommentLength": 131,
+      "reviewItems": 1,
+      "planItems": 1,
+      "payloadLinks": 0
+    }
+  ],
+  "payloadGate": {
+    "apiDbFirstImported": 13,
+    "legacyWeeklyWorkspaceImported": 3,
+    "legacyWeeklyWorkspaceNeedsReview": 3,
+    "sharedSharedDraft": 13,
+    "sharedSharedDraftDistinctSourceSha16": 13
+  },
+  "stopReason": "All six target WeeklyReport ids and natural keys already exist, so no create-style write package may be generated."
+}
