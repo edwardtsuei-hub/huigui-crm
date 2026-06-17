@@ -15,7 +15,7 @@
 
 - `blocked_waiting_for_vite_source`：员工端 Vite 源码未恢复，前端 UI 修复不能做。
 - `blocked_waiting_for_local_docker`：本机 Docker 不存在；仅阻塞 Docker 标准演练路径。
-- `blocked_waiting_for_history_identity_backfill_review`：旧薪资条和旧通知记录的 `publishBatchId / 身份字段` 仍需 dry-run 与人工复核。
+- `blocked_waiting_for_publish_batch_id_manual_assignment`：旧薪资条和旧通知记录的身份字段方案 A 已完成；`publishBatchId` 仍需人工指定 `2026-05` 批次并单独授权。
 
 ## 允许进入评审的内容
 
@@ -97,6 +97,20 @@ npm run verify:payroll-db -- \
 - `salary_slips_with_incomplete_identity`：1 条旧薪资条身份字段不完整。
 - `salary_slips_missing_publish_batch_id`：1 条旧薪资条或相关旧通知链路缺发布批次字段。
 - 旧通知记录 `recentNotifyLogs[0].publishBatchId=null`，需要纳入历史数据复核。
+
+历史回填 dry-run 和方案 A 真实回填已完成：
+
+- 证据目录：`output/payroll/history-identity-backfill-dryrun-20260617-232715`。
+- 结果文档：`docs/payroll-salary-slip-history-identity-backfill-dryrun-2026-06-17.md`。
+- 授权评审单：`docs/payroll-salary-slip-history-backfill-authorization-request-2026-06-17.md`。
+- 24 条使用者身分索引、1 条历史薪资条、1 条历史通知记录、1 条草稿批次已只读导出。
+- 1 条历史薪资条原为 `auto_update_candidate`，0 条人工身份冲突；2026-06-18 已按授权完成方案 A。
+- 受影响月份为 `2026-05`；旧薪资条和旧通知记录各有 1 条 `publishBatchId` 缺口，且没有可自动推断的发布批次候选。
+- 审查 SQL 默认 `ROLLBACK`，SHA256：`c0ebb809bf4253e2067b3e87b7a2c390c88dc3618dba74167d0f270f29c62ca0`。
+- 方案 A 执行包已准备：`output/payroll/history-identity-backfill-dryrun-20260617-232715/scheme-a-execution-package.md`。
+- 方案 A 生产只读 before-check 已执行，目标薪资条三项身份字段仍为 `NULL`；结果 SHA256：`92b9c932856a10932a2706f5161676940a1aa2f64b2fb9f98da8d2eda18a1c23`。
+- 方案 A 执行结果：`docs/payroll-salary-slip-history-backfill-result-2026-06-18.md`。
+- 方案 A 后 payroll DB verify：`identityIncomplete=0`，warning 只剩 `salary_slips_missing_publish_batch_id`。
 
 必须确认：
 
@@ -225,23 +239,39 @@ npm run audit:payroll-package -- \
 
 ## 历史数据回填清单
 
-历史回填只能先 dry-run：
+历史回填已经完成一次只读导出和 dry-run：
 
 ```bash
 node scripts/migrations/payroll/salary-identity-backfill-dryrun.mjs \
-  --users-tsv output/payroll/users.tsv \
-  --salary-slips-tsv output/payroll/salary-slips.tsv \
-  --out output/payroll/salary-identity-backfill-plan.json \
-  --markdown-out output/payroll/salary-identity-backfill-plan.md \
-  --sql-out output/payroll/salary-identity-backfill-plan.sql \
+  --users-tsv output/payroll/history-identity-backfill-dryrun-20260617-232715/users.tsv \
+  --salary-slips-tsv output/payroll/history-identity-backfill-dryrun-20260617-232715/salary-slips.tsv \
+  --out output/payroll/history-identity-backfill-dryrun-20260617-232715/salary-identity-backfill-plan.json \
+  --markdown-out output/payroll/history-identity-backfill-dryrun-20260617-232715/salary-identity-backfill-plan.md \
+  --sql-out output/payroll/history-identity-backfill-dryrun-20260617-232715/salary-identity-backfill-plan.sql \
   --no-write
 ```
+
+本轮 dry-run 原始结果：
+
+- `auto_update_candidate`：1 条。
+- `needsManualReview`：0 条身份冲突。
+- 旧通知记录 `publishBatchId`：1 条缺失，受影响月份 `2026-05` 无自动候选。
+- SQL 默认 `ROLLBACK`。
+- SQL SHA256：`c0ebb809bf4253e2067b3e87b7a2c390c88dc3618dba74167d0f270f29c62ca0`。
+
+方案 A 已按授权完成：
+
+- 更新 1 条 `SalarySlip` 的 `userId / wecomUserId / loginAccount`。
+- 不回填 `publishBatchId`。
+- 不更新 `SalaryNotifyLog`。
+- 执行结果文档：`docs/payroll-salary-slip-history-backfill-result-2026-06-18.md`。
 
 人工复核要求：
 
 - `name_hint_needs_manual` 不能自动回填。
 - `identity_conflict_needs_manual` 必须逐条确认。
 - `ambiguous_strong_match_needs_manual` 必须逐条确认。
+- 旧薪资条和旧通知记录的 `publishBatchId` 回填不由方案 A 覆盖；必须先人工指定 `2026-05` 发布批次，再另行确认和授权。
 - SQL 默认 `ROLLBACK`，测试库确认后才能人工改为 `COMMIT`。
 - SQL 文件必须记录 SHA256。
 

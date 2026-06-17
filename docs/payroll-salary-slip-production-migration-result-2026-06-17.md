@@ -19,6 +19,7 @@
 
 - 未重复执行生产 `db:migrate:deploy`。
 - 未执行历史薪资身份回填。
+- 未执行历史通知记录 `publishBatchId` 回填。
 - 未发送企业微信通知。
 - 未部署。
 - 未重启线上服务。
@@ -56,15 +57,29 @@
 
 以下 warning 来自迁移前旧数据，不代表 schema migration 失败：
 
-- `salary_slips_with_incomplete_identity`：生产已有 1 条旧薪资条身份字段不完整。
+- `salary_slips_with_incomplete_identity`：schema migration 收口时曾有 1 条旧薪资条身份字段不完整；2026-06-18 已通过方案 A 回填解决，当前 `identityIncomplete=0`。
 - `salary_slips_missing_publish_batch_id`：生产已有 1 条旧薪资条缺 `publishBatchId`。
 - 近期旧通知记录中存在 `publishBatchId=null` 的历史记录。
 
 处理要求：
 
 - 不能把本次 schema migration 视为历史数据回填完成。
-- 历史薪资条和旧通知记录必须单独导出、dry-run、人工复核后才能真实回填。
+- 历史薪资条和旧通知记录已完成只读导出和 dry-run；2026-06-18 已按用户授权完成方案 A 身份字段回填。`publishBatchId` 真实回填仍必须人工指定批次并单独授权。
 - 生产导入和员工查看仍必须使用明确身份字段，不允许退回姓名授权。
+
+## 后续历史回填 dry-run
+
+本次 schema 收口后，已另行完成历史回填 dry-run。2026-06-18 已按用户授权完成方案 A 身份字段回填：
+
+- 证据目录：`output/payroll/history-identity-backfill-dryrun-20260617-232715`
+- 结果文档：`docs/payroll-salary-slip-history-identity-backfill-dryrun-2026-06-17.md`
+- 使用者身分索引：24 条。
+- 历史薪资条：1 条，身份字段为 `auto_update_candidate`，0 条人工身份冲突。
+- 历史通知记录：1 条，缺 `publishBatchId`，受影响月份 `2026-05` 无可自动推断的发布批次候选。
+- 草稿批次：1 条，未能提供 `2026-05` 的候选 `publishBatchId`。
+- 审查 SQL 默认 `ROLLBACK`，SHA256：`c0ebb809bf4253e2067b3e87b7a2c390c88dc3618dba74167d0f270f29c62ca0`。
+- 方案 A 执行结果：`docs/payroll-salary-slip-history-backfill-result-2026-06-18.md`。
+- 方案 A 后 `identityIncomplete=0`，剩余 warning 为 `salary_slips_missing_publish_batch_id`。
 
 ## 证据文件
 
@@ -83,7 +98,7 @@
 ## 剩余事项
 
 1. 恢复员工端 Vite 源码后再做上传入口、导入中心深链预填和上传后返回闭环。
-2. 对历史薪资条和旧通知记录做身份字段与 `publishBatchId` dry-run，人工复核后再决定是否回填。
+2. 若要回填 `publishBatchId`，必须先指定 `2026-05` 的发布批次，并重新生成 dry-run 与授权。
 3. 复核薪资维护权限账号，补齐 `FINANCE` 或 `action.payroll.publish`。
 4. 企业微信通知仍需先走测试应用或 dry-run，不得直接真实发送。
 5. 完整发布前仍需前端真实登录、上传、发布、通知、员工本人查看闭环验收。
