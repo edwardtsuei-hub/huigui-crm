@@ -8,10 +8,10 @@
 
 - 薪资批量页已出现“去导入中心”“上传薪资表后返回核对”等引导文案，但页面本身没有直接上传控件。
 - 实际上传入口位于财务文件导入中心 `/finance/imports`，文件类型选项包含“薪资表”，支持 `.xlsx`、`.xls`、`.csv`。
-- 当前薪资前端代码位于静态压缩发布包 `apps/web/public/employee-frontend/releases/20260616090241`，未定位到可维护 Vite 源码；后续修改应先恢复或确认源代码，不建议直接修改压缩发布包。
+- 当前线上薪资前端仍位于静态压缩发布包 `apps/web/public/employee-frontend/releases/20260616090241`；本轮已新增可维护重建版 Vite 工程 `apps/employee-frontend`，但尚未接入正式静态 release 和部署流程。
 - 本机隔离 MySQL 后端演练已完成：migration、只读 DB 验收、UAT API execute 和审计包均已通过。
 - 生产 schema migration `20260617110000_payroll_publish_batch_identity` 已完成，字段和索引验收通过；历史旧薪资条身份字段已按方案 A 回填完成。旧薪资条和旧通知记录的 `publishBatchId` 已按方案 B 主方案回填到 `salary-publish-2026-05-codex-single-trial`，`PayrollDraftBatch` 按授权未纳入写入。
-- 前端真实登录、上传入口 UI 和上传后返回闭环仍等待员工端 Vite 源码恢复。
+- 前端上传入口 UI、导入中心深链和上传后返回闭环已在 `apps/employee-frontend` 本地实现；前端真实登录、上传、发布、通知记录和员工本人查看闭环仍需测试账号验收，且当前未部署。
 
 ## 修复目标
 
@@ -35,6 +35,21 @@
 | P2 | 本地测试环境 | 提供可复现 mock 或一键本地联调环境 |
 
 ## 工作线 A：前端上传入口与导入体验
+
+当前实现位置：
+
+```text
+apps/employee-frontend
+```
+
+本地状态：
+
+- `npm run lint:employee` 通过。
+- `npm run build:employee` 通过。
+- `npm run lint` 通过。
+- `npm run build` 通过。
+- `npm run preflight:payroll` 当前只剩 `blocked_waiting_for_local_docker` 环境阻塞。
+- 未修改旧压缩 release，未部署。
 
 ### A1. 薪资批量页增加主入口
 
@@ -274,9 +289,9 @@
 
 范围：
 
-- 找回或确认薪资前端 Vite 源码。
-- 修改 `/payroll/batch` 上传入口。
-- 修改 `/finance/imports` 深链预填和返回。
+- 评审 `apps/employee-frontend` 作为新的薪资前端基线。
+- 验证 `/payroll/batch` 上传入口。
+- 验证 `/finance/imports` 深链预填和返回。
 - 做桌面 / 手机截图验证。
 
 交付：
@@ -318,16 +333,16 @@
 
 ## 推荐实施顺序
 
-1. 先定位可维护前端源码，确认不能直接改压缩发布包。
-2. 完成 P0 前端入口和深链返回。
-3. 完成 P0 发布前确认摘要。
-4. 完成 P1 后端查询优化和权限收紧。
-5. 补齐回归测试。
-6. 再处理 P2 审计保留和本地环境优化。
+1. 评审 `apps/employee-frontend` 是否作为新的员工端源码基线。
+2. 用测试账号验证登录、上传、返回、发布、通知记录和员工本人查看。
+3. 设计新员工端静态交付包流程，不直接覆盖旧 release。
+4. 补发布前确认摘要的最终交互细节。
+5. 等测试账号和发布路径确认后，再做真实上传链路验证。
 
 ## 暂不建议做的事
 
 - 不建议直接修改 `apps/web/public/employee-frontend/releases/20260616090241` 里的压缩 JS。
+- 不建议在未完成 Go / No-Go 前用 `apps/employee-frontend/dist` 直接覆盖线上 release。
 - 不建议在没有数据库和企业微信 mock 的情况下做真实发布测试。
 - 不建议只加一个“去导入中心”按钮就算完成，因为真实问题是上传、返回、核对、发布的闭环不顺。
 

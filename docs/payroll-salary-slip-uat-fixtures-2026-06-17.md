@@ -43,11 +43,11 @@ tests/fixtures/payroll/salary-upload-uat-unresolved-2026-06.csv
 - 这些样例只用于本地 / 测试库 / UAT。
 - 不写生产数据库。
 - 不用于真实薪资金额。
-- 员工端 Vite 源码恢复前，不能用这些样例直接修改压缩发布包。
+- 员工端 Vite 候选正式接入 release 前，不能用这些样例直接修改压缩发布包。
 
 ## 生成后端 API payload
 
-当前员工端 Vite 源码仍未恢复时，可以先用样例生成后端接口 payload：
+在员工端 Vite 候选完成测试账号验收前，可以先用样例生成后端接口 payload：
 
 ```bash
 npm run fixture:payroll-payload -- \
