@@ -1,0 +1,85 @@
+{
+  "generatedAt": "2026-06-17T17:35:00+08:00",
+  "status": "waiting_for_explicit_rollback_rehearsal_authorization",
+  "scope": "weekly teamReports correction execution authorization gate",
+  "sourcePrs": [14, 15],
+  "sourceFiles": {
+    "fingerprintPackage": "output/employee-data-migration/2026-06-16/weekly-teamreports-correction-fingerprint-package.json",
+    "applyDraftSql": "output/employee-data-migration/2026-06-16/weekly-teamreports-correction-apply-draft.sql",
+    "rollbackDraftSql": "output/employee-data-migration/2026-06-16/weekly-teamreports-correction-rollback-draft.sql",
+    "sqlDraftPlan": "output/employee-data-migration/2026-06-16/weekly-teamreports-correction-sql-draft.json"
+  },
+  "safety": {
+    "writesDatabase": false,
+    "executedApply": false,
+    "executedRollback": false,
+    "executedRollbackRehearsal": false,
+    "productionSqlExecuted": false,
+    "commitStatementAuthorized": false,
+    "deployed": false,
+    "restarted": false,
+    "rollbackTagCreated": false,
+    "schemaChanged": false,
+    "migrationGenerated": false,
+    "apiChanged": false,
+    "frontendChanged": false,
+    "deploymentAllowed": false
+  },
+  "sqlDraftCounts": {
+    "apply": {
+      "updateStatements": 10,
+      "commitStatements": 0,
+      "rollbackStatements": 1,
+      "shaGuards": 10,
+      "payloadLinkGuards": 10,
+      "childReportIdGuards": 4
+    },
+    "rollback": {
+      "updateStatements": 10,
+      "commitStatements": 0,
+      "rollbackStatements": 1,
+      "shaGuards": 10,
+      "payloadLinkGuards": 10,
+      "childReportIdGuards": 4
+    }
+  },
+  "rollbackRehearsalRequiresExplicitUserAuthorization": true,
+  "commitRequiresSecondExplicitUserAuthorization": true,
+  "rollbackRehearsalPassCriteria": {
+    "beforeShaMatches": 12,
+    "targetPayloadLinksMustRemain": 0,
+    "payloadGrouping": {
+      "api_db_first_bridge_IMPORTED": 13,
+      "legacy_weekly_workspace_IMPORTED": 3,
+      "legacy_weekly_workspace_NEEDS_REVIEW": 3
+    },
+    "sharedSharedDraft": 13,
+    "sharedDistinctSha16": 13,
+    "applyAffectedRowsExpected": 10,
+    "applyPostcheckAfterShaExpected": 10,
+    "afterRollbackBeforeShaMatchesAgain": 12
+  },
+  "stopConditions": [
+    "Any before SHA mismatch",
+    "Any target WeeklyReportPayload direct link greater than zero",
+    "Payload grouping differs from 13/3/3",
+    "shared/shared draft count differs from 13",
+    "shared distinct sourceSha16 differs from 13",
+    "Any apply affectedRows value differs from 1 during rollback rehearsal",
+    "Any apply postcheck after SHA mismatch during rollback rehearsal",
+    "Any before SHA mismatch after rollback rehearsal"
+  ],
+  "nextAllowedStep": "wait_for_user_authorization_to_run_apply_draft_with_final_rollback",
+  "stillForbidden": [
+    "COMMIT",
+    "production write execution",
+    "deployment",
+    "restart",
+    "rollback tag",
+    "schema change",
+    "migration",
+    "API change",
+    "frontend change",
+    "mixing payroll/schema unrelated work into this lane"
+  ]
+}
