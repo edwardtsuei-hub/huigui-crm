@@ -251,6 +251,7 @@ function buildReport() {
     "matching names alone do not authorize salary slip access",
     "payroll maintenance no longer allows finance-looking text or member-management permission",
     "salary notify logs keep publish batch id and do not prune history",
+    "salary notify logs create distinct default ids for repeated publish batch records",
     "salary identity backfill dry-run only auto-updates explicit identity matches",
     "SalarySlips sync rejects rows without explicit employee identity before writing",
     "SalarySlips sync rejects empty and invalid amount payloads before writing",

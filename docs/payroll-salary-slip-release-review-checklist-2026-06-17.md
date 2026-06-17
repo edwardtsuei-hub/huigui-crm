@@ -48,7 +48,7 @@ git diff --name-only -- apps/web/public/employee-frontend/releases/2026061609024
 
 期望结果：
 
-- `npm run test:payroll` 为 47/47 passed。
+- `npm run test:payroll` 为 48/48 passed。
 - `npm run preflight:payroll` 可以是 `passed_with_blockers`，但不能有 `failures`。
 - 压缩发布包 diff 必须为空。
 - 预检输出应包含 release route evidence，说明当前仅在压缩 release 中命中 `/payroll/batch`、`/finance/imports` 和“上传薪资表”，且没有 `.map` 或 `sourceMappingURL` 可还原源码。
@@ -113,6 +113,7 @@ npm run fixture:payroll-payload -- \
 - 正式薪资条同步只替换当前 `publishBatchId`，不能覆盖同月其他发布批次。
 - 正式薪资条默认 ID 由月份、发布批次和员工身份稳定生成，不受导入行号影响；同一批次重跑稳定覆盖，不同批次各自留档。
 - 通知记录写入同一个 `publishBatchId`。
+- 通知记录未显式传 `id` 时，默认 ID 必须包含发布批次并保持唯一，避免同批次多次通知覆盖历史。
 - 通知记录不能缺失 `publishBatchId`；旧入口未传时，只允许后端从当月唯一发布批次自动补齐。
 - 合作老师不进入通知名单。
 - 无企微账号员工不进入企微通知名单。

@@ -20,7 +20,7 @@
 本轮已完成：
 
 - 补齐 payroll 后端 schema、migration、服务逻辑、权限收紧和通知追溯。
-- 将薪资 mock/服务/UAT 工具回归扩展到 47 个场景。
+- 将薪资 mock/服务/UAT 工具回归扩展到 48 个场景。
 - 新增薪资身份字段回填 dry-run 脚本、真实迁移运行手册、上线前预检脚本和只读数据库验收脚本。
 - 新增真实联调 UAT 薪资上传 CSV 样例和预期说明。
 - 新增 UAT CSV 转后端 API payload 工具，便于前端源码恢复前先测后端链路。
@@ -45,7 +45,7 @@
 - `npm run db:generate` 通过。
 - `npm run preflight:payroll` 通过，状态为 `passed_with_blockers`。
 - `npm run verify:payroll-db` 可运行；当前状态为 `blocked_waiting_for_database_connection`。
-- `npm run test:payroll` 通过：47/47。
+- `npm run test:payroll` 通过：48/48。
 - `npm run lint -w @huigui/api` 通过。
 - `npm run build` 通过。
 
@@ -104,6 +104,7 @@
 - 已移除“角色名 / 部门 / 姓名像财务或办公室”这类文本正则放行。
 - 通知记录不再 prune 删除旧记录。
 - 工作区读取通知记录改为最近 240 条展示，历史记录保留在库内。
+- 通知记录默认 ID 包含 `publishBatchId` 和随机段；同一批次重复通知默认新增审计记录，不会因同月时间戳撞 ID 覆盖历史。
 - `GET /salary-notify-logs` 支持按月份和发布批次查询历史通知记录，默认最多返回 240 条，最大 1000 条。
 - `POST /salary-notify-logs` 必须带 `publishBatchId`，或能从当月唯一发布批次自动推断；否则拒绝写入，避免通知记录与发布批次断链。
 - `GET /salary-notify-logs` 必须带 `month` 或 `publishBatchId`，避免无筛选拉取通知历史。
@@ -138,6 +139,7 @@
 - 仅姓名相同不能授权查看薪资条。
 - 财务文本 / 成员管理权限不再误放行薪资维护。
 - 通知记录保存 publishBatchId 且不删除历史。
+- 通知记录默认 ID 带发布批次，同一发布批次多次通知会保留多条历史。
 - 通知记录可按 `month / publishBatchId` 查询，工作区读取不再无上限拉全量历史。
 - 通知记录写入必须带 publishBatchId；如旧入口未传但当月只有一个发布批次，后端会自动补齐；当月多批次时必须显式传。
 - 通知记录查询必须带月份或发布批次。
@@ -175,7 +177,7 @@
 | `npm run db:generate` | 通过 |
 | `npm run preflight:payroll` | 通过，`passed_with_blockers` |
 | `npm run verify:payroll-db` | 可运行，当前阻塞于数据库连接 |
-| `npm run test:payroll` | 通过，47/47 |
+| `npm run test:payroll` | 通过，48/48 |
 | `npm run lint -w @huigui/api` | 通过 |
 | `npm run build` | 通过 |
 | Docker | 不存在，`docker: command not found` |
