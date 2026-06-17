@@ -1,12 +1,12 @@
 # Payroll 历史薪资身份回填 dry-run 结果
 
 日期：2026-06-17
-状态：`dry_run_completed_review_required`
+状态：`dry_run_completed_scheme_a_applied`
 本地证据目录：`output/payroll/history-identity-backfill-dryrun-20260617-232715`
 
 ## 结论
 
-本轮只做生产只读导出和本地 dry-run，没有写入生产库。
+本轮先做生产只读导出和本地 dry-run。2026-06-18 已按用户授权完成方案 A 真实回填：只更新 1 条历史 `SalarySlip` 的 `userId / wecomUserId / loginAccount`，不回填 `publishBatchId`，不更新通知记录。
 
 结果：
 
@@ -24,12 +24,12 @@
 
 旧通知记录和旧薪资条的 `publishBatchId` 仍需要人工确认应归属哪个发布批次；本轮补查 `PayrollDraftBatch` 后，没有找到可自动推断的同月份候选 `publishBatchId`，因此没有生成发布批次写入 SQL。
 
-方案 A 执行包已准备完成，并已执行生产只读 before-check：目标 `SalarySlip` 的 `userId / wecomUserId / loginAccount` 仍为 `NULL`，匹配使用者存在。该步骤仍未写生产库。
+方案 A 执行包已准备完成，并已执行生产只读 before-check：目标 `SalarySlip` 的 `userId / wecomUserId / loginAccount` 仍为 `NULL`，匹配使用者存在。随后用户已授权方案 A，真实回填已完成。
 
 ## 写库状态
 
-- 生产写库：未执行。
-- 历史薪资身份字段回填：未执行。
+- 生产写库：已执行方案 A。
+- 历史薪资身份字段回填：已完成 1 条 `SalarySlip`。
 - 旧通知记录 `publishBatchId` 回填：未执行。
 - 企业微信通知：未发送。
 - 部署 / 重启：未执行。
@@ -59,6 +59,8 @@
 | `output/payroll/history-identity-backfill-dryrun-20260617-232715/scheme-a-guarded-rollback.sql` | 方案 A 条件回滚模板，默认 `ROLLBACK` |
 | `output/payroll/history-identity-backfill-dryrun-20260617-232715/scheme-a-postcheck.sql` | 方案 A 授权写入后的只读验收 SQL |
 | `output/payroll/history-identity-backfill-dryrun-20260617-232715/scheme-a-execution-manifest.json` | 方案 A 执行包 manifest |
+| `output/payroll/history-identity-backfill-scheme-a-apply-20260618-053755/scheme-a-apply-result.md` | 方案 A 真实执行结果摘要 |
+| `docs/payroll-salary-slip-history-backfill-result-2026-06-18.md` | 方案 A 结果文档 |
 
 SQL SHA256：
 
@@ -74,20 +76,19 @@ c0ebb809bf4253e2067b3e87b7a2c390c88dc3618dba74167d0f270f29c62ca0
 
 ## 人工复核要求
 
-在任何真实回填前，必须人工确认：
+方案 A 身份字段已回填完成。任何后续 `publishBatchId` 真实回填前，必须人工确认：
 
-- 1 条 `auto_update_candidate` 是否确实对应唯一使用者。
 - `2026-05` 缺失的薪资条 `publishBatchId` 应补成哪个发布批次；当前无自动候选。
 - `2026-05` 缺失的通知记录 `publishBatchId` 应补成哪个发布批次；当前无自动候选。
-- 是否需要先在 staging / 测试库执行同一 SQL 并重新跑 payroll DB verify。
+- 是否需要先在 staging / 测试库执行 `publishBatchId` SQL 并重新跑 payroll DB verify。
 
 ## 下一步授权边界
 
 如要进入真实回填，必须另行授权，且授权范围应明确区分：
 
-1. 是否允许按方案 A 只回填历史薪资条 `userId / wecomUserId / loginAccount`。
-2. 是否允许同时回填历史薪资条 `publishBatchId`。
-3. 是否允许回填历史通知记录 `publishBatchId`。
+1. 是否允许回填历史薪资条 `publishBatchId`。
+2. 是否允许回填历史通知记录 `publishBatchId`。
+3. `2026-05` 应使用哪个目标 `publishBatchId`。
 4. 是否要求先执行 staging 写入演练。
 
 在上述授权前，当前状态只能视为 dry-run 完成，不能视为历史数据回填完成。
