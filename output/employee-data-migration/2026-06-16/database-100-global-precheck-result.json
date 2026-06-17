@@ -1,0 +1,48 @@
+{
+  "generatedAt": "2026-06-17T18:00:00+08:00",
+  "status": "readonly_precheck_passed_with_observations",
+  "sourceSql": "output/employee-data-migration/2026-06-16/database-100-global-precheck.sql",
+  "safety": {
+    "writesDatabase": false,
+    "productionSqlExecuted": false,
+    "selectOnlyExecuted": true,
+    "schemaChanged": false,
+    "migrationGenerated": false,
+    "apiChanged": false,
+    "frontendChanged": false,
+    "deployed": false,
+    "restarted": false,
+    "rollbackTagCreated": false,
+    "deploymentAllowed": false
+  },
+  "hardGateMismatches": 0,
+  "hardGateSummary": {
+    "RosterWeek": "matched 6",
+    "RosterShift": "matched 210",
+    "RosterShiftOrphan": "matched 0",
+    "WeeklyReportPayloadTotal": "matched 19",
+    "WeeklyReportPayloadGroups": "matched 13/3/3",
+    "sharedSharedDraft": "matched 13",
+    "sharedDistinctSha16": "matched 13",
+    "WeeklyReportReviewItemOrphan": "matched 0",
+    "WeeklyReportPlanItemOrphan": "matched 0",
+    "weeklyCorrectionTargetPayloadLinks": "matched 0",
+    "weeklyCorrectionBeforeSha": "matched 12/12",
+    "EmployeeLaunchEvidenceArchiveTableExists": "matched 0",
+    "FileRecordCount": "matched 0"
+  },
+  "observationsNotHardGates": {
+    "Notification": 214,
+    "AuditLog": 27,
+    "SalarySlip": 1,
+    "SalaryNotifyLog": 1,
+    "PayrollDraftBatch": 1,
+    "SalarySlipIdentityColumnsPresent": {
+      "loginAccount": 0,
+      "publishBatchId": 0,
+      "userId": 0,
+      "wecomUserId": 0
+    }
+  },
+  "nextClosestDataClosureStep": "authorize_ROLLBACK_transaction_rehearsal"
+}
