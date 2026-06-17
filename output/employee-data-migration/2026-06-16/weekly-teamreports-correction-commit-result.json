@@ -1,0 +1,63 @@
+{
+  "generatedAt": "2026-06-17T22:20:00+08:00",
+  "status": "committed_postcheck_passed",
+  "scope": "weekly teamReports correction real COMMIT result",
+  "authorization": {
+    "explicitRollbackRehearsalAuthorizationReceived": true,
+    "explicitCommitAuthorizationReceived": true,
+    "commitAuthorizationPhrase": "授权真实 COMMIT"
+  },
+  "execution": {
+    "sourceRollbackDraft": "output/employee-data-migration/2026-06-16/weekly-teamreports-correction-apply-draft.sql",
+    "temporaryCommitSql": "/tmp/weekly-teamreports-correction-apply-commit.sql",
+    "onlyFinalStatementChangedFromRollbackToCommit": true,
+    "finalStatement": "COMMIT",
+    "transcript": "output/employee-data-migration/2026-06-16/weekly-teamreports-correction-commit-transcript.tsv",
+    "executedCommit": true,
+    "deployed": false,
+    "restarted": false,
+    "rollbackTagCreated": false,
+    "schemaChanged": false,
+    "migrationExecuted": false,
+    "apiChanged": false,
+    "frontendChanged": false
+  },
+  "preCommit": {
+    "globalPrecheck": "output/employee-data-migration/2026-06-16/database-100-global-precheck-before-commit-verify.json",
+    "mismatches": 0,
+    "sqlGuardFailedChecks": 0
+  },
+  "commitTranscript": {
+    "rows": 46,
+    "applyPrecheckMatches": 10,
+    "affectedRowsAllOne": true,
+    "affectedRows": 10,
+    "applyPostcheckMatches": 10
+  },
+  "postCommit": {
+    "oldBaselinePrecheck": "output/employee-data-migration/2026-06-16/database-100-global-precheck-after-commit-old-baseline-verify.json",
+    "oldBaselineExpectedMismatches": 10,
+    "finalBaselinePrecheck": "output/employee-data-migration/2026-06-16/database-100-global-precheck-after-commit-verify.json",
+    "finalBaselineMismatches": 0,
+    "globalPrecheckSqlUpdatedToFinalSha": true
+  },
+  "postCommitGate": {
+    "rosterWeek": 6,
+    "rosterShift": 210,
+    "orphanRosterShift": 0,
+    "weeklyReportPayloadTotal": 19,
+    "apiDbFirstBridgeImported": 13,
+    "legacyWeeklyWorkspaceImported": 3,
+    "legacyWeeklyWorkspaceNeedsReview": 3,
+    "sharedSharedDraft": 13,
+    "sharedDistinctSha16": 13,
+    "weeklyCorrectionTargetPayloadLinks": 0,
+    "weeklyFinalShaChecks": 12
+  },
+  "stillRequired": [
+    "separate D-line release decision before any deployment",
+    "payroll migration test/prod authorization before salary slip schema reaches production",
+    "EmployeeLaunchEvidenceArchive schema authorization before archive schema reaches production",
+    "Vite source recovery before B-line frontend fixes"
+  ]
+}

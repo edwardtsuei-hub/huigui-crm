@@ -1,6 +1,6 @@
 {
   "generatedAt": "2026-06-17T17:55:00+08:00",
-  "status": "select_only_precheck_ready",
+  "status": "select_only_precheck_ready_final_sha_after_weekly_commit",
   "scope": "database 100 readiness global precheck",
   "files": {
     "markdown": "docs/database-100-global-precheck-2026-06-17.md",
@@ -41,7 +41,8 @@
     },
     "weeklyCorrection": {
       "targetPayloadLinks": 0,
-      "beforeShaChecks": 12
+      "finalShaChecks": 12,
+      "committed": true
     },
     "archive": {
       "EmployeeLaunchEvidenceArchiveTableExists": 0,
@@ -64,22 +65,20 @@
   },
   "blocksIf": [
     "Any non-null expectedValue differs from actualValue",
-    "Any weekly correction before SHA differs from expectedValue",
+    "Any weekly correction final SHA differs from expectedValue",
     "Any target WeeklyReport direct payload link is greater than zero",
     "shared/shared draft or distinct sourceSha16 grows",
     "RosterShift orphan count is greater than zero",
     "WeeklyReportReviewItem or WeeklyReportPlanItem orphan count is greater than zero"
   ],
   "nextUsage": [
-    "before weekly ROLLBACK transaction rehearsal",
-    "before weekly real COMMIT window",
+    "after weekly real COMMIT as the current production baseline",
+    "before future data correction windows",
     "before EmployeeLaunchEvidenceArchive schema or migration draft",
     "before payroll test DB migration and UAT judgment",
     "before release decision"
   ],
   "stillRequiresExplicitAuthorization": [
-    "weekly apply draft ROLLBACK transaction rehearsal",
-    "weekly real COMMIT",
     "schema change",
     "migration",
     "deployment",

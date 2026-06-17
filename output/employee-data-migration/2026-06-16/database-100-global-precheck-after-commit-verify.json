@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-17T14:16:53.724Z",
+  "generatedAt": "2026-06-17T14:15:58.552Z",
   "status": "passed",
-  "input": "output/employee-data-migration/2026-06-16/database-100-global-precheck.tsv",
+  "input": "output/employee-data-migration/2026-06-16/database-100-global-precheck-after-commit.tsv",
   "safety": {
     "writesDatabase": false,
     "readsDatabase": false,
