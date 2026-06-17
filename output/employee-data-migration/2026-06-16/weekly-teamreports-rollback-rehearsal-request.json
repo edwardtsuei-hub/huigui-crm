@@ -1,0 +1,181 @@
+{
+  "generatedAt": "2026-06-17T13:35:46.179Z",
+  "status": "ready_to_request_explicit_rollback_rehearsal_authorization",
+  "scope": "weekly teamReports rollback rehearsal authorization request",
+  "exactAuthorizationPhrase": "授权执行 weekly teamReports ROLLBACK 事务试跑",
+  "currentGate": {
+    "canRequestRollbackRehearsalAuthorization": true,
+    "rollbackRehearsalAuthorizedByThisArtifact": false,
+    "commitAllowed": false,
+    "deploymentAllowed": false,
+    "productionWriteAllowed": false
+  },
+  "inputs": {
+    "globalPrecheck": "output/employee-data-migration/2026-06-16/database-100-global-precheck-verify-result.json",
+    "sqlGuard": "output/employee-data-migration/2026-06-16/weekly-teamreports-correction-sql-guard-result.json",
+    "writeGate": "output/employee-data-migration/2026-06-16/weekly-teamreports-correction-write-gate-result.json",
+    "authorization": "output/employee-data-migration/2026-06-16/weekly-teamreports-correction-execution-authorization.json"
+  },
+  "rehearsalPlan": {
+    "purpose": "Run the already-guarded apply draft inside a transaction that ends with ROLLBACK, then verify no production data remained changed.",
+    "applyDraftSql": "output/employee-data-migration/2026-06-16/weekly-teamreports-correction-apply-draft.sql",
+    "fingerprintPrecheckSql": "output/employee-data-migration/2026-06-16/weekly-teamreports-correction-fingerprint-package.precheck.sql",
+    "globalPrecheckSql": "output/employee-data-migration/2026-06-16/database-100-global-precheck.sql",
+    "verifier": "scripts/migrations/employee-data/weekly-teamreports-correction-rehearsal-verify.mjs",
+    "sqlMustEndWith": "ROLLBACK",
+    "expectedAffectedRows": 10,
+    "expectedAfterShaMatches": 10,
+    "afterRollbackPrecheckRequired": true
+  },
+  "passCriteria": {
+    "beforeShaMatches": 12,
+    "targetPayloadLinksMustRemain": 0,
+    "payloadGrouping": {
+      "api_db_first_bridge_IMPORTED": 13,
+      "legacy_weekly_workspace_IMPORTED": 3,
+      "legacy_weekly_workspace_NEEDS_REVIEW": 3
+    },
+    "sharedSharedDraft": 13,
+    "sharedDistinctSha16": 13,
+    "applyAffectedRowsExpected": 10,
+    "applyPostcheckAfterShaExpected": 10,
+    "afterRollbackBeforeShaMatchesAgain": 12
+  },
+  "stopConditions": [
+    "Any before SHA mismatch",
+    "Any target WeeklyReportPayload direct link greater than zero",
+    "Payload grouping differs from 13/3/3",
+    "shared/shared draft count differs from 13",
+    "shared distinct sourceSha16 differs from 13",
+    "Any apply affectedRows value differs from 1 during rollback rehearsal",
+    "Any apply postcheck after SHA mismatch during rollback rehearsal",
+    "Any before SHA mismatch after rollback rehearsal"
+  ],
+  "stillForbidden": [
+    "COMMIT",
+    "production write execution",
+    "deployment",
+    "restart",
+    "rollback tag",
+    "schema change",
+    "migration",
+    "API change",
+    "frontend change",
+    "mixing payroll/schema unrelated work into this lane"
+  ],
+  "summary": {
+    "checks": 7,
+    "failedChecks": 0,
+    "globalPrecheckStatus": "passed",
+    "globalPrecheckMismatches": 0,
+    "sqlGuardStatus": "passed",
+    "sqlGuardFailedChecks": 0,
+    "writeGateStatus": "ready_for_explicit_rollback_rehearsal_authorization",
+    "authorizationStatus": "waiting_for_explicit_rollback_rehearsal_authorization"
+  },
+  "failedChecks": [],
+  "checks": [
+    {
+      "name": "globalPrecheck.status",
+      "passed": true,
+      "actual": "passed",
+      "expected": "passed",
+      "severity": "hard",
+      "details": ""
+    },
+    {
+      "name": "globalPrecheck.mismatches",
+      "passed": true,
+      "actual": {
+        "mismatches": 0,
+        "malformedRows": 0,
+        "duplicateCheckNames": 0
+      },
+      "expected": {
+        "mismatches": 0,
+        "malformedRows": 0,
+        "duplicateCheckNames": 0
+      },
+      "severity": "hard",
+      "details": ""
+    },
+    {
+      "name": "sqlGuard.status",
+      "passed": true,
+      "actual": {
+        "status": "passed",
+        "failedChecks": 0,
+        "applyStatus": "passed",
+        "rollbackStatus": "passed"
+      },
+      "expected": {
+        "status": "passed",
+        "failedChecks": 0,
+        "applyStatus": "passed",
+        "rollbackStatus": "passed"
+      },
+      "severity": "hard",
+      "details": ""
+    },
+    {
+      "name": "writeGate.status",
+      "passed": true,
+      "actual": {
+        "status": "ready_for_explicit_rollback_rehearsal_authorization",
+        "nextAllowedAction": "request_user_authorization_for_rollback_rehearsal",
+        "canRequestRollbackRehearsalAuthorization": true
+      },
+      "expected": {
+        "status": "ready_for_explicit_rollback_rehearsal_authorization",
+        "nextAllowedAction": "request_user_authorization_for_rollback_rehearsal",
+        "canRequestRollbackRehearsalAuthorization": true
+      },
+      "severity": "hard",
+      "details": ""
+    },
+    {
+      "name": "writeGate.noCommitOrDeployment",
+      "passed": true,
+      "actual": {
+        "commitAllowed": false,
+        "deploymentAllowed": false,
+        "writesDatabase": false,
+        "executesSql": false
+      },
+      "expected": {
+        "commitAllowed": false,
+        "deploymentAllowed": false,
+        "writesDatabase": false,
+        "executesSql": false
+      },
+      "severity": "hard",
+      "details": ""
+    },
+    {
+      "name": "authorization.status",
+      "passed": true,
+      "actual": "waiting_for_explicit_rollback_rehearsal_authorization",
+      "expected": "waiting_for_explicit_rollback_rehearsal_authorization",
+      "severity": "hard",
+      "details": ""
+    },
+    {
+      "name": "authorization.noExecutionYet",
+      "passed": true,
+      "actual": {
+        "writesDatabase": false,
+        "executedRollbackRehearsal": false,
+        "productionSqlExecuted": false,
+        "commitStatementAuthorized": false
+      },
+      "expected": {
+        "writesDatabase": false,
+        "executedRollbackRehearsal": false,
+        "productionSqlExecuted": false,
+        "commitStatementAuthorized": false
+      },
+      "severity": "hard",
+      "details": ""
+    }
+  ]
+}
