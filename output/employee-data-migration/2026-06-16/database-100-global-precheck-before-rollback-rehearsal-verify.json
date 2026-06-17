@@ -1,0 +1,68 @@
+{
+  "generatedAt": "2026-06-17T13:46:06.783Z",
+  "status": "passed",
+  "input": "output/employee-data-migration/2026-06-16/database-100-global-precheck-before-rollback-rehearsal.tsv",
+  "safety": {
+    "writesDatabase": false,
+    "readsDatabase": false,
+    "parsesPrecheckOutputOnly": true
+  },
+  "summary": {
+    "totalRows": 38,
+    "hardGates": 29,
+    "observations": 9,
+    "mismatches": 0,
+    "malformedRows": 0,
+    "duplicateCheckNames": 0
+  },
+  "mismatches": [],
+  "malformedRows": [],
+  "duplicateCheckNames": [],
+  "observations": [
+    {
+      "checkName": "archive.Notification.count",
+      "actualValue": "214",
+      "line": 30
+    },
+    {
+      "checkName": "archive.AuditLog.count",
+      "actualValue": "27",
+      "line": 31
+    },
+    {
+      "checkName": "payroll.SalarySlip.column.loginAccount",
+      "actualValue": "0",
+      "line": 32
+    },
+    {
+      "checkName": "payroll.SalarySlip.column.publishBatchId",
+      "actualValue": "0",
+      "line": 33
+    },
+    {
+      "checkName": "payroll.SalarySlip.column.userId",
+      "actualValue": "0",
+      "line": 34
+    },
+    {
+      "checkName": "payroll.SalarySlip.column.wecomUserId",
+      "actualValue": "0",
+      "line": 35
+    },
+    {
+      "checkName": "payroll.SalarySlip.count",
+      "actualValue": "1",
+      "line": 36
+    },
+    {
+      "checkName": "payroll.SalaryNotifyLog.count",
+      "actualValue": "1",
+      "line": 37
+    },
+    {
+      "checkName": "payroll.PayrollDraftBatch.count",
+      "actualValue": "1",
+      "line": 38
+    }
+  ]
+}
