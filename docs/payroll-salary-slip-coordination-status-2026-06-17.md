@@ -6,19 +6,19 @@
 - 未部署。
 - 上一授权流程已执行 payroll 生产 schema migration `20260617110000_payroll_publish_batch_identity`；本次收口未重复写生产库。
 - 未重启线上服务。
-- 未执行历史薪资身份回填。
+- 未执行真实历史薪资身份回填；已完成只读导出和 dry-run 评估。
 - 未发送企业微信通知。
 - 仓库根目录未发现 `.codegraph/`，因此本次按普通文件检索推进。
 
 ## 当前总状态
 
-整体状态：后端线、mock 回归、后端 UAT 工具、本机隔离 MySQL 演练、审计留档工具和 payroll 生产 schema postcheck 已完成；前端源码恢复线、历史身份回填和发布前业务确认仍阻塞。
+整体状态：后端线、mock 回归、后端 UAT 工具、本机隔离 MySQL 演练、审计留档工具、payroll 生产 schema postcheck 和历史身份回填 dry-run 已完成；前端源码恢复线、历史回填真实写入授权和发布前业务确认仍阻塞。
 
 仍保留的阻塞标记：
 
 - `blocked_waiting_for_vite_source`：员工端 Vite 源码或 sourcemap/build artifacts 尚未恢复。
 - `blocked_waiting_for_local_docker`：本机 Docker 仍不存在；如必须走 Docker 标准演练路径，仍需补齐 Docker。
-- `blocked_waiting_for_history_identity_backfill_review`：生产旧薪资条和旧通知记录仍有 `publishBatchId / 身份字段` 缺口，必须单独 dry-run 和人工复核，不能随 schema migration 自动回填。
+- `blocked_waiting_for_history_identity_backfill_review`：生产旧薪资条和旧通知记录仍有 `publishBatchId / 身份字段` 缺口；dry-run 已完成，但真实回填仍需人工复核和单独授权，不能随 schema migration 自动回填。
 
 本轮已完成：
 
@@ -59,6 +59,7 @@
 - 生产迁移后结构检查通过：6 个目标字段和 6 个目标索引均已存在。
 - 生产 `verify:payroll-db` 状态为 `passed_with_warnings`，无 blockers、无 failures；warning 来自 1 条历史薪资条和 1 条历史通知记录缺 `publishBatchId / 身份字段`。
 - 生产迁移后 database 100 global precheck 通过：38 行、29 个 hard gates、0 mismatch。
+- 历史身份回填 dry-run 已完成：生产只读导出 24 条使用者身分索引、1 条历史薪资条、1 条历史通知记录、1 条草稿批次；薪资条身份字段有 1 条 `auto_update_candidate`、0 条人工身份冲突；受影响月份 `2026-05` 没有可自动推断的 `publishBatchId` 候选，旧薪资条和旧通知记录的发布批次仍需人工指定。方案 A 执行包已准备，并已完成生产只读 before-check，仍未写库。
 - `npm run test:payroll` 通过：48/48。
 - `npm run lint -w @huigui/api` 通过。
 - `npm run build` 通过。
@@ -201,6 +202,7 @@
 | 员工端压缩 release diff | 为空 |
 | 生产 MySQL migration | 上一授权流程已执行，`20260617110000_payroll_publish_batch_identity` 已在 `_prisma_migrations` 完成；本次收口未重复执行新的 `db:migrate:deploy` |
 | 生产 migration postcheck | 通过；字段/索引无缺失，database 100 0 mismatch |
+| 历史身份回填 dry-run | 完成；1 条薪资条为自动候选，0 条身份冲突；方案 A before-check 通过；受影响月份 `2026-05` 无可自动推断的 `publishBatchId` 候选 |
 
 ## 文件改动清单
 
@@ -245,23 +247,24 @@
    - 本机 MySQL 路径已完成后端演练；如后续要求 Docker compose 标准环境，仍需补 Docker。
 
 3. `blocked_waiting_for_history_identity_backfill_review`
-   - schema migration 已落生产，但历史 1 条薪资条和 1 条通知记录仍缺 `publishBatchId / 身份字段`。
-   - 只能先走 `salary-identity-backfill-dryrun.mjs` 和人工复核；本轮没有执行真实回填。
+   - schema migration 已落生产，历史 dry-run 已完成，但 1 条薪资条和 1 条通知记录仍缺 `publishBatchId / 身份字段`。
+   - `salary-identity-backfill-dryrun.mjs` 已生成审查计划和默认 `ROLLBACK` SQL；本轮没有执行真实回填。
+   - 真实回填前必须人工指定 `2026-05` 发布批次归属，并另行授权写库范围。
 
 ## 还需要人工确认的事项
 
 1. 员工端 Vite 源码在哪个仓库、目录或构建机上。
 2. 是否接受本次权限收紧策略：不再允许文本像“财务/办公室/人事”或 `action.management.member.update` 维护薪资。
 3. 哪些账号需要补 `FINANCE` 角色或 `action.payroll.publish` 权限。
-4. 历史薪资条和旧通知记录是否需要补 `publishBatchId / userId / wecomUserId / loginAccount`，以及谁人工确认。
+4. 历史薪资条和旧通知记录是否按 dry-run 结果补 `publishBatchId / userId / wecomUserId / loginAccount`，以及谁人工确认。
 5. 是否还需要补 Docker 标准演练，或接受本机 MySQL 演练作为后端 UAT 证据。
 6. 真实企业微信通知是否先在测试应用 / dry-run 模式验证。
 
 ## 下一步
 
 1. 恢复员工端 Vite 源码后，补前端上传入口和导入中心返回闭环。
-2. 导出 `User`、`SalarySlip` 和旧通知记录 TSV，运行 dry-run 生成历史回填评估报告。
-3. 人工确认历史回填范围，特别是旧薪资条和旧通知记录的 `publishBatchId / 身份字段`。
+2. 人工复核 `docs/payroll-salary-slip-history-identity-backfill-dryrun-2026-06-17.md`、`docs/payroll-salary-slip-history-backfill-authorization-request-2026-06-17.md` 和本地证据目录，确认历史回填范围。
+3. 单独授权是否仅回填旧薪资条身份字段，或先人工指定 `2026-05` 的 `publishBatchId` 后再回填旧薪资条和旧通知记录的发布批次。
 4. 确认权限清单：哪些账号需要 `FINANCE` 或 `action.payroll.publish`。
 5. 恢复源码后用测试账号验证完整链路：登录、上传薪资表、复核差异、发布薪资条、通知记录、员工本人查看。
 6. 用 `tests/fixtures/payroll` 的 UAT 样例验证同名隔离、合作老师跳过、无企微账号跳过和差异阻断。
