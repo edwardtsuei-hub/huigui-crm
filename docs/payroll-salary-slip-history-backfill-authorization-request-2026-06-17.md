@@ -1,7 +1,7 @@
 # Payroll 历史回填授权评审单
 
 日期：2026-06-17
-状态：`scheme_a_completed`
+状态：`scheme_b_main_completed`
 依据：`docs/payroll-salary-slip-history-identity-backfill-dryrun-2026-06-17.md`
 
 ## 背景
@@ -12,7 +12,7 @@
 - 1 条历史薪资条缺少 `publishBatchId`。
 - 1 条历史通知记录缺少 `publishBatchId`。
 
-本轮先完成只读导出和本地 dry-run。2026-06-18 用户已授权并完成方案 A 真实回填；本文件仍作为授权范围记录。
+本轮先完成只读导出和本地 dry-run。2026-06-18 用户已授权并完成方案 A 真实回填；随后用户明确确认方案 B 主方案，已完成 1 条历史薪资条和 1 条历史通知记录的 `publishBatchId` 回填。本文件仍作为授权范围记录。
 
 ## Dry-run 结果
 
@@ -27,6 +27,8 @@
 | 受影响月份 | `2026-05` |
 | `publishBatchId` 自动候选 | 无 |
 | 方案 A 生产写库 | 已执行，影响 1 条 `SalarySlip` |
+| 方案 B 主方案生产写库 | 已执行，影响 1 条 `SalarySlip` 和 1 条 `SalaryNotifyLog` |
+| `PayrollDraftBatch` | 未纳入方案 B 主方案写入 |
 
 审查 SQL：
 
@@ -99,9 +101,13 @@
 
 ## 建议
 
-方案 A 已完成。`publishBatchId` 需要业务确认 `2026-05` 的真实发布批次后，再走方案 B 的新 dry-run 和授权。
+方案 A 已完成。2026-06-18 已按用户授权准备方案 B dry-run，目标 `publishBatchId=salary-publish-2026-05-codex-single-trial`；随后用户确认执行主方案 B，已完成真实回填，不纳入 `PayrollDraftBatch`。
 
 方案 A 执行结果见：`docs/payroll-salary-slip-history-backfill-result-2026-06-18.md`。
+
+方案 B dry-run 结果见：`docs/payroll-salary-slip-publish-batch-backfill-dryrun-2026-06-18.md`。
+
+方案 B 真实执行结果见：`docs/payroll-salary-slip-publish-batch-backfill-result-2026-06-18.md`。
 
 ## 授权口径
 
@@ -115,6 +121,18 @@
 
 ```text
 授权准备 payroll 历史 publishBatchId 回填 dry-run：方案 B，2026-05 publishBatchId=<目标批次号>，先生成 SQL 和 SHA256，不直接写生产。
+```
+
+上述 dry-run 已完成。以下主方案 B 授权口径已使用：
+
+```text
+授权执行 payroll 历史 publishBatchId 回填：方案 B，仅回填 1 条 SalarySlip 和 1 条 SalaryNotifyLog 的 publishBatchId=salary-publish-2026-05-codex-single-trial，不更新 PayrollDraftBatch，不发送通知，不部署。
+```
+
+若要把 `PayrollDraftBatch` 也纳入写入，必须明确写入：
+
+```text
+授权执行 payroll 历史 publishBatchId 回填：方案 B，回填 1 条 SalarySlip、1 条 SalaryNotifyLog 和 1 条 PayrollDraftBatch 的 publishBatchId=salary-publish-2026-05-codex-single-trial，不发送通知，不部署。
 ```
 
 如暂不回填，请明确回复：

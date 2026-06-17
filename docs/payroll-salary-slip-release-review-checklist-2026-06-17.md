@@ -15,7 +15,6 @@
 
 - `blocked_waiting_for_vite_source`：员工端 Vite 源码未恢复，前端 UI 修复不能做。
 - `blocked_waiting_for_local_docker`：本机 Docker 不存在；仅阻塞 Docker 标准演练路径。
-- `blocked_waiting_for_publish_batch_id_manual_assignment`：旧薪资条和旧通知记录的身份字段方案 A 已完成；`publishBatchId` 仍需人工指定 `2026-05` 批次并单独授权。
 
 ## 允许进入评审的内容
 
@@ -37,7 +36,6 @@
 - 员工端上传入口 UI 已修复。
 - 导入中心深链预填和上传后返回已修复。
 - 前端真实登录、上传、发布、通知、员工查看闭环已通过。
-- 历史薪资条身份字段已经回填。
 - 企业微信真实通知已经发布。
 
 ## 评审前命令
@@ -92,7 +90,7 @@ npm run verify:payroll-db -- \
 - 生产只读验收：`output/payroll/production-schema-migration-20260617-231344/payroll-postcheck.md`，状态 `passed_with_warnings`，无 blockers、无 failures。
 - database 100：`output/payroll/production-schema-migration-20260617-231344/database-100-global-precheck-post-verify.md`，38 行、29 个 hard gates、0 mismatch。
 
-生产 warning 不阻断 schema migration，但阻断“宣称历史数据完全整理完成”：
+方案 B 执行前，生产 warning 不阻断 schema migration，但阻断“宣称历史数据完全整理完成”：
 
 - `salary_slips_with_incomplete_identity`：1 条旧薪资条身份字段不完整。
 - `salary_slips_missing_publish_batch_id`：1 条旧薪资条或相关旧通知链路缺发布批次字段。
@@ -111,6 +109,13 @@ npm run verify:payroll-db -- \
 - 方案 A 生产只读 before-check 已执行，目标薪资条三项身份字段仍为 `NULL`；结果 SHA256：`92b9c932856a10932a2706f5161676940a1aa2f64b2fb9f98da8d2eda18a1c23`。
 - 方案 A 执行结果：`docs/payroll-salary-slip-history-backfill-result-2026-06-18.md`。
 - 方案 A 后 payroll DB verify：`identityIncomplete=0`，warning 只剩 `salary_slips_missing_publish_batch_id`。
+- 方案 B dry-run 结果：`docs/payroll-salary-slip-publish-batch-backfill-dryrun-2026-06-18.md`。
+- 方案 B 目标批次：`salary-publish-2026-05-codex-single-trial`。
+- 主方案 B 预计影响 1 条 `SalarySlip` 和 1 条 `SalaryNotifyLog`，dry-run 后已确认生产 `publishBatchId` 仍为空。
+- `PayrollDraftBatch` 可选影响 1 行，必须明确授权才可纳入真实写入。
+- 方案 B 主方案执行结果：`docs/payroll-salary-slip-publish-batch-backfill-result-2026-06-18.md`。
+- 方案 B 主方案已按授权真实执行：`SalarySlip` 影响 1 行，`SalaryNotifyLog` 影响 1 行，`PayrollDraftBatch` 未纳入。
+- 方案 B 后只读核对：`SalarySlip` 缺 `publishBatchId` 数为 0，`SalaryNotifyLog` 缺 `publishBatchId` 数为 0，2026-05 `PayrollDraftBatch.publishBatchId` 仍为空。
 
 必须确认：
 

@@ -10,7 +10,7 @@
 - 实际上传入口位于财务文件导入中心 `/finance/imports`，文件类型选项包含“薪资表”，支持 `.xlsx`、`.xls`、`.csv`。
 - 当前薪资前端代码位于静态压缩发布包 `apps/web/public/employee-frontend/releases/20260616090241`，未定位到可维护 Vite 源码；后续修改应先恢复或确认源代码，不建议直接修改压缩发布包。
 - 本机隔离 MySQL 后端演练已完成：migration、只读 DB 验收、UAT API execute 和审计包均已通过。
-- 生产 schema migration `20260617110000_payroll_publish_batch_identity` 已完成，字段和索引验收通过；历史旧薪资条身份字段已按方案 A 回填完成。旧薪资条和旧通知记录的 `publishBatchId` 仍需人工指定 `2026-05` 批次并单独授权。
+- 生产 schema migration `20260617110000_payroll_publish_batch_identity` 已完成，字段和索引验收通过；历史旧薪资条身份字段已按方案 A 回填完成。旧薪资条和旧通知记录的 `publishBatchId` 已按方案 B 主方案回填到 `salary-publish-2026-05-codex-single-trial`，`PayrollDraftBatch` 按授权未纳入写入。
 - 前端真实登录、上传入口 UI 和上传后返回闭环仍等待员工端 Vite 源码恢复。
 
 ## 修复目标
