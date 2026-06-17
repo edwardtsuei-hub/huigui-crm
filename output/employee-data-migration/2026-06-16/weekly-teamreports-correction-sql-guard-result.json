@@ -1,0 +1,463 @@
+{
+  "generatedAt": "2026-06-17T09:56:23.334Z",
+  "status": "passed",
+  "scope": "weekly teamReports correction SQL static guard",
+  "inputs": {
+    "applySql": "output/employee-data-migration/2026-06-16/weekly-teamreports-correction-apply-draft.sql",
+    "rollbackSql": "output/employee-data-migration/2026-06-16/weekly-teamreports-correction-rollback-draft.sql",
+    "plan": "output/employee-data-migration/2026-06-16/weekly-teamreports-correction-sql-draft.json"
+  },
+  "safety": {
+    "writesDatabase": false,
+    "readsDatabase": false,
+    "executesSql": false,
+    "parsesLocalSqlDraftsOnly": true,
+    "deploys": false,
+    "restarts": false
+  },
+  "summary": {
+    "draftsChecked": 2,
+    "failedChecks": 0,
+    "applyStatus": "passed",
+    "rollbackStatus": "passed"
+  },
+  "failedChecks": [],
+  "drafts": [
+    {
+      "mode": "apply",
+      "sqlPath": "output/employee-data-migration/2026-06-16/weekly-teamreports-correction-apply-draft.sql",
+      "status": "passed",
+      "counts": {
+        "statements": 51,
+        "startTransaction": 1,
+        "rollback": 1,
+        "commit": 0,
+        "update": 10,
+        "rowCountSelects": 10,
+        "precheckSelects": 10,
+        "postcheckSelects": 10,
+        "payloadLinkGuards": 10,
+        "shaGuards": 30,
+        "childReportIdGuards": 4
+      },
+      "forbiddenStatements": [],
+      "disallowedUpdateTables": [],
+      "checks": [
+        {
+          "name": "final_statement_is_rollback",
+          "passed": true,
+          "actual": "ROLLBACK",
+          "expected": "ROLLBACK"
+        },
+        {
+          "name": "single_transaction_start",
+          "passed": true,
+          "actual": 1,
+          "expected": 1
+        },
+        {
+          "name": "single_rollback_statement",
+          "passed": true,
+          "actual": 1,
+          "expected": 1
+        },
+        {
+          "name": "no_commit_statement",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "only_expected_update_count",
+          "passed": true,
+          "actual": 10,
+          "expected": 10
+        },
+        {
+          "name": "only_allowed_update_tables",
+          "passed": true,
+          "actual": "none",
+          "expected": "WeeklyReport,WeeklyReportPlanItem,WeeklyReportReviewItem"
+        },
+        {
+          "name": "no_forbidden_executable_statements",
+          "passed": true,
+          "actual": "none",
+          "expected": "none"
+        },
+        {
+          "name": "row_count_select_for_each_update",
+          "passed": true,
+          "actual": 10,
+          "expected": 10
+        },
+        {
+          "name": "precheck_select_for_each_update",
+          "passed": true,
+          "actual": 10,
+          "expected": 10
+        },
+        {
+          "name": "postcheck_select_for_each_update",
+          "passed": true,
+          "actual": 10,
+          "expected": 10
+        },
+        {
+          "name": "payload_link_guard_for_each_update",
+          "passed": true,
+          "actual": 10,
+          "expected": 10
+        },
+        {
+          "name": "sha_guard_and_prepost_count",
+          "passed": true,
+          "actual": 30,
+          "expected": 30
+        },
+        {
+          "name": "child_report_id_guard_count",
+          "passed": true,
+          "actual": 4,
+          "expected": 4
+        },
+        {
+          "name": "all_operation_guards_complete",
+          "passed": true,
+          "actual": "all_complete",
+          "expected": "all_complete"
+        }
+      ],
+      "operationChecks": [
+        {
+          "op": "op01",
+          "table": "WeeklyReport",
+          "id": "wr_b3f18d418c27145ced5e627c",
+          "reportId": "wr_b3f18d418c27145ced5e627c",
+          "field": "completedSummary",
+          "expectedShaField": "beforeSha256",
+          "blockFound": true,
+          "guardComplete": true,
+          "missingSnippets": []
+        },
+        {
+          "op": "op02",
+          "table": "WeeklyReport",
+          "id": "wr_b3f18d418c27145ced5e627c",
+          "reportId": "wr_b3f18d418c27145ced5e627c",
+          "field": "focusSummary",
+          "expectedShaField": "beforeSha256",
+          "blockFound": true,
+          "guardComplete": true,
+          "missingSnippets": []
+        },
+        {
+          "op": "op03",
+          "table": "WeeklyReportReviewItem",
+          "id": "wri_7f9a9b2dbc48b1a374f8281c",
+          "reportId": "wr_b3f18d418c27145ced5e627c",
+          "field": "description",
+          "expectedShaField": "beforeSha256",
+          "blockFound": true,
+          "guardComplete": true,
+          "missingSnippets": []
+        },
+        {
+          "op": "op04",
+          "table": "WeeklyReportPlanItem",
+          "id": "wpi_4f5bf9170135688f49982adb",
+          "reportId": "wr_b3f18d418c27145ced5e627c",
+          "field": "description",
+          "expectedShaField": "beforeSha256",
+          "blockFound": true,
+          "guardComplete": true,
+          "missingSnippets": []
+        },
+        {
+          "op": "op05",
+          "table": "WeeklyReport",
+          "id": "wr_b361a1934ab724cd56c5da14",
+          "reportId": "wr_b361a1934ab724cd56c5da14",
+          "field": "completedSummary",
+          "expectedShaField": "beforeSha256",
+          "blockFound": true,
+          "guardComplete": true,
+          "missingSnippets": []
+        },
+        {
+          "op": "op06",
+          "table": "WeeklyReport",
+          "id": "wr_b361a1934ab724cd56c5da14",
+          "reportId": "wr_b361a1934ab724cd56c5da14",
+          "field": "focusSummary",
+          "expectedShaField": "beforeSha256",
+          "blockFound": true,
+          "guardComplete": true,
+          "missingSnippets": []
+        },
+        {
+          "op": "op07",
+          "table": "WeeklyReportReviewItem",
+          "id": "wri_5d12854bc0e9ce932fc43ddf",
+          "reportId": "wr_b361a1934ab724cd56c5da14",
+          "field": "description",
+          "expectedShaField": "beforeSha256",
+          "blockFound": true,
+          "guardComplete": true,
+          "missingSnippets": []
+        },
+        {
+          "op": "op08",
+          "table": "WeeklyReport",
+          "id": "wr_6bf6e9ba0d49a18000a3fb7a",
+          "reportId": "wr_6bf6e9ba0d49a18000a3fb7a",
+          "field": "completedSummary",
+          "expectedShaField": "beforeSha256",
+          "blockFound": true,
+          "guardComplete": true,
+          "missingSnippets": []
+        },
+        {
+          "op": "op09",
+          "table": "WeeklyReport",
+          "id": "wr_6bf6e9ba0d49a18000a3fb7a",
+          "reportId": "wr_6bf6e9ba0d49a18000a3fb7a",
+          "field": "focusSummary",
+          "expectedShaField": "beforeSha256",
+          "blockFound": true,
+          "guardComplete": true,
+          "missingSnippets": []
+        },
+        {
+          "op": "op10",
+          "table": "WeeklyReportReviewItem",
+          "id": "wri_c0dc353f8490b81a8c2f2314",
+          "reportId": "wr_6bf6e9ba0d49a18000a3fb7a",
+          "field": "description",
+          "expectedShaField": "beforeSha256",
+          "blockFound": true,
+          "guardComplete": true,
+          "missingSnippets": []
+        }
+      ]
+    },
+    {
+      "mode": "rollback",
+      "sqlPath": "output/employee-data-migration/2026-06-16/weekly-teamreports-correction-rollback-draft.sql",
+      "status": "passed",
+      "counts": {
+        "statements": 51,
+        "startTransaction": 1,
+        "rollback": 1,
+        "commit": 0,
+        "update": 10,
+        "rowCountSelects": 10,
+        "precheckSelects": 10,
+        "postcheckSelects": 10,
+        "payloadLinkGuards": 10,
+        "shaGuards": 30,
+        "childReportIdGuards": 4
+      },
+      "forbiddenStatements": [],
+      "disallowedUpdateTables": [],
+      "checks": [
+        {
+          "name": "final_statement_is_rollback",
+          "passed": true,
+          "actual": "ROLLBACK",
+          "expected": "ROLLBACK"
+        },
+        {
+          "name": "single_transaction_start",
+          "passed": true,
+          "actual": 1,
+          "expected": 1
+        },
+        {
+          "name": "single_rollback_statement",
+          "passed": true,
+          "actual": 1,
+          "expected": 1
+        },
+        {
+          "name": "no_commit_statement",
+          "passed": true,
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "only_expected_update_count",
+          "passed": true,
+          "actual": 10,
+          "expected": 10
+        },
+        {
+          "name": "only_allowed_update_tables",
+          "passed": true,
+          "actual": "none",
+          "expected": "WeeklyReport,WeeklyReportPlanItem,WeeklyReportReviewItem"
+        },
+        {
+          "name": "no_forbidden_executable_statements",
+          "passed": true,
+          "actual": "none",
+          "expected": "none"
+        },
+        {
+          "name": "row_count_select_for_each_update",
+          "passed": true,
+          "actual": 10,
+          "expected": 10
+        },
+        {
+          "name": "precheck_select_for_each_update",
+          "passed": true,
+          "actual": 10,
+          "expected": 10
+        },
+        {
+          "name": "postcheck_select_for_each_update",
+          "passed": true,
+          "actual": 10,
+          "expected": 10
+        },
+        {
+          "name": "payload_link_guard_for_each_update",
+          "passed": true,
+          "actual": 10,
+          "expected": 10
+        },
+        {
+          "name": "sha_guard_and_prepost_count",
+          "passed": true,
+          "actual": 30,
+          "expected": 30
+        },
+        {
+          "name": "child_report_id_guard_count",
+          "passed": true,
+          "actual": 4,
+          "expected": 4
+        },
+        {
+          "name": "all_operation_guards_complete",
+          "passed": true,
+          "actual": "all_complete",
+          "expected": "all_complete"
+        }
+      ],
+      "operationChecks": [
+        {
+          "op": "op01",
+          "table": "WeeklyReport",
+          "id": "wr_b3f18d418c27145ced5e627c",
+          "reportId": "wr_b3f18d418c27145ced5e627c",
+          "field": "completedSummary",
+          "expectedShaField": "afterSha256",
+          "blockFound": true,
+          "guardComplete": true,
+          "missingSnippets": []
+        },
+        {
+          "op": "op02",
+          "table": "WeeklyReport",
+          "id": "wr_b3f18d418c27145ced5e627c",
+          "reportId": "wr_b3f18d418c27145ced5e627c",
+          "field": "focusSummary",
+          "expectedShaField": "afterSha256",
+          "blockFound": true,
+          "guardComplete": true,
+          "missingSnippets": []
+        },
+        {
+          "op": "op03",
+          "table": "WeeklyReportReviewItem",
+          "id": "wri_7f9a9b2dbc48b1a374f8281c",
+          "reportId": "wr_b3f18d418c27145ced5e627c",
+          "field": "description",
+          "expectedShaField": "afterSha256",
+          "blockFound": true,
+          "guardComplete": true,
+          "missingSnippets": []
+        },
+        {
+          "op": "op04",
+          "table": "WeeklyReportPlanItem",
+          "id": "wpi_4f5bf9170135688f49982adb",
+          "reportId": "wr_b3f18d418c27145ced5e627c",
+          "field": "description",
+          "expectedShaField": "afterSha256",
+          "blockFound": true,
+          "guardComplete": true,
+          "missingSnippets": []
+        },
+        {
+          "op": "op05",
+          "table": "WeeklyReport",
+          "id": "wr_b361a1934ab724cd56c5da14",
+          "reportId": "wr_b361a1934ab724cd56c5da14",
+          "field": "completedSummary",
+          "expectedShaField": "afterSha256",
+          "blockFound": true,
+          "guardComplete": true,
+          "missingSnippets": []
+        },
+        {
+          "op": "op06",
+          "table": "WeeklyReport",
+          "id": "wr_b361a1934ab724cd56c5da14",
+          "reportId": "wr_b361a1934ab724cd56c5da14",
+          "field": "focusSummary",
+          "expectedShaField": "afterSha256",
+          "blockFound": true,
+          "guardComplete": true,
+          "missingSnippets": []
+        },
+        {
+          "op": "op07",
+          "table": "WeeklyReportReviewItem",
+          "id": "wri_5d12854bc0e9ce932fc43ddf",
+          "reportId": "wr_b361a1934ab724cd56c5da14",
+          "field": "description",
+          "expectedShaField": "afterSha256",
+          "blockFound": true,
+          "guardComplete": true,
+          "missingSnippets": []
+        },
+        {
+          "op": "op08",
+          "table": "WeeklyReport",
+          "id": "wr_6bf6e9ba0d49a18000a3fb7a",
+          "reportId": "wr_6bf6e9ba0d49a18000a3fb7a",
+          "field": "completedSummary",
+          "expectedShaField": "afterSha256",
+          "blockFound": true,
+          "guardComplete": true,
+          "missingSnippets": []
+        },
+        {
+          "op": "op09",
+          "table": "WeeklyReport",
+          "id": "wr_6bf6e9ba0d49a18000a3fb7a",
+          "reportId": "wr_6bf6e9ba0d49a18000a3fb7a",
+          "field": "focusSummary",
+          "expectedShaField": "afterSha256",
+          "blockFound": true,
+          "guardComplete": true,
+          "missingSnippets": []
+        },
+        {
+          "op": "op10",
+          "table": "WeeklyReportReviewItem",
+          "id": "wri_c0dc353f8490b81a8c2f2314",
+          "reportId": "wr_6bf6e9ba0d49a18000a3fb7a",
+          "field": "description",
+          "expectedShaField": "afterSha256",
+          "blockFound": true,
+          "guardComplete": true,
+          "missingSnippets": []
+        }
+      ]
+    }
+  ]
+}
