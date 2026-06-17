@@ -1,0 +1,168 @@
+{
+  "generatedAt": "2026-06-17T17:15:00+08:00",
+  "status": "execution_package_dry_run_only",
+  "scope": "weekly teamReports correction before-after fingerprint package",
+  "safety": {
+    "writesDatabase": false,
+    "executedApply": false,
+    "productionSqlGenerated": false,
+    "executableUpdateSqlGenerated": false,
+    "writeScriptGenerated": false,
+    "schemaChanged": false,
+    "migrationGenerated": false,
+    "apiChanged": false,
+    "frontendChanged": false,
+    "deployed": false,
+    "restarted": false,
+    "rollbackTagCreated": false,
+    "deploymentAllowed": false
+  },
+  "summary": {
+    "targetReports": 3,
+    "fieldOperations": 12,
+    "operationsWithChangedFingerprint": 10,
+    "operationsAlreadyMatchingAfter": 2,
+    "directDatabaseWriteAllowed": false,
+    "nextStage": "executable_sql_draft_and_rollback_sql_draft_if_user_authorizes"
+  },
+  "operations": [
+    {
+      "table": "WeeklyReport",
+      "id": "wr_b3f18d418c27145ced5e627c",
+      "reportId": "wr_b3f18d418c27145ced5e627c",
+      "field": "completedSummary",
+      "beforeCharLength": 110,
+      "afterCharLength": 100,
+      "beforeSha256": "bbe18fd842f916c028d666489f428b3d83706a2fb334972a44ba398d58b8f4eb",
+      "afterSha256": "9855315c7448f0c200cd7b0d7ddbdcd394f69825290f23690b959527a41fadf1",
+      "afterText": "1:周六日喜乐瑜伽活动已经确定沟通好！包含用餐流程全部梳理\n2:儿童节活动套餐已经搭配好，流程全部和前厅伙伴沟通\n3:六月份活动已经和lisa沟通确定活动内容，具体事项6月份提前安排\n4:套餐本周完成"
+    },
+    {
+      "table": "WeeklyReport",
+      "id": "wr_b3f18d418c27145ced5e627c",
+      "reportId": "wr_b3f18d418c27145ced5e627c",
+      "field": "focusSummary",
+      "beforeCharLength": 106,
+      "afterCharLength": 78,
+      "beforeSha256": "4e347ce35fd68dfe2b4e6661ec9b0739e3d52d8c58d93df27735463712ea352e",
+      "afterSha256": "3758965d005dfb52be4a8baf7ed7bd9c9a632422cd0c6904e28e384e9f78ed4f",
+      "afterText": "下周计划。6.1-6.7工作计划\n1:六一活动安排。\n2:周六日两天颂铂课程周四确定用餐人数，用餐模式和后厨沟通备货\n3:梅门甩茶进货，热果饮和工厂沟通制作"
+    },
+    {
+      "table": "WeeklyReportReviewItem",
+      "id": "wri_7f9a9b2dbc48b1a374f8281c",
+      "reportId": "wr_b3f18d418c27145ced5e627c",
+      "field": "description",
+      "beforeCharLength": 110,
+      "afterCharLength": 117,
+      "beforeSha256": "bbe18fd842f916c028d666489f428b3d83706a2fb334972a44ba398d58b8f4eb",
+      "afterSha256": "480fadca9a11169fc70c56621931f834825f9870ad9a848688dedc1205a87b57",
+      "afterText": "周报范围：熊抱大地 · 门店经营\n1:周六日喜乐瑜伽活动已经确定沟通好！包含用餐流程全部梳理\n2:儿童节活动套餐已经搭配好，流程全部和前厅伙伴沟通\n3:六月份活动已经和lisa沟通确定活动内容，具体事项6月份提前安排\n4:套餐本周完成"
+    },
+    {
+      "table": "WeeklyReportPlanItem",
+      "id": "wpi_4f5bf9170135688f49982adb",
+      "reportId": "wr_b3f18d418c27145ced5e627c",
+      "field": "description",
+      "beforeCharLength": 93,
+      "afterCharLength": 78,
+      "beforeSha256": "56e41efb39d9402cc0f7082f6e33b87f4ced762a282e655482a1711a0e651753",
+      "afterSha256": "3758965d005dfb52be4a8baf7ed7bd9c9a632422cd0c6904e28e384e9f78ed4f",
+      "afterText": "下周计划。6.1-6.7工作计划\n1:六一活动安排。\n2:周六日两天颂铂课程周四确定用餐人数，用餐模式和后厨沟通备货\n3:梅门甩茶进货，热果饮和工厂沟通制作"
+    },
+    {
+      "table": "WeeklyReport",
+      "id": "wr_b361a1934ab724cd56c5da14",
+      "reportId": "wr_b361a1934ab724cd56c5da14",
+      "field": "completedSummary",
+      "beforeCharLength": 262,
+      "afterCharLength": 85,
+      "beforeSha256": "30f5319c8994c6d8498153ec8826e581eeb324ecf87d719c00a96e0cef49983b",
+      "afterSha256": "7a578b1b5427ab49956404be36665c477f4b90d4508c572cbd39aa7aa5ae2df1",
+      "afterText": "1、家庭振动师推海报已做完发圈推广，发推文，做直播2场\n2、定制班12～16号开课，培训5天\n3、21天打卡奖励驻颜术6.22\n4、周三开会做课程总结和家庭振动师推广计划"
+    },
+    {
+      "table": "WeeklyReport",
+      "id": "wr_b361a1934ab724cd56c5da14",
+      "reportId": "wr_b361a1934ab724cd56c5da14",
+      "field": "focusSummary",
+      "beforeCharLength": 34,
+      "afterCharLength": 21,
+      "beforeSha256": "e94c12f07884e9d3b65dfb73f0653ea1c4f5497d4699fdcbe9fb185ade95d9b4",
+      "afterSha256": "4d57c379f590c1a0938cb84a75eba827688061a8ad75d8bcc300ccfeb5b82cdc",
+      "afterText": "4、周三开会做课程总结和家庭振动师推广计划"
+    },
+    {
+      "table": "WeeklyReportReviewItem",
+      "id": "wri_5d12854bc0e9ce932fc43ddf",
+      "reportId": "wr_b361a1934ab724cd56c5da14",
+      "field": "description",
+      "beforeCharLength": 262,
+      "afterCharLength": 105,
+      "beforeSha256": "30f5319c8994c6d8498153ec8826e581eeb324ecf87d719c00a96e0cef49983b",
+      "afterSha256": "ee332a2387a2106c9de5b4a931c3c1278d91bb873b28d07900610e4a8ae3654e",
+      "afterText": "周报范围：道冲元气 · 经营与预约回访\n1、家庭振动师推海报已做完发圈推广，发推文，做直播2场\n2、定制班12～16号开课，培训5天\n3、21天打卡奖励驻颜术6.22\n4、周三开会做课程总结和家庭振动师推广计划"
+    },
+    {
+      "table": "WeeklyReportPlanItem",
+      "id": "wpi_aab34de461e592a3df8daf1c",
+      "reportId": "wr_b361a1934ab724cd56c5da14",
+      "field": "description",
+      "beforeCharLength": 21,
+      "afterCharLength": 21,
+      "beforeSha256": "4d57c379f590c1a0938cb84a75eba827688061a8ad75d8bcc300ccfeb5b82cdc",
+      "afterSha256": "4d57c379f590c1a0938cb84a75eba827688061a8ad75d8bcc300ccfeb5b82cdc",
+      "afterText": "4、周三开会做课程总结和家庭振动师推广计划"
+    },
+    {
+      "table": "WeeklyReport",
+      "id": "wr_6bf6e9ba0d49a18000a3fb7a",
+      "reportId": "wr_6bf6e9ba0d49a18000a3fb7a",
+      "field": "completedSummary",
+      "beforeCharLength": 249,
+      "afterCharLength": 277,
+      "beforeSha256": "a89c4b0ce122c8a7961f66ace13ce5693e75cea5431d9c7d0152c0f6ecfc457b",
+      "afterSha256": "ce9ce54b54eb94efbaa9deaf0c920a9ff1315560d7f4998153678cb17bbfa622",
+      "afterText": "【最新提交 2026-06-12 16:01】\n1. 下周五之前确认新菜单\n2. 跟进雯雯新的橱窗kt板制作进度\n3. 日本友人过来交流准备工作，前厅厨房清洁工作跟进,计划28-29号下午2点-5点，由申厨和陈师傅负责交流培训\n\n【同周较早提交 2026-06-12 15:51】\n1. 下周五之前确认新菜单\n2. 跟进雯雯新的橱窗kt板制作进度\n3. 日本友人过来交流准备工作，前厅厨房清洁工作跟进,计划28-29号下午2点-5点，由申厨和陈师傅负责交流培训\n\n【缺失说明】\n两次提交在“负责交流培训”之后的逗号尾部均未找到完整原文，v3 不自动补写。"
+    },
+    {
+      "table": "WeeklyReport",
+      "id": "wr_6bf6e9ba0d49a18000a3fb7a",
+      "reportId": "wr_6bf6e9ba0d49a18000a3fb7a",
+      "field": "focusSummary",
+      "beforeCharLength": 26,
+      "afterCharLength": 13,
+      "beforeSha256": "db86fd344bfb99561594a5c686ddd9cbf71efa83a0e2eec9ad8651e92bf59202",
+      "afterSha256": "117b721758dcc41a3310f6ed42ffdb56f38b6eaf790a0a471fa7593d2c59daaa",
+      "afterText": "1. 下周五之前确认新菜单"
+    },
+    {
+      "table": "WeeklyReportReviewItem",
+      "id": "wri_c0dc353f8490b81a8c2f2314",
+      "reportId": "wr_6bf6e9ba0d49a18000a3fb7a",
+      "field": "description",
+      "beforeCharLength": 249,
+      "afterCharLength": 294,
+      "beforeSha256": "a89c4b0ce122c8a7961f66ace13ce5693e75cea5431d9c7d0152c0f6ecfc457b",
+      "afterSha256": "0f7b5ccb00a3bc174c6cbc6fb1d6bd849e3414a64b0ac050299898c76388924c",
+      "afterText": "周报范围：熊抱大地 · 经营回顾\n【最新提交 2026-06-12 16:01】\n1. 下周五之前确认新菜单\n2. 跟进雯雯新的橱窗kt板制作进度\n3. 日本友人过来交流准备工作，前厅厨房清洁工作跟进,计划28-29号下午2点-5点，由申厨和陈师傅负责交流培训\n\n【同周较早提交 2026-06-12 15:51】\n1. 下周五之前确认新菜单\n2. 跟进雯雯新的橱窗kt板制作进度\n3. 日本友人过来交流准备工作，前厅厨房清洁工作跟进,计划28-29号下午2点-5点，由申厨和陈师傅负责交流培训\n\n【缺失说明】\n两次提交在“负责交流培训”之后的逗号尾部均未找到完整原文，v3 不自动补写。"
+    },
+    {
+      "table": "WeeklyReportPlanItem",
+      "id": "wpi_30251efba4234d81299d5bf2",
+      "reportId": "wr_6bf6e9ba0d49a18000a3fb7a",
+      "field": "description",
+      "beforeCharLength": 13,
+      "afterCharLength": 13,
+      "beforeSha256": "117b721758dcc41a3310f6ed42ffdb56f38b6eaf790a0a471fa7593d2c59daaa",
+      "afterSha256": "117b721758dcc41a3310f6ed42ffdb56f38b6eaf790a0a471fa7593d2c59daaa",
+      "afterText": "1. 下周五之前确认新菜单"
+    }
+  ],
+  "precheckRequired": [
+    "Current field SHA256 values must match beforeSha256 for every operation.",
+    "Target rows must still have zero direct WeeklyReportPayload links.",
+    "Payload gate must remain stable.",
+    "No production update may run without explicit user authorization."
+  ]
+}
