@@ -37,9 +37,37 @@ npm run build
 
 - `npm run db:generate` 通过。
 - `npm run preflight:payroll` 通过，当前状态为 `passed_with_blockers`。
-- `npm run test:payroll` 通过：33/33。
+- `npm run test:payroll` 通过：48/48。
 - `npm run lint -w @huigui/api` 通过。
 - `npm run build` 通过。
+
+## 迁移 readiness gate
+
+在申请测试库 migration 前，先生成当前门禁：
+
+```bash
+npm run preflight:payroll -- \
+  --out output/payroll/salary-slip-preflight-current.json \
+  --markdown-out output/payroll/salary-slip-preflight-current.md
+
+ssh root@49.232.57.98 "docker exec -i huigui-mysql sh -lc 'mysql --default-character-set=utf8mb4 -uroot -p\"\$MYSQL_ROOT_PASSWORD\" \"\$MYSQL_DATABASE\" -N -B'" \
+  < output/payroll/salary-slip-production-readiness-precheck.sql \
+  > output/payroll/salary-slip-production-readiness-precheck.tsv
+
+node scripts/migrations/payroll/salary-slip-migration-readiness-gate.mjs \
+  --preflight output/payroll/salary-slip-preflight-current.json \
+  --global-precheck-verify output/employee-data-migration/2026-06-16/database-100-global-precheck-verify-result.json \
+  --production-precheck output/payroll/salary-slip-production-readiness-precheck.tsv \
+  --out output/payroll/salary-slip-migration-readiness-gate.json \
+  --markdown-out docs/payroll-salary-slip-migration-readiness-gate-2026-06-17.md
+```
+
+当前 readiness gate 结果：
+
+- `status=ready_for_test_db_migration_authorization`
+- `productionMigrationAllowed=false`
+- production migration 尚未执行，且生产库仍处于迁移前状态。
+- 下一步只允许申请测试库 / staging migration 授权，不允许直接执行生产 migration。
 
 ## 结构迁移
 

@@ -1,0 +1,79 @@
+{
+  "generatedAt": "2026-06-17T14:27:25.320Z",
+  "status": "ready_for_test_db_migration_authorization",
+  "nextAllowedAction": "request_test_db_migration_authorization",
+  "scope": "payroll salary slip migration readiness gate",
+  "inputs": {
+    "preflight": "output/payroll/salary-slip-preflight-current.json",
+    "globalPrecheckVerify": "output/employee-data-migration/2026-06-16/database-100-global-precheck-verify-result.json",
+    "productionPrecheck": "output/payroll/salary-slip-production-readiness-precheck.tsv",
+    "migrationSql": "prisma/migrations/20260617110000_payroll_publish_batch_identity/migration.sql"
+  },
+  "safety": {
+    "writesDatabase": false,
+    "readsProductionFromCapturedSelectOutput": true,
+    "executesMigration": false,
+    "productionMigrationAllowed": false,
+    "deploys": false,
+    "restarts": false,
+    "rollbackTagCreated": false
+  },
+  "decision": {
+    "canRequestTestDbMigrationAuthorization": true,
+    "canRequestProductionMigrationAuthorization": false,
+    "productionMigrationAllowed": false,
+    "reason": "Safe to request test DB migration authorization; production migration still needs a separate window after test DB and UAT evidence."
+  },
+  "summary": {
+    "hardFailures": 0,
+    "softBlockers": 3,
+    "preflightStatus": "passed_with_blockers",
+    "globalPrecheckStatus": "passed",
+    "globalPrecheckMismatches": 0,
+    "migrationStaticPassed": true,
+    "productionPrecheckMismatches": 0,
+    "productionMigrationApplied": false
+  },
+  "hardFailures": [],
+  "softBlockers": [
+    "frontend_vite_source_missing_blocks_full_ui_release_not_test_db_migration",
+    "local_docker_missing_blocks_local_db_rehearsal",
+    "local_mysql_client_missing_blocks_local_db_rehearsal"
+  ],
+  "migrationStatic": {
+    "requiredMigration": "20260617110000_payroll_publish_batch_identity",
+    "statementCount": 9,
+    "alterStatements": 3,
+    "createIndexStatements": 6,
+    "missingSnippets": [],
+    "forbiddenKeywords": [],
+    "containsDestructiveDdl": false,
+    "passed": true
+  },
+  "production": {
+    "rows": 16,
+    "hardRows": 13,
+    "observations": 3,
+    "mismatches": [],
+    "migrationApplied": false,
+    "migrationAppliedActual": "0",
+    "missingPreMigrationColumns": 6,
+    "existingPreMigrationColumns": [],
+    "missingPreMigrationIndexes": 6,
+    "existingPreMigrationIndexes": [],
+    "tableCounts": {
+      "table.SalarySlip.count": 1,
+      "table.SalaryNotifyLog.count": 1,
+      "table.PayrollDraftBatch.count": 1
+    }
+  },
+  "requiredBeforeProduction": [
+    "Run the migration in a test or staging database first.",
+    "Run salary-slip-db-verify against that migrated test database.",
+    "Run payroll UAT API execute mode only against an explicitly confirmed test database.",
+    "Generate and review payroll audit package from API readback evidence.",
+    "Take a production database backup.",
+    "Get a separate explicit production migration authorization.",
+    "Run production migration in a controlled window, then run salary-slip-db-verify and database-100 global precheck."
+  ]
+}

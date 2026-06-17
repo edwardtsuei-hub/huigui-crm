@@ -1,0 +1,269 @@
+{
+  "generatedAt": "2026-06-17T14:24:58.617Z",
+  "writesDatabase": false,
+  "deploys": false,
+  "status": "passed_with_blockers",
+  "blockers": [
+    "blocked_waiting_for_vite_source",
+    "blocked_waiting_for_local_docker",
+    "blocked_waiting_for_local_mysql_client"
+  ],
+  "failures": [],
+  "checks": {
+    "codegraphPresent": false,
+    "currentRelease": "20260616090241",
+    "releaseSourceLikeFiles": [],
+    "frontendReleaseEvidence": {
+      "routeHits": [
+        {
+          "file": "apps/web/public/employee-frontend/releases/20260616090241/assets/app-contexts-CUzvWnXS.js",
+          "matchedTokens": [
+            "/finance/imports"
+          ],
+          "bytes": 159758
+        },
+        {
+          "file": "apps/web/public/employee-frontend/releases/20260616090241/assets/app-static-data-CPLFq21v.js",
+          "matchedTokens": [
+            "/finance/imports"
+          ],
+          "bytes": 54049
+        },
+        {
+          "file": "apps/web/public/employee-frontend/releases/20260616090241/assets/index-C20sRqov.js",
+          "matchedTokens": [
+            "/payroll/batch",
+            "/finance/imports"
+          ],
+          "bytes": 2001764
+        },
+        {
+          "file": "apps/web/public/employee-frontend/releases/20260616090241/assets/payroll-batch-page-CXA8ZBid.js",
+          "matchedTokens": [
+            "/finance/imports",
+            "上传薪资表"
+          ],
+          "bytes": 99358
+        }
+      ],
+      "sourceMapFiles": [],
+      "sourceMappingUrlFiles": []
+    },
+    "frontendSourceCandidates": [],
+    "protectedReleaseDiffLines": 0,
+    "dockerAvailable": false,
+    "mysqlClientAvailable": false,
+    "schemaChecks": [
+      {
+        "pattern": "publishBatchId      String?  @db.VarChar(160)",
+        "ok": true
+      },
+      {
+        "pattern": "userId              String?  @db.VarChar(120)",
+        "ok": true
+      },
+      {
+        "pattern": "wecomUserId         String?  @db.VarChar(128)",
+        "ok": true
+      },
+      {
+        "pattern": "loginAccount        String?  @db.VarChar(64)",
+        "ok": true
+      },
+      {
+        "pattern": "@@index([publishBatchId])",
+        "ok": true
+      },
+      {
+        "pattern": "@@index([userId])",
+        "ok": true
+      },
+      {
+        "pattern": "@@index([wecomUserId])",
+        "ok": true
+      },
+      {
+        "pattern": "@@index([loginAccount])",
+        "ok": true
+      }
+    ],
+    "migrationChecks": [
+      {
+        "pattern": "ALTER TABLE `SalarySlip`",
+        "ok": true
+      },
+      {
+        "pattern": "ADD COLUMN `publishBatchId`",
+        "ok": true
+      },
+      {
+        "pattern": "ADD COLUMN `userId`",
+        "ok": true
+      },
+      {
+        "pattern": "ADD COLUMN `wecomUserId`",
+        "ok": true
+      },
+      {
+        "pattern": "ADD COLUMN `loginAccount`",
+        "ok": true
+      },
+      {
+        "pattern": "ALTER TABLE `SalaryNotifyLog`",
+        "ok": true
+      },
+      {
+        "pattern": "ALTER TABLE `PayrollDraftBatch`",
+        "ok": true
+      },
+      {
+        "pattern": "CREATE INDEX `SalarySlip_publishBatchId_idx`",
+        "ok": true
+      },
+      {
+        "pattern": "CREATE INDEX `SalaryNotifyLog_publishBatchId_idx`",
+        "ok": true
+      },
+      {
+        "pattern": "CREATE INDEX `PayrollDraftBatch_publishBatchId_idx`",
+        "ok": true
+      }
+    ],
+    "destructiveMigrationTokens": [],
+    "serviceForbiddenTokens": [],
+    "regressionChecks": [
+      {
+        "pattern": "matching names alone do not authorize salary slip access",
+        "ok": true
+      },
+      {
+        "pattern": "payroll maintenance no longer allows finance-looking text or member-management permission",
+        "ok": true
+      },
+      {
+        "pattern": "salary notify logs keep publish batch id and do not prune history",
+        "ok": true
+      },
+      {
+        "pattern": "salary notify logs create distinct default ids for repeated publish batch records",
+        "ok": true
+      },
+      {
+        "pattern": "salary identity backfill dry-run only auto-updates explicit identity matches",
+        "ok": true
+      },
+      {
+        "pattern": "SalarySlips sync rejects rows without explicit employee identity before writing",
+        "ok": true
+      },
+      {
+        "pattern": "SalarySlips sync rejects empty and invalid amount payloads before writing",
+        "ok": true
+      },
+      {
+        "pattern": "SalarySlips sync warns about amount mismatches without blocking publish",
+        "ok": true
+      },
+      {
+        "pattern": "SalarySlips sync replaces only the current publish batch",
+        "ok": true
+      },
+      {
+        "pattern": "SalarySlips sync default ids are stable within a publish batch and distinct across batches",
+        "ok": true
+      },
+      {
+        "pattern": "UAT salary fixture blocks invalid required amounts before generating publish payloads",
+        "ok": true
+      },
+      {
+        "pattern": "UAT salary fixture blocks rows without explicit employee identity",
+        "ok": true
+      },
+      {
+        "pattern": "UAT salary fixture blocks CSV files with missing required headers before generating publish payloads",
+        "ok": true
+      },
+      {
+        "pattern": "UAT salary fixture parses quoted CSV amounts with thousands separators",
+        "ok": true
+      },
+      {
+        "pattern": "UAT salary fixture strips UTF-8 BOM from CSV headers",
+        "ok": true
+      },
+      {
+        "pattern": "BOM老师",
+        "ok": true
+      },
+      {
+        "pattern": "CSV has an unclosed quoted cell",
+        "ok": true
+      },
+      {
+        "pattern": "blocked_missing_required_headers",
+        "ok": true
+      },
+      {
+        "pattern": "blocked_invalid_amounts",
+        "ok": true
+      },
+      {
+        "pattern": "blocked_missing_identity",
+        "ok": true
+      },
+      {
+        "pattern": "salary notify logs require publish batch id and filtered queries",
+        "ok": true
+      },
+      {
+        "pattern": "salary notify logs infer a single publish batch id but reject ambiguous months",
+        "ok": true
+      },
+      {
+        "pattern": "UAT payroll API submitter requires explicit test database confirmation before execute",
+        "ok": true
+      },
+      {
+        "pattern": "PAYROLL_UAT_TEST_DB",
+        "ok": true
+      },
+      {
+        "pattern": "UAT payroll API submitter blocks inconsistent payload files before dry-run plan",
+        "ok": true
+      },
+      {
+        "pattern": "UAT payroll API submitter validates notify log response publish batch",
+        "ok": true
+      },
+      {
+        "pattern": "payload_publish_batch_mismatch_with_notify_log",
+        "ok": true
+      },
+      {
+        "pattern": "UAT payroll API submitter fails when read-back amounts identities or notify counts drift",
+        "ok": true
+      },
+      {
+        "pattern": "UAT audit package blocks failed API submit results instead of exporting misleading evidence",
+        "ok": true
+      },
+      {
+        "pattern": "UAT audit package blocks submit results that lack API readback evidence",
+        "ok": true
+      },
+      {
+        "pattern": "notify_response_publish_batch_id_mismatch",
+        "ok": true
+      },
+      {
+        "pattern": "salary_slips_readback_amount_mismatch",
+        "ok": true
+      },
+      {
+        "pattern": "notify_logs_readback_no_single_log_matches_counts",
+        "ok": true
+      }
+    ]
+  }
+}
