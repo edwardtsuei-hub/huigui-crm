@@ -16,6 +16,8 @@
 - `blocked_waiting_for_local_docker`：本机 Docker 不存在；仅阻塞 Docker 标准演练路径。
 - `blocked_waiting_for_employee_frontend_release_plan`：`apps/employee-frontend` 已可构建，但尚未完成静态 release 接入、真账号验收和部署评审。
 
+员工端静态 release / 灰度接入方案已另行起草，见 `docs/employee-frontend-payroll-release-gray-plan-2026-06-18.md`。该方案仅用于评审，不授权部署、不切换 `current.release`、不覆盖现行 `20260616090241` release。
+
 ## 允许进入评审的内容
 
 - 后端 `salary-slips/sync` 发布批次与身份字段写入。
