@@ -1,0 +1,123 @@
+{
+  "generatedAt": "2026-06-17T16:55:00+08:00",
+  "status": "correction_plan_dry_run_only",
+  "scope": "weekly teamReports existing sync correction plan",
+  "safety": {
+    "writesDatabase": false,
+    "executedApply": false,
+    "productionSqlGenerated": false,
+    "executableUpdateSqlGenerated": false,
+    "writeScriptGenerated": false,
+    "schemaChanged": false,
+    "migrationGenerated": false,
+    "apiChanged": false,
+    "frontendChanged": false,
+    "deployed": false,
+    "restarted": false,
+    "rollbackTagCreated": false,
+    "deploymentAllowed": false
+  },
+  "summary": {
+    "parentRowsToConsiderForCorrection": 3,
+    "reviewItemsToConsiderForCorrection": 3,
+    "planItemsToConsiderForCorrection": 3,
+    "directDatabaseWriteAllowed": false,
+    "nextStage": "correction_execution_package_dry_run_with_before_after_fingerprints"
+  },
+  "precheckResult": {
+    "readOnlyPrecheckExecuted": true,
+    "targetParentRowsFound": 3,
+    "targetReviewItemsFound": 3,
+    "targetPlanItemsFound": 3,
+    "targetPayloadLinks": 0,
+    "payloadGate": {
+      "apiDbFirstImported": 13,
+      "legacyWeeklyWorkspaceImported": 3,
+      "legacyWeeklyWorkspaceNeedsReview": 3,
+      "sharedSharedDraft": 13
+    },
+    "precheckPassedForDryRunPlanning": true
+  },
+  "correctionCandidates": [
+    {
+      "memberLogin": "Han",
+      "weekStartKey": "2026-05-25",
+      "weeklyReportId": "wr_b3f18d418c27145ced5e627c",
+      "reviewItemId": "wri_7f9a9b2dbc48b1a374f8281c",
+      "planItemId": "wpi_4f5bf9170135688f49982adb",
+      "reason": "Parent and child text remain truncated and include unrecovered focus item.",
+      "parentFields": [
+        "completedSummary",
+        "focusSummary"
+      ],
+      "childRows": [
+        "WeeklyReportReviewItem.description",
+        "WeeklyReportPlanItem.description"
+      ],
+      "excludedText": "4:上月考勤上交立猛 ..."
+    },
+    {
+      "memberLogin": "ChengCheng",
+      "weekStartKey": "2026-06-08",
+      "weeklyReportId": "wr_b361a1934ab724cd56c5da14",
+      "reviewItemId": "wri_5d12854bc0e9ce932fc43ddf",
+      "planItemId": "wpi_aab34de461e592a3df8daf1c",
+      "reason": "Formal body includes earlier same-week context with unrecovered ellipsis; v3 target keeps latest submission only in formal body.",
+      "parentFields": [
+        "completedSummary",
+        "focusSummary"
+      ],
+      "childRows": [
+        "WeeklyReportReviewItem.description",
+        "WeeklyReportPlanItem.description"
+      ],
+      "evidenceOnlyText": "Earlier same-week submission 2026-06-14 04:27"
+    },
+    {
+      "memberLogin": "lisali",
+      "weekStartKey": "2026-06-08",
+      "weeklyReportId": "wr_6bf6e9ba0d49a18000a3fb7a",
+      "reviewItemId": "wri_c0dc353f8490b81a8c2f2314",
+      "planItemId": "wpi_30251efba4234d81299d5bf2",
+      "reason": "Formal body still contains legacy ellipsis tails; v3 target uses conservative recovery plus missing-tail note.",
+      "parentFields": [
+        "completedSummary",
+        "focusSummary"
+      ],
+      "childRows": [
+        "WeeklyReportReviewItem.description",
+        "WeeklyReportPlanItem.description"
+      ],
+      "conservativeRecovery": "由申厨和陈师傅负责交流培训"
+    }
+  ],
+  "notCorrectedInThisPlan": [
+    {
+      "target": "greatchef / 2026-05-25 support reviewItem",
+      "reason": "May be acceptable as historical support/coordination evidence; requires D-line/business acceptance."
+    },
+    {
+      "target": "lisali / 2026-05-25 and 2026-06-01 prefix differences",
+      "reason": "Semantic content matches v3 sufficiently; defer cosmetic prefix cleanup."
+    },
+    {
+      "target": "manager relations Han/greatchef -> lisali",
+      "reason": "Organization relation source review is separate from weekly report content correction."
+    }
+  ],
+  "precheckRequired": [
+    "3 target WeeklyReport rows still exist.",
+    "3 target WeeklyReportReviewItem rows still exist.",
+    "3 target WeeklyReportPlanItem rows still exist.",
+    "No target rows have new WeeklyReportPayload direct links.",
+    "Payload gate remains stable."
+  ],
+  "executionPackageRequirementsIfLaterAuthorized": [
+    "before/after text for each parent and child row",
+    "before/after SHA256 fingerprints",
+    "SELECT-only precheck",
+    "postcheck",
+    "rollback package",
+    "explicit user authorization before any database write"
+  ]
+}
