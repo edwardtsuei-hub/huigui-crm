@@ -4,6 +4,12 @@
 
 本地代码层面可以进入测试库验收；不能直接进入生产发布。
 
+当前 migration readiness gate：
+
+- `status=ready_for_test_db_migration_authorization`
+- `productionMigrationAllowed=false`
+- 生产库仍为迁移前状态，测试库 migration 和 UAT 证据完成前不得申请生产 migration。
+
 必须继续拦截的事项：
 
 - `blocked_waiting_for_vite_source`：员工端 Vite 源码未恢复，前端 UI 修复不能做。
