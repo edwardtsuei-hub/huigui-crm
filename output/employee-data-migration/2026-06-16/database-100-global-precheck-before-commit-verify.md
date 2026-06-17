@@ -1,8 +1,8 @@
 # Database 100 global precheck verify result
 
-Generated at: 2026-06-17T14:16:53.724Z
+Generated at: 2026-06-17T14:13:26.783Z
 Status: `passed`
-Input: `output/employee-data-migration/2026-06-16/database-100-global-precheck.tsv`
+Input: `output/employee-data-migration/2026-06-16/database-100-global-precheck-before-commit.tsv`
 
 ## Summary
 
@@ -28,4 +28,3 @@ Input: `output/employee-data-migration/2026-06-16/database-100-global-precheck.t
 | `payroll.SalarySlip.count` | `1` |
 | `payroll.SalaryNotifyLog.count` | `1` |
 | `payroll.PayrollDraftBatch.count` | `1` |
-
