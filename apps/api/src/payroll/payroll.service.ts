@@ -1,13 +1,20 @@
 import { BadRequestException, ForbiddenException, Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
+import { createHash } from "node:crypto";
 import type { AuthenticatedUser } from "../common/types/authenticated-user";
 import { PrismaService } from "../prisma/prisma.service";
 
 const MONTH_PATTERN = /^\d{4}-\d{2}$/;
 const NOTIFY_STATUSES = new Set(["sent", "preview", "skipped", "failed"]);
-const PAYROLL_WRITE_PERMISSION = "action.management.member.update";
 
 type JsonRecord = Record<string, unknown>;
+type PayrollIdentityCandidates = {
+  teacherIds: string[];
+  userIds: string[];
+  wecomUserIds: string[];
+  loginAccounts: string[];
+  nameHints: string[];
+};
 
 @Injectable()
 export class PayrollService {
@@ -19,24 +26,60 @@ export class PayrollService {
     const month = this.requiredMonth(body.month, "薪资条同步缺少月份。");
     const source = body.source === "wecom" ? "wecom" : "manual_import";
     const syncedBy = this.optionalText(body.syncedBy) ?? user.name ?? "财务";
+    const publishBatchId = this.optionalText(body.publishBatchId)
+      ?? `salary-publish-${month}-${Date.now()}`;
     const rawItems = Array.isArray(body.items) ? body.items : [];
     const syncedAt = new Date();
     const slipsByTeacherId = new Map<string, Prisma.SalarySlipCreateManyInput>();
+    const missingIdentityRows: string[] = [];
+    const warnings: string[] = [];
+
+    if (rawItems.length === 0) {
+      throw new BadRequestException("薪资条同步至少需要一条明细。");
+    }
 
     rawItems.forEach((rawItem, index) => {
       const item = this.asRecord(rawItem);
       const teacherName = this.optionalText(item.teacherName) ?? `老师${index + 1}`;
-      const teacherId = this.optionalText(item.teacherId) ?? `teacher-${teacherName}`;
+      const userId = this.firstText(item, ["userId", "employeeUserId", "systemUserId"]);
+      const wecomUserId = this.firstText(item, ["wecomUserId", "wecomUserid", "userid", "wecom_userid"]);
+      const loginAccount = this.firstText(item, ["loginAccount", "login", "account", "username"]);
+      const rawTeacherId = this.firstText(item, ["teacherId", "employeeId", "staffId"]);
+      const hasExplicitIdentity = Boolean(rawTeacherId || userId || wecomUserId || loginAccount);
+      const teacherId = rawTeacherId ?? wecomUserId ?? loginAccount ?? userId ?? `teacher-${teacherName}`;
+      if (slipsByTeacherId.has(teacherId)) {
+        warnings.push(`重复薪资条已按最后一条覆盖：${teacherName} / ${teacherId}`);
+      }
+      if (!hasExplicitIdentity) {
+        missingIdentityRows.push(`第 ${index + 1} 行 ${teacherName}`);
+      }
+      const grossAmount = this.payrollAmount(item.grossAmount, 0, "应发", teacherName);
+      const commissionAmount = this.optionalPayrollAmount(item.commissionAmount, "提成", teacherName);
+      const profitSharingAmount = this.optionalPayrollAmount(item.profitSharingAmount, "分润", teacherName);
+      const deductionAmount = this.payrollAmount(item.deductionAmount, 0, "扣款", teacherName);
+      const netAmount = this.payrollAmount(item.netAmount, grossAmount, "实发", teacherName);
+      this.appendAmountWarnings(warnings, {
+        teacherName,
+        grossAmount,
+        commissionAmount,
+        profitSharingAmount,
+        deductionAmount,
+        netAmount,
+      });
       slipsByTeacherId.set(teacherId, {
-        id: this.optionalText(item.id) ?? `salary-slip-${month}-${index + 1}`,
+        id: this.optionalText(item.id) ?? this.defaultSalarySlipId(month, publishBatchId, teacherId),
         month,
+        publishBatchId,
         teacherId,
         teacherName,
-        grossAmount: this.decimalAmount(item.grossAmount),
-        commissionAmount: this.optionalDecimalAmount(item.commissionAmount),
-        profitSharingAmount: this.optionalDecimalAmount(item.profitSharingAmount),
-        deductionAmount: this.decimalAmount(item.deductionAmount),
-        netAmount: this.decimalAmount(item.netAmount ?? item.grossAmount),
+        userId,
+        wecomUserId,
+        loginAccount,
+        grossAmount,
+        commissionAmount,
+        profitSharingAmount,
+        deductionAmount,
+        netAmount,
         source,
         sourceLabel: this.optionalText(item.sourceLabel),
         settlementId: this.optionalText(item.settlementId),
@@ -47,31 +90,57 @@ export class PayrollService {
       });
     });
 
+    if (missingIdentityRows.length > 0) {
+      throw new BadRequestException(
+        `薪资条同步存在缺少明确员工身份的明细：${missingIdentityRows.join("、")}。请提供 teacherId、userId、wecomUserId 或 loginAccount。`,
+      );
+    }
+
     const slips = Array.from(slipsByTeacherId.values());
     const teacherIds = slips.map((item) => item.teacherId);
+    let deletedCount = 0;
+    let insertedCount = 0;
 
     if (slips.length > 0) {
       await this.prisma.$transaction(async (tx) => {
-        await tx.salarySlip.deleteMany({
+        const deleted = await tx.salarySlip.deleteMany({
           where: {
             month,
+            publishBatchId,
             teacherId: { in: teacherIds },
           },
         });
-        await tx.salarySlip.createMany({ data: slips });
+        const inserted = await tx.salarySlip.createMany({ data: slips });
+        deletedCount = deleted.count;
+        insertedCount = inserted.count;
       });
     }
 
-    return { ok: true };
+    return {
+      ok: true,
+      createdCount: Math.max(insertedCount - deletedCount, 0),
+      updatedCount: deletedCount,
+      skippedCount: Math.max(rawItems.length - slips.length, 0),
+      teacherIds,
+      publishBatchId,
+      warnings,
+    };
   }
 
   async getMySalarySlips(user: AuthenticatedUser) {
     const candidates = this.getPayrollIdentityCandidates(user);
-    if (candidates.size === 0) {
-      return { data: [] };
+    const identityWhere = this.buildMySalarySlipWhere(candidates);
+    if (!identityWhere) {
+      return {
+        data: [],
+        warnings: candidates.nameHints.length > 0
+          ? ["当前账号缺少明确身份字段，薪资条不会按姓名授权查询，请联系财务补充员工映射。"]
+          : [],
+      };
     }
 
     const slips = await this.prisma.salarySlip.findMany({
+      where: identityWhere,
       orderBy: [
         { month: "desc" },
         { syncedAt: "desc" },
@@ -79,12 +148,65 @@ export class PayrollService {
     });
 
     return {
-      data: slips
-        .filter((slip) => (
-          candidates.has(this.normalizeIdentityText(slip.teacherId))
-          || candidates.has(this.normalizeIdentityText(slip.teacherName))
-        ))
-        .map((slip) => this.serializeSalarySlip(slip)),
+      data: slips.map((slip) => this.serializeSalarySlip(slip)),
+    };
+  }
+
+  async listSalarySlips(input: unknown, user: AuthenticatedUser) {
+    this.assertCanMaintainPayroll(user);
+    const body = this.asRecord(input);
+    const month = this.optionalText(body.month);
+    const publishBatchId = this.optionalText(body.publishBatchId);
+    const teacherId = this.optionalText(body.teacherId);
+    const userId = this.optionalText(body.userId);
+    const wecomUserId = this.optionalText(body.wecomUserId);
+    const loginAccount = this.optionalText(body.loginAccount);
+    const limit = this.optionalPositiveInteger(body.limit, 500, 2000);
+    const where: Prisma.SalarySlipWhereInput = {};
+
+    if (month) {
+      where.month = this.requiredMonth(month, "薪资条月份必须为 YYYY-MM。");
+    }
+    if (publishBatchId) {
+      where.publishBatchId = publishBatchId;
+    }
+    if (teacherId) {
+      where.teacherId = teacherId;
+    }
+    if (userId) {
+      where.userId = userId;
+    }
+    if (wecomUserId) {
+      where.wecomUserId = wecomUserId;
+    }
+    if (loginAccount) {
+      where.loginAccount = loginAccount;
+    }
+    if (Object.keys(where).length === 0) {
+      throw new BadRequestException("查询薪资条至少需要月份、发布批次或明确员工身份条件。");
+    }
+
+    const slips = await this.prisma.salarySlip.findMany({
+      where,
+      orderBy: [
+        { month: "desc" },
+        { syncedAt: "desc" },
+        { teacherName: "asc" },
+      ],
+      take: limit,
+    });
+
+    return {
+      data: slips.map((slip) => this.serializeSalarySlip(slip)),
+      filters: {
+        month: month ?? undefined,
+        publishBatchId: publishBatchId ?? undefined,
+        teacherId: teacherId ?? undefined,
+        userId: userId ?? undefined,
+        wecomUserId: wecomUserId ?? undefined,
+        loginAccount: loginAccount ?? undefined,
+        limit,
+      },
     };
   }
 
@@ -94,9 +216,14 @@ export class PayrollService {
     const month = this.requiredMonth(body.month, "薪资通知记录缺少月份。");
     const actionLabel = this.optionalText(body.actionLabel);
     const message = this.optionalText(body.message);
+    const publishBatchId = this.optionalText(body.publishBatchId)
+      ?? await this.inferSinglePublishBatchId(month);
 
     if (!actionLabel || !message) {
       throw new BadRequestException("薪资通知记录缺少动作或说明。");
+    }
+    if (!publishBatchId) {
+      throw new BadRequestException("薪资通知记录缺少发布批次号。");
     }
 
     const id = this.optionalText(body.id) ?? `salary-notify-log-${month}-${Date.now()}`;
@@ -105,6 +232,7 @@ export class PayrollService {
       at: this.optionalDate(body.at) ?? new Date(),
       actionLabel,
       modeLabel: this.optionalText(body.modeLabel) ?? "企业微信预览",
+      publishBatchId,
       status: this.normalizeNotifyStatus(body.status),
       tone: this.optionalText(body.tone),
       message,
@@ -120,9 +248,45 @@ export class PayrollService {
       create: { id, ...data },
       update: data,
     });
-    await this.pruneSalaryNotifyLogs();
 
-    return { ok: true };
+    return { ok: true, publishBatchId: data.publishBatchId };
+  }
+
+  async listSalaryNotifyLogs(input: unknown, user: AuthenticatedUser) {
+    this.assertCanMaintainPayroll(user);
+    const body = this.asRecord(input);
+    const month = this.optionalText(body.month);
+    const publishBatchId = this.optionalText(body.publishBatchId);
+    const limit = this.optionalPositiveInteger(body.limit, 240, 1000);
+    const where: Prisma.SalaryNotifyLogWhereInput = {};
+
+    if (month) {
+      where.month = this.requiredMonth(month, "薪资通知记录月份必须为 YYYY-MM。");
+    }
+    if (publishBatchId) {
+      where.publishBatchId = publishBatchId;
+    }
+    if (Object.keys(where).length === 0) {
+      throw new BadRequestException("查询薪资通知记录至少需要月份或发布批次条件。");
+    }
+
+    const logs = await this.prisma.salaryNotifyLog.findMany({
+      where,
+      orderBy: [
+        { createdAt: "desc" },
+        { at: "desc" },
+      ],
+      take: limit,
+    });
+
+    return {
+      data: logs.map((log) => this.serializeSalaryNotifyLog(log)),
+      filters: {
+        month: month ?? undefined,
+        publishBatchId: publishBatchId ?? undefined,
+        limit,
+      },
+    };
   }
 
   async getPayrollDraftBatch(monthInput: string, user: AuthenticatedUser) {
@@ -143,6 +307,7 @@ export class PayrollService {
       where: { month },
       create: {
         month,
+        publishBatchId: this.optionalText(body.publishBatchId),
         drafts: this.toInputJsonValue(this.isRecord(body.drafts) ? body.drafts : {}),
         publishedAt: this.optionalDate(body.publishedAt),
         notifyStatus: this.optionalText(body.notifyStatus),
@@ -150,6 +315,7 @@ export class PayrollService {
         updatedBy: this.optionalText(body.updatedBy) ?? user.name ?? "财务",
       },
       update: {
+        publishBatchId: this.optionalText(body.publishBatchId),
         drafts: this.toInputJsonValue(this.isRecord(body.drafts) ? body.drafts : {}),
         publishedAt: this.optionalDate(body.publishedAt),
         notifyStatus: this.optionalText(body.notifyStatus),
@@ -184,7 +350,7 @@ export class PayrollService {
           { createdAt: "desc" },
           { at: "desc" },
         ],
-        take: 60,
+        take: 240,
       }),
       this.prisma.payrollDraftBatch.findMany({
         orderBy: [
@@ -213,41 +379,30 @@ export class PayrollService {
     if (roleCode === "SUPER_ADMIN" || roleCode === "ADMIN" || roleCode === "FINANCE") {
       return true;
     }
-    if (user.permissions.includes(PAYROLL_WRITE_PERMISSION) || user.permissions.includes("action.payroll.publish")) {
+    if (user.permissions.includes("action.payroll.publish")) {
       return true;
     }
-
-    const identityText = [
-      user.roleCode,
-      user.roleName,
-      user.department,
-      user.title,
-      user.name,
-      user.loginAccount,
-      user.wecomName,
-      user.wecomUserId,
-      ...user.permissions,
-    ]
-      .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
-      .join(" ")
-      .toLowerCase();
-
-    return /finance|财务|財務|finance_reviewer|office_admin|office|admin|办公室|辦公室|人事|hr/.test(identityText);
+    return false;
   }
 
-  private getPayrollIdentityCandidates(user: AuthenticatedUser) {
-    const candidates = new Set<string>();
-    [
-      user.id,
-      user.name,
-      user.loginAccount,
-      user.email,
-      user.mobile,
-      user.wecomUserId,
-      user.wecomName,
-    ].forEach((value) => {
-      this.addIdentityCandidate(candidates, value);
-    });
+  private getPayrollIdentityCandidates(user: AuthenticatedUser): PayrollIdentityCandidates {
+    const teacherIds = new Set<string>();
+    const userIds = new Set<string>();
+    const wecomUserIds = new Set<string>();
+    const loginAccounts = new Set<string>();
+    const nameHints = new Set<string>();
+
+    this.addIdentityCandidate(userIds, user.id);
+    this.addIdentityCandidate(teacherIds, user.id);
+
+    this.addIdentityCandidate(loginAccounts, user.loginAccount);
+    this.addIdentityCandidate(teacherIds, user.loginAccount);
+
+    this.addIdentityCandidate(wecomUserIds, user.wecomUserId);
+    this.addIdentityCandidate(teacherIds, user.wecomUserId);
+
+    this.addIdentityCandidate(nameHints, user.name);
+    this.addIdentityCandidate(nameHints, user.wecomName);
 
     const mappedIdentity = this.getMappedEmployeeIdentity(user.wecomUserId);
     if (mappedIdentity) {
@@ -255,16 +410,56 @@ export class PayrollService {
         "userid",
         "userId",
         "username",
+        "identityId",
+        "employeeId",
+      ].forEach((key) => {
+        this.addIdentityCandidate(teacherIds, mappedIdentity[key]);
+      });
+      this.addIdentityCandidate(userIds, mappedIdentity.userId);
+      this.addIdentityCandidate(userIds, mappedIdentity.identityId);
+      this.addIdentityCandidate(userIds, mappedIdentity.employeeUserId);
+      this.addIdentityCandidate(userIds, mappedIdentity.systemUserId);
+      this.addIdentityCandidate(userIds, mappedIdentity.userid);
+      this.addIdentityCandidate(wecomUserIds, mappedIdentity.wecomUserId);
+      this.addIdentityCandidate(wecomUserIds, mappedIdentity.userid);
+      this.addIdentityCandidate(loginAccounts, mappedIdentity.loginAccount);
+      this.addIdentityCandidate(loginAccounts, mappedIdentity.username);
+
+      [
         "name",
         "displayName",
         "employeeName",
         "wecomName",
       ].forEach((key) => {
-        this.addIdentityCandidate(candidates, mappedIdentity[key]);
+        this.addIdentityCandidate(nameHints, mappedIdentity[key]);
       });
     }
 
-    return candidates;
+    return {
+      teacherIds: Array.from(teacherIds),
+      userIds: Array.from(userIds),
+      wecomUserIds: Array.from(wecomUserIds),
+      loginAccounts: Array.from(loginAccounts),
+      nameHints: Array.from(nameHints),
+    };
+  }
+
+  private buildMySalarySlipWhere(candidates: PayrollIdentityCandidates): Prisma.SalarySlipWhereInput | null {
+    const or: Prisma.SalarySlipWhereInput[] = [];
+    if (candidates.teacherIds.length > 0) {
+      or.push({ teacherId: { in: candidates.teacherIds } });
+    }
+    if (candidates.userIds.length > 0) {
+      or.push({ userId: { in: candidates.userIds } });
+    }
+    if (candidates.wecomUserIds.length > 0) {
+      or.push({ wecomUserId: { in: candidates.wecomUserIds } });
+    }
+    if (candidates.loginAccounts.length > 0) {
+      or.push({ loginAccount: { in: candidates.loginAccounts } });
+    }
+
+    return or.length > 0 ? { OR: or } : null;
   }
 
   private getMappedEmployeeIdentity(wecomUserId?: string | null) {
@@ -287,48 +482,9 @@ export class PayrollService {
   }
 
   private addIdentityCandidate(candidates: Set<string>, value: unknown) {
-    const normalized = this.normalizeIdentityText(value);
-    if (normalized) {
-      candidates.add(normalized);
-    }
-  }
-
-  private normalizeIdentityText(value: unknown) {
     const text = this.optionalText(value);
-    if (!text) {
-      return "";
-    }
-
-    return text
-      .toLowerCase()
-      .replace(/\s+/g, "")
-      .replace(/[·・.．()（）_-]/g, "")
-      .replace(/老師|老师|教练|教練/g, "")
-      .replace(/吳/g, "吴")
-      .replace(/彥/g, "彦")
-      .replace(/羅/g, "罗")
-      .replace(/凱/g, "凯")
-      .replace(/瑤/g, "瑶")
-      .replace(/覺/g, "觉")
-      .replace(/達/g, "达")
-      .replace(/張/g, "张")
-      .replace(/曉/g, "晓")
-      .replace(/譚/g, "谭");
-  }
-
-  private async pruneSalaryNotifyLogs() {
-    const stale = await this.prisma.salaryNotifyLog.findMany({
-      select: { id: true },
-      orderBy: [
-        { createdAt: "desc" },
-        { at: "desc" },
-      ],
-      skip: 60,
-    });
-    if (stale.length > 0) {
-      await this.prisma.salaryNotifyLog.deleteMany({
-        where: { id: { in: stale.map((item) => item.id) } },
-      });
+    if (text) {
+      candidates.add(text);
     }
   }
 
@@ -348,6 +504,28 @@ export class PayrollService {
     }
   }
 
+  private async inferSinglePublishBatchId(month: string) {
+    const slips = await this.prisma.salarySlip.findMany({
+      where: {
+        month,
+        publishBatchId: { not: null },
+      },
+      select: { publishBatchId: true },
+      orderBy: [{ syncedAt: "desc" }],
+      take: 200,
+    });
+    const publishBatchIds = Array.from(new Set(slips
+      .map((slip) => this.optionalText(slip.publishBatchId))
+      .filter((item): item is string => Boolean(item))));
+    if (publishBatchIds.length === 1) {
+      return publishBatchIds[0];
+    }
+    if (publishBatchIds.length > 1) {
+      throw new BadRequestException("薪资通知记录缺少发布批次号，且当月存在多个发布批次。");
+    }
+    return undefined;
+  }
+
   private requiredMonth(value: unknown, message: string) {
     const month = this.optionalText(value);
     if (!month || !MONTH_PATTERN.test(month)) {
@@ -358,6 +536,16 @@ export class PayrollService {
 
   private optionalText(value: unknown) {
     return typeof value === "string" && value.trim() ? value.trim() : undefined;
+  }
+
+  private firstText(record: JsonRecord, keys: string[]) {
+    for (const key of keys) {
+      const text = this.optionalText(record[key]);
+      if (text) {
+        return text;
+      }
+    }
+    return undefined;
   }
 
   private decimalAmount(value: unknown) {
@@ -372,6 +560,54 @@ export class PayrollService {
     return this.decimalAmount(value);
   }
 
+  private payrollAmount(value: unknown, fallback: number, fieldLabel: string, teacherName: string) {
+    if (value === undefined || value === null || value === "") {
+      return fallback;
+    }
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) {
+      throw new BadRequestException(`薪资条金额不是有效数字：${teacherName} / ${fieldLabel}。`);
+    }
+    return parsed;
+  }
+
+  private optionalPayrollAmount(value: unknown, fieldLabel: string, teacherName: string) {
+    if (value === undefined || value === null || value === "") {
+      return undefined;
+    }
+    return this.payrollAmount(value, 0, fieldLabel, teacherName);
+  }
+
+  private appendAmountWarnings(warnings: string[], input: {
+    teacherName: string;
+    grossAmount: number;
+    commissionAmount?: number;
+    profitSharingAmount?: number;
+    deductionAmount: number;
+    netAmount: number;
+  }) {
+    const amountEntries = [
+      ["应发", input.grossAmount],
+      ["提成", input.commissionAmount],
+      ["分润", input.profitSharingAmount],
+      ["扣款", input.deductionAmount],
+      ["实发", input.netAmount],
+    ] as const;
+    amountEntries.forEach(([label, amount]) => {
+      if (amount !== undefined && amount < 0) {
+        warnings.push(`金额异常需复核：${input.teacherName} / ${label} 为负数。`);
+      }
+    });
+
+    const expectedNet = input.grossAmount
+      + (input.commissionAmount ?? 0)
+      + (input.profitSharingAmount ?? 0)
+      - input.deductionAmount;
+    if (Math.abs(input.netAmount - expectedNet) > 0.01) {
+      warnings.push(`金额异常需复核：${input.teacherName} / 实发与应发、提成、分润、扣款合计不一致。`);
+    }
+  }
+
   private optionalDate(value: unknown) {
     const text = this.optionalText(value);
     if (!text) {
@@ -384,6 +620,24 @@ export class PayrollService {
     const date = new Date(withTimezone);
 
     return Number.isNaN(date.getTime()) ? undefined : date;
+  }
+
+  private optionalPositiveInteger(value: unknown, fallback: number, max: number) {
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      return fallback;
+    }
+    return Math.min(parsed, max);
+  }
+
+  private defaultSalarySlipId(month: string, publishBatchId: string, teacherId: string) {
+    const safeTeacherId = teacherId
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48) || "teacher";
+    const digest = createHash("sha1").update(`${month}:${publishBatchId}:${teacherId}`).digest("hex").slice(0, 16);
+    return `salary-slip-${month}-${safeTeacherId}-${digest}`;
   }
 
   private normalizeNotifyStatus(value: unknown) {
@@ -413,8 +667,12 @@ export class PayrollService {
   private serializeSalarySlip(slip: {
     id: string;
     month: string;
+    publishBatchId: string | null;
     teacherId: string;
     teacherName: string;
+    userId: string | null;
+    wecomUserId: string | null;
+    loginAccount: string | null;
     grossAmount: Prisma.Decimal;
     commissionAmount: Prisma.Decimal | null;
     profitSharingAmount: Prisma.Decimal | null;
@@ -431,8 +689,12 @@ export class PayrollService {
     return {
       id: slip.id,
       month: slip.month,
+      publishBatchId: slip.publishBatchId ?? undefined,
       teacherId: slip.teacherId,
       teacherName: slip.teacherName,
+      userId: slip.userId ?? undefined,
+      wecomUserId: slip.wecomUserId ?? undefined,
+      loginAccount: slip.loginAccount ?? undefined,
       grossAmount: Number(slip.grossAmount),
       commissionAmount: slip.commissionAmount === null ? undefined : Number(slip.commissionAmount),
       profitSharingAmount: slip.profitSharingAmount === null ? undefined : Number(slip.profitSharingAmount),
@@ -451,6 +713,7 @@ export class PayrollService {
   private serializeSalaryNotifyLog(log: {
     id: string;
     month: string;
+    publishBatchId: string | null;
     at: Date;
     actionLabel: string;
     modeLabel: string;
@@ -467,6 +730,7 @@ export class PayrollService {
     return {
       id: log.id,
       month: log.month,
+      publishBatchId: log.publishBatchId ?? undefined,
       at: log.at.toISOString(),
       actionLabel: log.actionLabel,
       modeLabel: log.modeLabel,
@@ -484,6 +748,7 @@ export class PayrollService {
 
   private serializePayrollDraftBatch(batch: {
     month: string;
+    publishBatchId: string | null;
     drafts: Prisma.JsonValue;
     publishedAt: Date | null;
     notifyStatus: string | null;
@@ -494,6 +759,7 @@ export class PayrollService {
   }) {
     return {
       month: batch.month,
+      publishBatchId: batch.publishBatchId ?? null,
       drafts: this.isRecord(batch.drafts) ? batch.drafts : {},
       publishedAt: batch.publishedAt?.toISOString() ?? null,
       notifyStatus: batch.notifyStatus,
