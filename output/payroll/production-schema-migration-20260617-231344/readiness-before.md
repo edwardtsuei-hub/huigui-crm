@@ -1,38 +1,34 @@
 # Payroll salary slip migration readiness gate
 
-Generated at: 2026-06-17T14:56:42.983Z
-Status: `ready_for_test_db_migration_authorization`
-Next allowed action: `request_test_db_migration_authorization`
-
-## Current Role
-
-This file is a pre-production readiness snapshot. It was used before the explicit production migration authorization. The production schema migration was later executed successfully; current status is recorded in `docs/payroll-salary-slip-production-migration-result-2026-06-17.md`.
+Generated at: 2026-06-17T15:13:59.385Z
+Status: `blocked`
+Next allowed action: `fix_failed_gate`
 
 ## Decision
 
 | Gate | Value |
 | --- | --- |
-| canRequestTestDbMigrationAuthorization | `true` |
+| canRequestTestDbMigrationAuthorization | `false` |
 | canRequestProductionMigrationAuthorization | `false` |
 | productionMigrationAllowed | `false` |
-| reason | Safe to request test DB migration authorization; production migration still needs a separate window after test DB and UAT evidence. |
+| reason | One or more hard readiness checks failed. |
 
 ## Summary
 
 | Metric | Value |
 | --- | --- |
-| hardFailures | `0` |
+| hardFailures | `1` |
 | softBlockers | `2` |
 | preflightStatus | `passed_with_blockers` |
 | globalPrecheckStatus | `passed` |
 | globalPrecheckMismatches | `0` |
 | migrationStaticPassed | `true` |
-| productionPrecheckMismatches | `0` |
-| productionMigrationApplied | `false` |
+| productionPrecheckMismatches | `13` |
+| productionMigrationApplied | `true` |
 
 ## Hard Failures
 
-- None
+- `production_pre_migration_state_not_clean`
 
 ## Soft Blockers
 
@@ -50,10 +46,10 @@ This file is a pre-production readiness snapshot. It was used before the explici
 
 ## Production Pre-Migration Snapshot
 
-- Migration applied: `false`
-- Hard mismatches: 0
-- Required columns still absent: 6
-- Required indexes still absent: 6
+- Migration applied: `true`
+- Hard mismatches: 13
+- Required columns still absent: 0
+- Required indexes still absent: 0
 - table.SalarySlip.count: 1
 - table.SalaryNotifyLog.count: 1
 - table.PayrollDraftBatch.count: 1

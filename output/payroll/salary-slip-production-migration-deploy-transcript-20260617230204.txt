@@ -1,0 +1,14 @@
+Prisma schema loaded from ../tmp/payroll-prisma-20260617230204/prisma/schema.prisma
+Datasource "db": MySQL database "huigui_crm" at "mysql:3306"
+
+28 migrations found in prisma/migrations
+
+Applying migration `20260617110000_payroll_publish_batch_identity`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20260617110000_payroll_publish_batch_identity/
+    └─ migration.sql
+
+All migrations have been successfully applied.

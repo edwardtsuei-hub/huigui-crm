@@ -1,12 +1,11 @@
 {
-  "generatedAt": "2026-06-17T14:24:58.617Z",
+  "generatedAt": "2026-06-17T14:56:27.351Z",
   "writesDatabase": false,
   "deploys": false,
   "status": "passed_with_blockers",
   "blockers": [
     "blocked_waiting_for_vite_source",
-    "blocked_waiting_for_local_docker",
-    "blocked_waiting_for_local_mysql_client"
+    "blocked_waiting_for_local_docker"
   ],
   "failures": [],
   "checks": {
@@ -52,7 +51,7 @@
     "frontendSourceCandidates": [],
     "protectedReleaseDiffLines": 0,
     "dockerAvailable": false,
-    "mysqlClientAvailable": false,
+    "mysqlClientAvailable": true,
     "schemaChecks": [
       {
         "pattern": "publishBatchId      String?  @db.VarChar(160)",

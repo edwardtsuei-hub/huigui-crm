@@ -1,0 +1,38 @@
+{
+  "generatedAt": "2026-06-17T15:05:18.210Z",
+  "writesDatabase": false,
+  "status": "passed_with_warnings",
+  "blockers": [],
+  "failures": [],
+  "warnings": [
+    "salary_slips_with_incomplete_identity",
+    "salary_slips_missing_publish_batch_id"
+  ],
+  "checks": {
+    "databaseName": "huigui_crm",
+    "migrationApplied": true,
+    "migration": {
+      "migrationName": "20260617110000_payroll_publish_batch_identity",
+      "finishedAt": "2026-06-17T15:04:24.177Z",
+      "rolledBackAt": null
+    },
+    "missingColumns": [],
+    "missingIndexes": [],
+    "tableCounts": {
+      "salarySlips": 1,
+      "salaryNotifyLogs": 1,
+      "payrollDraftBatches": 1
+    },
+    "identityIncomplete": 1,
+    "publishBatchMissing": 1,
+    "duplicateTeacherNames": [],
+    "recentNotifyLogs": [
+      {
+        "month": "2026-05",
+        "publishBatchId": null,
+        "status": "sent",
+        "createdAt": "2026-06-15T00:26:39.155Z"
+      }
+    ]
+  }
+}

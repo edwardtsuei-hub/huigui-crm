@@ -1,0 +1,16 @@
+migration.applied	1	0
+column.PayrollDraftBatch.publishBatchId	1	0
+column.SalaryNotifyLog.publishBatchId	1	0
+column.SalarySlip.loginAccount	1	0
+column.SalarySlip.publishBatchId	1	0
+column.SalarySlip.userId	1	0
+column.SalarySlip.wecomUserId	1	0
+index.PayrollDraftBatch_publishBatchId_idx	1	0
+index.SalaryNotifyLog_publishBatchId_idx	1	0
+index.SalarySlip_loginAccount_idx	1	0
+index.SalarySlip_publishBatchId_idx	1	0
+index.SalarySlip_userId_idx	1	0
+index.SalarySlip_wecomUserId_idx	1	0
+table.SalarySlip.count	1	NULL
+table.SalaryNotifyLog.count	1	NULL
+table.PayrollDraftBatch.count	1	NULL

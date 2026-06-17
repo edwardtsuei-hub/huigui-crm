@@ -50,7 +50,7 @@ ssh root@49.232.57.98 "docker exec -i huigui-mysql sh -lc 'mysql --default-chara
 
 `expectedValue` 为 `NULL` 的项目只作为观测值，不作为阻断值。
 
-薪资身份列当前仍属于独立薪资线迁移范围；在薪资 migration 进入测试库 / 生产窗口前，相关列存在性只做观察，不阻断周报修正后的全局门禁。
+薪资身份列属于独立薪资线迁移范围；相关列已在生产库存在，列存在性继续只做观察，不改动周报修正后的全局硬门禁。
 
 ## 阻断规则
 
@@ -65,7 +65,7 @@ ssh root@49.232.57.98 "docker exec -i huigui-mysql sh -lc 'mysql --default-chara
 
 当前不作为全局硬阻断、但需要继续追踪的情况：
 
-- `SalarySlip.publishBatchId / userId / wecomUserId / loginAccount` 在生产库尚未存在。
+- `SalarySlip.publishBatchId / userId / wecomUserId / loginAccount` 已在生产库存在；历史薪资身份完整度仍由 payroll 专线继续追踪。
 - `EmployeeLaunchEvidenceArchive` 尚未落 schema。
 - `FileRecord` 尚未具备 `storageKey / sourceFile / legacyAttachmentId`。
 
@@ -80,6 +80,7 @@ ssh root@49.232.57.98 "docker exec -i huigui-mysql sh -lc 'mysql --default-chara
 5. 发布前总控只读检查。
 
 weekly teamReports 修正已在用户二次明确授权后完成真实 `COMMIT`，本 precheck 已更新为提交后的 final SHA 口径。
+payroll 生产 schema 已在生产库完成；本轮授权后通过只读 postcheck 确认，迁移后全局门禁结果见 `output/payroll/production-schema-migration-20260617-231344/database-100-global-precheck-post-verify.md`。
 
 ## 本轮只读试跑结果
 
@@ -89,4 +90,4 @@ weekly teamReports 修正已在用户二次明确授权后完成真实 `COMMIT`�
 - 排班、周报 payload、周报子表 orphan、周报修正 final SHA 全部吻合。
 - `EmployeeLaunchEvidenceArchive` 当前不存在，符合当前 schema draft 阶段预期。
 - `FileRecord` 当前为 0，且缺少归档元数据列，符合当前 C 线阻断判断。
-- 薪资身份列当前仍未进入生产库，作为薪资线观察项，不阻断周报修正后的全局门禁。
+- 迁移后复跑结果：38 行、29 个 hard gates、0 mismatch；薪资身份列观察项均为 `1`，三张薪资表数量仍为 1。

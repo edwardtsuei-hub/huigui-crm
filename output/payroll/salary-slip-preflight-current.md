@@ -1,6 +1,6 @@
 # Payroll salary slip preflight
 
-Generated at: 2026-06-17T14:24:58.617Z
+Generated at: 2026-06-17T14:56:27.351Z
 Status: `passed_with_blockers`
 Writes database: no
 Deploys: no
@@ -9,7 +9,6 @@ Deploys: no
 
 - `blocked_waiting_for_vite_source`
 - `blocked_waiting_for_local_docker`
-- `blocked_waiting_for_local_mysql_client`
 
 ## Failures
 
@@ -21,7 +20,7 @@ Deploys: no
 - Current release: `20260616090241`
 - Protected release diff lines: 0
 - Docker available: no
-- MySQL client available: no
+- MySQL client available: yes
 - Release source-like files: 0
 - Release route/token hits: 4
 - Release sourcemap files: 0
