@@ -1,0 +1,153 @@
+{
+  "generatedAt": "2026-06-17T13:35:00+08:00",
+  "status": "ready_for_d_line_review",
+  "scope": "weekly teamReports formal sync pre-execution runbook",
+  "source": {
+    "mergedPr": 9,
+    "v3DryRunJson": "output/employee-data-migration/2026-06-16/weekly-teamreports-formal-sync-dryrun-v3.json",
+    "v3DryRunMarkdown": "output/employee-data-migration/2026-06-16/weekly-teamreports-formal-sync-dryrun-v3.md",
+    "v3PrecheckSql": "output/employee-data-migration/2026-06-16/weekly-teamreports-formal-sync-dryrun-v3.precheck.sql"
+  },
+  "safety": {
+    "writesDatabase": false,
+    "executedApply": false,
+    "productionSqlGenerated": false,
+    "writeScriptGenerated": false,
+    "schemaChanged": false,
+    "migrationGenerated": false,
+    "apiChanged": false,
+    "frontendChanged": false,
+    "deployed": false,
+    "restarted": false,
+    "rollbackTagCreated": false,
+    "deploymentAllowed": false
+  },
+  "recommendedFirstWriteScope": {
+    "table": "WeeklyReport",
+    "mode": "parent_rows_only",
+    "rowCount": 6,
+    "status": "SUBMITTED",
+    "dataScope": "REAL",
+    "partitionKey": "REAL",
+    "excludedTables": [
+      "WeeklyReportReviewItem",
+      "WeeklyReportPlanItem",
+      "WeeklyReportPayload",
+      "User"
+    ],
+    "reason": "Keep the first formal sync small and reversible; child rows, payload linking, and manager relations require separate design."
+  },
+  "includedCandidates": [
+    {
+      "row": 1,
+      "memberLogin": "Han",
+      "memberName": "阿蕊",
+      "weekStartKey": "2026-05-25",
+      "weekEndKey": "2026-05-31",
+      "proposedReportId": "wr_b3f18d418c27145ced5e627c",
+      "decision": "include_with_omission_note"
+    },
+    {
+      "row": 2,
+      "memberLogin": "greatchef",
+      "memberName": "申琦",
+      "weekStartKey": "2026-05-25",
+      "weekEndKey": "2026-05-31",
+      "proposedReportId": "wr_f6d96e2ecf408970676e6808",
+      "decision": "include_ready"
+    },
+    {
+      "row": 3,
+      "memberLogin": "lisali",
+      "memberName": "lisa",
+      "weekStartKey": "2026-05-25",
+      "weekEndKey": "2026-05-31",
+      "proposedReportId": "wr_3e8fad063c44a5bba1ee02f4",
+      "decision": "include_ready"
+    },
+    {
+      "row": 6,
+      "memberLogin": "lisali",
+      "memberName": "lisa",
+      "weekStartKey": "2026-06-01",
+      "weekEndKey": "2026-06-07",
+      "proposedReportId": "wr_c681a1d1666dd11fde497046",
+      "decision": "include_ready"
+    },
+    {
+      "row": 7,
+      "memberLogin": "ChengCheng",
+      "memberName": "程程",
+      "weekStartKey": "2026-06-08",
+      "weekEndKey": "2026-06-14",
+      "proposedReportId": "wr_b361a1934ab724cd56c5da14",
+      "decision": "include_latest_only_context_blocked"
+    },
+    {
+      "row": 8,
+      "memberLogin": "lisali",
+      "memberName": "lisa",
+      "weekStartKey": "2026-06-08",
+      "weekEndKey": "2026-06-14",
+      "proposedReportId": "wr_6bf6e9ba0d49a18000a3fb7a",
+      "decision": "include_conservative_context"
+    }
+  ],
+  "deferredCandidates": [
+    {
+      "row": 4,
+      "memberLogin": "ChengCheng",
+      "memberName": "程程",
+      "weekStartKey": "2026-06-01",
+      "proposedReportId": "wr_fa07cbec542a9d71ea66f8a7",
+      "reason": "Missing tail after `做出简易菜单供客...`"
+    },
+    {
+      "row": 5,
+      "memberLogin": "greatchef",
+      "memberName": "申琦",
+      "weekStartKey": "2026-06-01",
+      "proposedReportId": "wr_ee35a6b8731ee3a02c2515df",
+      "reason": "Missing tail after `6.黑胡椒...`"
+    }
+  ],
+  "excludedManagerRelations": [
+    {
+      "memberLogin": "Han",
+      "managerLogin": "lisali",
+      "reason": "Organization data change; separate approval required."
+    },
+    {
+      "memberLogin": "greatchef",
+      "managerLogin": "lisali",
+      "reason": "Organization data change; separate approval required."
+    }
+  ],
+  "preWriteGates": [
+    "D-line review of this runbook",
+    "Explicit user authorization before generating any write package",
+    "Separate PR for any write package",
+    "D-line readonly gate before any write package is executed",
+    "Confirm target 6 WeeklyReport rows do not already exist by id and by userId/weekStartDate/partitionKey"
+  ],
+  "postWriteChecks": [
+    "6 proposed WeeklyReport ids exist",
+    "All 6 rows use partitionKey REAL",
+    "All 6 rows use dataScope REAL",
+    "All 6 rows use status SUBMITTED",
+    "No WeeklyReportReviewItem rows created",
+    "No WeeklyReportPlanItem rows created",
+    "WeeklyReportPayload grouping remains unchanged unless separately authorized",
+    "shared/shared/draft remains 13"
+  ],
+  "stopConditions": [
+    "api health check fails",
+    "RosterWeek/RosterShift/orphan gate changes unexpectedly",
+    "WeeklyReportPayload shared/shared/draft grows above 13",
+    "Any target WeeklyReport already exists",
+    "Any target user is missing or inactive",
+    "Schema fields differ from runbook assumptions",
+    "Unrelated payroll/schema/API/frontend changes are mixed into the PR"
+  ],
+  "nextStepRecommendation": "Ask D line to review. If approved, the next main-line step is to generate a separate formal write-plan dry-run package, still without executing database writes."
+}
