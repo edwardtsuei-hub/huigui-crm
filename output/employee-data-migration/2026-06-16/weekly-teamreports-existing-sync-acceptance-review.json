@@ -1,0 +1,113 @@
+{
+  "generatedAt": "2026-06-17T16:40:00+08:00",
+  "status": "needs_correction_plan",
+  "scope": "weekly teamReports existing sync acceptance and diff review",
+  "safety": {
+    "readOnlyReview": true,
+    "writesDatabase": false,
+    "executedApply": false,
+    "productionSqlGenerated": false,
+    "executableUpdateSqlGenerated": false,
+    "schemaChanged": false,
+    "migrationGenerated": false,
+    "apiChanged": false,
+    "frontendChanged": false,
+    "deployed": false,
+    "restarted": false,
+    "rollbackTagCreated": false,
+    "deploymentAllowed": false
+  },
+  "structureAcceptance": {
+    "targetWeeklyReportsExisting": 6,
+    "submittedRealReports": 6,
+    "weeklyReportReviewItems": 7,
+    "weeklyReportPlanItems": 6,
+    "weeklyReportPayloadDirectLinks": 0,
+    "payloadGate": {
+      "apiDbFirstImported": 13,
+      "legacyWeeklyWorkspaceImported": 3,
+      "legacyWeeklyWorkspaceNeedsReview": 3,
+      "sharedSharedDraft": 13,
+      "sharedSharedDraftDistinctSourceSha16": 13
+    }
+  },
+  "contentAcceptance": {
+    "passedOrAcceptable": [
+      {
+        "id": "wr_3e8fad063c44a5bba1ee02f4",
+        "memberLogin": "lisali",
+        "weekStartKey": "2026-05-25",
+        "status": "acceptable_with_prefix_difference",
+        "note": "Body matches v3 semantically; production row has scope/plan prefixes."
+      },
+      {
+        "id": "wr_c681a1d1666dd11fde497046",
+        "memberLogin": "lisali",
+        "weekStartKey": "2026-06-01",
+        "status": "acceptable_with_prefix_difference",
+        "note": "Body and manager comment match v3 semantically; production row has scope/support prefixes."
+      }
+    ],
+    "needsReview": [
+      {
+        "id": "wr_f6d96e2ecf408970676e6808",
+        "memberLogin": "greatchef",
+        "weekStartKey": "2026-05-25",
+        "status": "needs_subtable_acceptance",
+        "note": "Production has an extra support/coordination reviewItem; may be acceptable but requires D-line/business acceptance."
+      }
+    ],
+    "needsCorrectionPlan": [
+      {
+        "id": "wr_b3f18d418c27145ced5e627c",
+        "memberLogin": "Han",
+        "weekStartKey": "2026-05-25",
+        "reason": "completedSummary remains truncated and focusSummary still includes unrecovered `4:上月考勤上交立猛 ...`."
+      },
+      {
+        "id": "wr_b361a1934ab724cd56c5da14",
+        "memberLogin": "ChengCheng",
+        "weekStartKey": "2026-06-08",
+        "reason": "formal body includes earlier same-week context with unrecovered `做出简易菜单供客...`; v3 target keeps that as metadata only."
+      },
+      {
+        "id": "wr_6bf6e9ba0d49a18000a3fb7a",
+        "memberLogin": "lisali",
+        "weekStartKey": "2026-06-08",
+        "reason": "formal body still contains `负...` and `负责交流培训，...`; v3 target uses conservative recovery plus missing-tail note."
+      }
+    ]
+  },
+  "subtableAcceptance": {
+    "status": "needs_diff_review",
+    "reviewItems": 7,
+    "planItems": 6,
+    "notes": [
+      "Subtable text mirrors earlier production body text.",
+      "If parent rows are corrected later, related child rows must be checked to avoid UI inconsistency.",
+      "greatchef / 2026-05-25 has an extra support/coordination review item."
+    ]
+  },
+  "managerRelationAcceptance": {
+    "status": "needs_source_review",
+    "currentRelations": [
+      {
+        "memberLogin": "Han",
+        "managerUserId": "employee-lisali-user"
+      },
+      {
+        "memberLogin": "greatchef",
+        "managerUserId": "employee-lisali-user"
+      }
+    ],
+    "note": "These manager relations exist in production but were excluded from weekly teamReports v3; source and approval should be reviewed separately."
+  },
+  "nextRecommendedStage": "existing_sync_correction_plan_dry_run",
+  "forbiddenNextActionsWithoutExplicitUserApproval": [
+    "production database update",
+    "executable UPDATE SQL generation",
+    "deployment",
+    "restart",
+    "rollback tag"
+  ]
+}
