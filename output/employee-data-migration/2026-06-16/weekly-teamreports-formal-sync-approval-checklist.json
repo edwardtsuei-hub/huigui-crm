@@ -1,0 +1,144 @@
+{
+  "generatedAt": "2026-06-17T09:30:00+08:00",
+  "status": "waiting_business_approval",
+  "scope": "weekly-teamReports formal sync pre-approval after PR #4",
+  "safety": {
+    "readOnlyReview": true,
+    "executedApply": false,
+    "writesDatabase": false,
+    "productionSqlGenerated": false,
+    "deployed": false,
+    "restarted": false,
+    "rollbackTagCreated": false
+  },
+  "inputs": {
+    "dryRunJson": "output/employee-data-migration/2026-06-16/weekly-teamreports-backfill-dryrun-v2.json",
+    "dryRunMarkdown": "output/employee-data-migration/2026-06-16/weekly-teamreports-backfill-dryrun-v2.md",
+    "precheckSql": "output/employee-data-migration/2026-06-16/weekly-teamreports-backfill-dryrun-v2.precheck.sql",
+    "sourceDir": "storage/uploads/employee-launch-weekly"
+  },
+  "summary": {
+    "historicalFormalCandidates": 8,
+    "approvedForAutomaticImport": 0,
+    "requiresSourceCompletion": 5,
+    "requiresSupersededContextPreserved": 2,
+    "managerRelationApprovals": 2,
+    "missingUsers": 0,
+    "existingRealWeeklyReports": 0
+  },
+  "candidateRows": [
+    {
+      "memberLogin": "Han",
+      "memberName": "阿蕊",
+      "weekStartKey": "2026-05-25",
+      "weekEndKey": "2026-05-31",
+      "submittedAtLabel": "2026-05-30 13:23",
+      "approvalStatus": "candidate_requires_source_completion",
+      "sourceCompletionRequired": true,
+      "supersededContextRequired": false,
+      "note": "reviewHistory contains ellipsis in completed summary and focus summary; current teamReports.summary can recover completed summary, but focus summary still needs source confirmation."
+    },
+    {
+      "memberLogin": "greatchef",
+      "memberName": "申琦",
+      "weekStartKey": "2026-05-25",
+      "weekEndKey": "2026-05-31",
+      "submittedAtLabel": "2026-05-30 13:19",
+      "approvalStatus": "candidate_ready_for_business_review",
+      "sourceCompletionRequired": false,
+      "supersededContextRequired": false,
+      "note": "No ellipsis found in dry-run candidate text."
+    },
+    {
+      "memberLogin": "lisali",
+      "memberName": "lisa",
+      "weekStartKey": "2026-05-25",
+      "weekEndKey": "2026-05-31",
+      "submittedAtLabel": "2026-05-30 13:19",
+      "approvalStatus": "candidate_ready_for_business_review",
+      "sourceCompletionRequired": false,
+      "supersededContextRequired": false,
+      "note": "No ellipsis found in dry-run candidate text."
+    },
+    {
+      "memberLogin": "ChengCheng",
+      "memberName": "程程",
+      "weekStartKey": "2026-06-01",
+      "weekEndKey": "2026-06-07",
+      "submittedAtLabel": "2026-06-07 05:26",
+      "approvalStatus": "candidate_requires_source_completion",
+      "sourceCompletionRequired": true,
+      "supersededContextRequired": false,
+      "note": "Completed summary contains legacy ellipsis; current local sources did not expose a full replacement."
+    },
+    {
+      "memberLogin": "greatchef",
+      "memberName": "申琦",
+      "weekStartKey": "2026-06-01",
+      "weekEndKey": "2026-06-07",
+      "submittedAtLabel": "2026-06-05 17:55",
+      "approvalStatus": "candidate_requires_source_completion",
+      "sourceCompletionRequired": true,
+      "supersededContextRequired": false,
+      "note": "Focus summary contains legacy ellipsis; current teamReports.nextPlans only contains the first three plan items."
+    },
+    {
+      "memberLogin": "lisali",
+      "memberName": "lisa",
+      "weekStartKey": "2026-06-01",
+      "weekEndKey": "2026-06-07",
+      "submittedAtLabel": "2026-06-06 17:59",
+      "approvalStatus": "candidate_ready_for_business_review",
+      "sourceCompletionRequired": false,
+      "supersededContextRequired": false,
+      "note": "No ellipsis found in dry-run candidate text."
+    },
+    {
+      "memberLogin": "ChengCheng",
+      "memberName": "程程",
+      "weekStartKey": "2026-06-08",
+      "weekEndKey": "2026-06-14",
+      "submittedAtLabel": "2026-06-14 04:36",
+      "approvalStatus": "candidate_requires_source_completion_and_context",
+      "sourceCompletionRequired": true,
+      "supersededContextRequired": true,
+      "note": "Latest submission is usable, but earlier same-week submission at 2026-06-14 04:27 contains ellipsis and must be preserved as context."
+    },
+    {
+      "memberLogin": "lisali",
+      "memberName": "lisa",
+      "weekStartKey": "2026-06-08",
+      "weekEndKey": "2026-06-14",
+      "submittedAtLabel": "2026-06-12 16:01",
+      "approvalStatus": "candidate_requires_source_completion_and_context",
+      "sourceCompletionRequired": true,
+      "supersededContextRequired": true,
+      "note": "Latest and earlier same-week submissions both contain ellipsis; preserve 2026-06-12 15:51 context after source completion."
+    }
+  ],
+  "managerRelationApprovals": [
+    {
+      "memberLogin": "Han",
+      "memberName": "阿蕊",
+      "managerLogin": "lisali",
+      "managerName": "Lisa Li",
+      "decision": "separate_approval_required",
+      "includedInWeeklyBackfill": false
+    },
+    {
+      "memberLogin": "greatchef",
+      "memberName": "申琦",
+      "managerLogin": "lisali",
+      "managerName": "Lisa Li",
+      "decision": "separate_approval_required",
+      "includedInWeeklyBackfill": false
+    }
+  ],
+  "nextSteps": [
+    "Business owner confirms whether the 8 rows may enter the historical formal weekly report candidate pool.",
+    "Recover full text for the 5 legacy ellipsis rows before any formal sync design.",
+    "Confirm presentation and retention of the 2 same-week earlier submission contexts.",
+    "Handle Han -> lisali and greatchef -> lisali manager links in a separate approval path.",
+    "After approvals, design the next formal sync plan and request D-line readonly gate review again."
+  ]
+}
