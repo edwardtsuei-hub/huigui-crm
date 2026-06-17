@@ -1,0 +1,150 @@
+{
+  "generatedAt": "2026-06-17T09:57:01+08:00",
+  "status": "waiting_business_decision",
+  "scope": "weekly teamReports business approval processing after PR #5",
+  "safety": {
+    "readOnlyReview": true,
+    "executedApply": false,
+    "writesDatabase": false,
+    "productionSqlGenerated": false,
+    "deployed": false,
+    "restarted": false,
+    "rollbackTagCreated": false
+  },
+  "summary": {
+    "historicalFormalCandidates": 8,
+    "readyForBusinessReview": 3,
+    "requiresSourceCompletion": 5,
+    "requiresSupersededContextPreserved": 2,
+    "managerRelationApprovals": 2,
+    "approvedForAutomaticImport": 0
+  },
+  "readyForBusinessReview": [
+    {
+      "row": 2,
+      "memberLogin": "greatchef",
+      "memberName": "申琦",
+      "weekStartKey": "2026-05-25",
+      "weekEndKey": "2026-05-31",
+      "submittedAtLabel": "2026-05-30 13:19",
+      "businessDecisionNeeded": "approve_or_defer_or_reject"
+    },
+    {
+      "row": 3,
+      "memberLogin": "lisali",
+      "memberName": "lisa",
+      "weekStartKey": "2026-05-25",
+      "weekEndKey": "2026-05-31",
+      "submittedAtLabel": "2026-05-30 13:19",
+      "businessDecisionNeeded": "approve_or_defer_or_reject"
+    },
+    {
+      "row": 6,
+      "memberLogin": "lisali",
+      "memberName": "lisa",
+      "weekStartKey": "2026-06-01",
+      "weekEndKey": "2026-06-07",
+      "submittedAtLabel": "2026-06-06 17:59",
+      "businessDecisionNeeded": "approve_or_defer_or_reject"
+    }
+  ],
+  "sourceCompletionItems": [
+    {
+      "row": 1,
+      "memberLogin": "Han",
+      "memberName": "阿蕊",
+      "weekStartKey": "2026-05-25",
+      "status": "partial_source_recovered",
+      "recoverableFromLocalSource": {
+        "completedSummary": "1:周六日喜乐瑜伽活动已经确定沟通好！包含用餐流程全部梳理\n2:儿童节活动套餐已经搭配好，流程全部和前厅伙伴沟通\n3:六月份活动已经和lisa沟通确定活动内容，具体事项6月份提前安排\n4:套餐本周完成",
+        "focusSummaryKnownPart": "下周计划。6.1-6.7工作计划\n1:六一活动安排。\n2:周六日两天颂铂课程周四确定用餐人数，用餐模式和后厨沟通备货\n3:梅门甩茶进货，热果饮和工厂沟通制作"
+      },
+      "missingText": "Focus summary item 4 starts with `4:上月考勤上交立猛 ...`; full text not found locally.",
+      "businessDecisionNeeded": "provide_full_text_or_approve_omission"
+    },
+    {
+      "row": 4,
+      "memberLogin": "ChengCheng",
+      "memberName": "程程",
+      "weekStartKey": "2026-06-01",
+      "status": "source_completion_required",
+      "missingText": "Completed summary item 4 ends with `做出简易菜单供客...`; full text not found locally.",
+      "businessDecisionNeeded": "provide_full_text_before_sync"
+    },
+    {
+      "row": 5,
+      "memberLogin": "greatchef",
+      "memberName": "申琦",
+      "weekStartKey": "2026-06-01",
+      "status": "source_completion_required",
+      "knownText": {
+        "completedSummary": "本周工作内容：\n1.贝果菜品的上新制作。\n2.制作上新菜品台南炸豆腐。\n3.制作上新菜品番茄豆腐面。\n4.菜单的出品正规化，口味、摆盘符合门店标准。",
+        "focusSummaryKnownPart": "1.西班牙冷汤的制作。\n2.日常每天厨房卫生的保持工作。\n3.包浆豆腐酱汁的调试。\n4.日常节约用水、用电的培训。\n5.保持门店现菜单菜品的出餐统一化。\n6.黑胡椒..."
+      },
+      "missingText": "Focus summary item 6 starts with `6.黑胡椒...`; full text not found locally.",
+      "businessDecisionNeeded": "provide_full_text_before_sync"
+    },
+    {
+      "row": 7,
+      "memberLogin": "ChengCheng",
+      "memberName": "程程",
+      "weekStartKey": "2026-06-08",
+      "status": "source_completion_and_context_required",
+      "latestSubmissionUsable": true,
+      "sameWeekContextRequired": true,
+      "missingText": "Earlier same-week submission item 4 ends with `做出简易菜单供客...`; full text not found locally.",
+      "businessDecisionNeeded": "provide_full_text_and_confirm_context_retention"
+    },
+    {
+      "row": 8,
+      "memberLogin": "lisali",
+      "memberName": "lisa",
+      "weekStartKey": "2026-06-08",
+      "status": "source_completion_and_context_required",
+      "sameWeekContextRequired": true,
+      "missingText": "Latest 2026-06-12 16:01 and earlier 2026-06-12 15:51 submissions both truncate item 3.",
+      "businessDecisionNeeded": "provide_full_text_and_confirm_context_retention"
+    }
+  ],
+  "sameWeekContextRules": [
+    {
+      "memberLogin": "ChengCheng",
+      "weekStartKey": "2026-06-08",
+      "primarySubmission": "2026-06-14 04:36",
+      "contextSubmission": "2026-06-14 04:27",
+      "requiredStructure": "latest_submission_plus_same_week_earlier_submission"
+    },
+    {
+      "memberLogin": "lisali",
+      "weekStartKey": "2026-06-08",
+      "primarySubmission": "2026-06-12 16:01",
+      "contextSubmission": "2026-06-12 15:51",
+      "requiredStructure": "latest_submission_plus_same_week_earlier_submission"
+    }
+  ],
+  "managerRelationApprovals": [
+    {
+      "memberLogin": "Han",
+      "memberName": "阿蕊",
+      "managerLogin": "lisali",
+      "managerName": "Lisa Li",
+      "includedInWeeklyBackfill": false,
+      "businessDecisionNeeded": "approve_or_defer_or_reject"
+    },
+    {
+      "memberLogin": "greatchef",
+      "memberName": "申琦",
+      "managerLogin": "lisali",
+      "managerName": "Lisa Li",
+      "includedInWeeklyBackfill": false,
+      "businessDecisionNeeded": "approve_or_defer_or_reject"
+    }
+  ],
+  "nextSteps": [
+    "Business/A line approves, defers, or rejects the 3 ready candidate rows.",
+    "Business/A line provides full text or explicit omission approval for the 5 source-completion rows.",
+    "Business/A line confirms same-week context display for ChengCheng and lisali rows in week 2026-06-08.",
+    "Business/A line separately approves, defers, or rejects Han -> lisali and greatchef -> lisali manager relations.",
+    "Main line designs formal sync v3 only after the above decisions are complete; v3 must start as dry-run only."
+  ]
+}
