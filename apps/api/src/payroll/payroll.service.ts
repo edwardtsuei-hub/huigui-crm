@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { AuthenticatedUser } from "../common/types/authenticated-user";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -226,7 +226,7 @@ export class PayrollService {
       throw new BadRequestException("薪资通知记录缺少发布批次号。");
     }
 
-    const id = this.optionalText(body.id) ?? `salary-notify-log-${month}-${Date.now()}`;
+    const id = this.optionalText(body.id) ?? this.defaultSalaryNotifyLogId(month, publishBatchId);
     const data = {
       month,
       at: this.optionalDate(body.at) ?? new Date(),
@@ -638,6 +638,15 @@ export class PayrollService {
       .slice(0, 48) || "teacher";
     const digest = createHash("sha1").update(`${month}:${publishBatchId}:${teacherId}`).digest("hex").slice(0, 16);
     return `salary-slip-${month}-${safeTeacherId}-${digest}`;
+  }
+
+  private defaultSalaryNotifyLogId(month: string, publishBatchId: string) {
+    const safePublishBatchId = publishBatchId
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 64) || "publish-batch";
+    return `salary-notify-log-${month}-${safePublishBatchId}-${randomUUID().slice(0, 8)}`;
   }
 
   private normalizeNotifyStatus(value: unknown) {

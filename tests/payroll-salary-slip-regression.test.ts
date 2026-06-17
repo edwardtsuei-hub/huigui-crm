@@ -2284,8 +2284,34 @@ test("salary notify logs keep publish batch id and do not prune history", async 
   const upsert = calls.salaryNotifyLogUpsert[0];
   assert.equal((upsert.create as Record<string, unknown>).publishBatchId, "salary-publish-test");
   assert.equal((upsert.update as Record<string, unknown>).publishBatchId, "salary-publish-test");
+  assert.match(String((upsert.where as Record<string, unknown>).id), /^salary-notify-log-2026-06-salary-publish-test-[a-f0-9-]{8}$/);
   assert.equal(calls.salaryNotifyLogFindMany.length, 0);
   assert.equal(calls.salaryNotifyLogDeleteMany.length, 0);
+});
+
+test("salary notify logs create distinct default ids for repeated publish batch records", async () => {
+  const { prisma, calls } = createPayrollPrismaMock();
+  const service = new PayrollService(prisma as never);
+  const payload = {
+    month: "2026-06",
+    publishBatchId: "salary-publish-repeat",
+    actionLabel: "发布并通知",
+    status: "sent",
+    message: "已发送 1 人。",
+    delivered: [{ id: "teacher-1", name: "老师一", userid: "wecom-1", netAmount: 100 }],
+    skipped: [],
+    failed: [],
+  };
+
+  await service.recordSalaryNotifyLog(payload, makeUser({ roleCode: "FINANCE", roleName: "财务" }));
+  await service.recordSalaryNotifyLog(payload, makeUser({ roleCode: "FINANCE", roleName: "财务" }));
+
+  const firstId = String((calls.salaryNotifyLogUpsert[0].where as Record<string, unknown>).id);
+  const secondId = String((calls.salaryNotifyLogUpsert[1].where as Record<string, unknown>).id);
+
+  assert.match(firstId, /^salary-notify-log-2026-06-salary-publish-repeat-[a-f0-9-]{8}$/);
+  assert.match(secondId, /^salary-notify-log-2026-06-salary-publish-repeat-[a-f0-9-]{8}$/);
+  assert.notEqual(firstId, secondId);
 });
 
 test("salary notify logs require publish batch id and filtered queries", async () => {
