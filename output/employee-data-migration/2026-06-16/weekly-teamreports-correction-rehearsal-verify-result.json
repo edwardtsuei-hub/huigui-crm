@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-06-17T10:05:34.333Z",
+  "generatedAt": "2026-06-17T13:47:13.040Z",
   "status": "passed",
   "scope": "weekly teamReports correction ROLLBACK rehearsal output verifier",
   "inputs": {
-    "transcript": "-",
+    "transcript": "output/employee-data-migration/2026-06-16/weekly-teamreports-correction-rollback-rehearsal-transcript.tsv",
     "plan": "output/employee-data-migration/2026-06-16/weekly-teamreports-correction-sql-draft.json",
-    "afterRollbackPrecheck": "output/employee-data-migration/2026-06-16/database-100-global-precheck.tsv"
+    "afterRollbackPrecheck": "output/employee-data-migration/2026-06-16/database-100-global-precheck-after-rollback-rehearsal.tsv"
   },
   "safety": {
     "writesDatabase": false,
@@ -273,7 +273,7 @@
       "passed": true,
       "actual": "{\"rows\":2,\"values\":[\"0\",\"0\"]}",
       "expected": "at least two gate rows, all 0",
-      "line": 11,
+      "line": 13,
       "details": ""
     },
     {
@@ -289,7 +289,7 @@
       "passed": true,
       "actual": "{\"rows\":2,\"values\":[\"0\",\"0\"]}",
       "expected": "at least two gate rows, all 0",
-      "line": 13,
+      "line": 11,
       "details": ""
     },
     {
@@ -559,7 +559,7 @@
   ],
   "afterRollbackPrecheck": {
     "provided": true,
-    "input": "output/employee-data-migration/2026-06-16/database-100-global-precheck.tsv",
+    "input": "output/employee-data-migration/2026-06-16/database-100-global-precheck-after-rollback-rehearsal.tsv",
     "summary": {
       "rows": 38,
       "hardGates": 29,
