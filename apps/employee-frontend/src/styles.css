@@ -405,6 +405,25 @@ td {
   font-weight: 800;
 }
 
+.deduction-cell {
+  display: grid;
+  gap: 4px;
+  min-width: 130px;
+}
+
+.deduction-cell span {
+  color: #26384f;
+  font-weight: 700;
+}
+
+.deduction-cell small {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.45;
+  max-width: 210px;
+  overflow-wrap: anywhere;
+}
+
 .two-column-panel {
   display: grid;
   gap: 20px;

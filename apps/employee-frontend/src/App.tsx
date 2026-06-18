@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
-  ArrowRight,
   CheckCircle2,
   CircleDollarSign,
   FileSpreadsheet,
@@ -23,7 +22,6 @@ import {
   type CurrentUser,
 } from "./lib/api";
 import {
-  buildUploadUrl,
   currentMonth,
   draftFromBatch,
   draftIsReady,
@@ -131,8 +129,7 @@ function AppShell({
 }) {
   const month = route.params.get("month") || currentMonth();
   const tabs = [
-    { label: "薪资批量", href: `/payroll/batch?month=${month}`, icon: CircleDollarSign },
-    { label: "导入中心", href: buildUploadUrl(month), icon: UploadCloud },
+    { label: "薪资工作台", href: `/payroll/batch?month=${month}`, icon: CircleDollarSign },
   ];
 
   return (
@@ -148,7 +145,7 @@ function AppShell({
         <nav className="nav-list">
           {tabs.map((tab) => {
             const Icon = tab.icon;
-            const active = route.path === tab.href.split("?")[0];
+            const active = route.path === tab.href.split("?")[0] || route.path === "/finance/imports";
             return (
               <button
                 className={`nav-item ${active ? "active" : ""}`}
@@ -231,12 +228,14 @@ function NoPermission({ user }: { user: CurrentUser | null }) {
 
 function PayrollBatchPage({ route, user, setToast }: { route: RouteState; user: CurrentUser | null; setToast: (toast: Toast) => void }) {
   const [month, setMonth] = useState(route.params.get("month") || currentMonth());
+  const [file, setFile] = useState<File | null>(null);
   const [draft, setDraft] = useState<PayrollDraft | null>(null);
   const [salarySlips, setSalarySlips] = useState<SalarySlip[]>([]);
   const [notifyLogs, setNotifyLogs] = useState<SalaryNotifyLog[]>([]);
   const [reviewedOriginal, setReviewedOriginal] = useState(false);
   const [confirmedRecipients, setConfirmedRecipients] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
 
@@ -276,6 +275,32 @@ function PayrollBatchPage({ route, user, setToast }: { route: RouteState; user: 
     void refresh(month);
   }, [month]);
 
+  async function handleFile(nextFile: File | null) {
+    setFile(nextFile);
+    setError("");
+    if (!nextFile) {
+      return;
+    }
+    setUploading(true);
+    setReviewedOriginal(false);
+    setConfirmedRecipients(false);
+    try {
+      const parsed = await parseSalaryFile(nextFile, month);
+      await saveDraftBatch(parsed.draft, { updatedBy: userDisplayName(user) });
+      setDraft(parsed.draft);
+      setSalarySlips([]);
+      setNotifyLogs([]);
+      setToast({
+        tone: parsed.supportedPreview ? "success" : "warning",
+        message: parsed.supportedPreview ? "已保存薪资表草稿，下方已生成核对数据。" : "已记录文件信息，请转换为 XLSX 或 CSV 后发布。",
+      });
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "读取薪资表失败");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function publish() {
     if (!draft || !canPublish) {
       return;
@@ -312,8 +337,8 @@ function PayrollBatchPage({ route, user, setToast }: { route: RouteState; user: 
     <section className="work-surface">
       <div className="page-header">
         <div>
-          <span className="panel-kicker">Payroll Batch</span>
-          <h1>薪资批量发送</h1>
+          <span className="panel-kicker">Payroll Workbench</span>
+          <h1>薪资工作台</h1>
         </div>
         <div className="header-actions">
           <label className="month-field">
@@ -324,14 +349,31 @@ function PayrollBatchPage({ route, user, setToast }: { route: RouteState; user: 
             <RefreshCw size={16} />
             刷新
           </button>
-          <button className="primary-button" onClick={() => navigate(buildUploadUrl(month))} type="button">
-            <UploadCloud size={18} />
-            上传薪资表
-          </button>
         </div>
       </div>
 
       {error ? <div className="alert danger"><AlertTriangle size={18} />{error}</div> : null}
+
+      <section className="panel import-panel">
+        <div className="panel-title-row">
+          <div>
+            <h2>上传薪资表</h2>
+            <p>支持 CSV、XLSX；上传后同页生成预览、名单和发布确认区。</p>
+          </div>
+          <span className="type-chip">薪资表</span>
+        </div>
+        <label className="upload-zone">
+          <UploadCloud size={34} />
+          <strong>{file ? file.name : "选择薪资表文件"}</strong>
+          <span>.csv / .xlsx / .xls</span>
+          <input
+            accept=".csv,.xlsx,.xls"
+            onChange={(event) => void handleFile(event.target.files?.[0] ?? null)}
+            type="file"
+          />
+        </label>
+        {uploading ? <div className="loading-row"><Loader2 className="spin" size={18} />正在解析并保存草稿...</div> : null}
+      </section>
 
       {loading ? (
         <div className="loading-row"><Loader2 className="spin" size={20} />正在读取薪资批次...</div>
@@ -376,125 +418,11 @@ function PayrollBatchPage({ route, user, setToast }: { route: RouteState; user: 
         <section className="empty-state">
           <FileSpreadsheet size={36} />
           <h2>当前月份还没有薪资导入草稿</h2>
-          <p>从导入中心上传薪资表后，会自动回到这里完成核对、发布和通知记录。</p>
-          <button className="primary-button" onClick={() => navigate(buildUploadUrl(month))} type="button">
-            <UploadCloud size={18} />
-            上传薪资表
-          </button>
+          <p>在上方选择薪资表文件后，会直接在本页完成核对、发布和通知记录。</p>
         </section>
       )}
 
       <HistoryPanel logs={notifyLogs} salarySlips={salarySlips} />
-    </section>
-  );
-}
-
-function FinanceImportsPage({ route, user, setToast }: { route: RouteState; user: CurrentUser | null; setToast: (toast: Toast) => void }) {
-  const [month, setMonth] = useState(route.params.get("month") || currentMonth());
-  const [file, setFile] = useState<File | null>(null);
-  const [draft, setDraft] = useState<PayrollDraft | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const returnTo = route.params.get("returnTo") || "/payroll/batch";
-  const importType = route.params.get("type") || "salary_slip";
-
-  useEffect(() => {
-    const routeMonth = route.params.get("month") || currentMonth();
-    if (routeMonth !== month) {
-      setMonth(routeMonth);
-    }
-  }, [route.params, month]);
-
-  async function handleFile(nextFile: File | null) {
-    setFile(nextFile);
-    setDraft(null);
-    setError("");
-    if (!nextFile) {
-      return;
-    }
-    setLoading(true);
-    try {
-      const parsed = await parseSalaryFile(nextFile, month);
-      setDraft(parsed.draft);
-      await saveDraftBatch(parsed.draft, { updatedBy: userDisplayName(user) });
-      setToast({
-        tone: parsed.supportedPreview ? "success" : "warning",
-        message: parsed.supportedPreview ? "已保存薪资表草稿，可返回核对。" : "已记录文件信息，请转换为 XLSX 或 CSV 后发布。",
-      });
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "读取薪资表失败");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function backToPayroll() {
-    const separator = returnTo.includes("?") ? "&" : "?";
-    navigate(`${returnTo}${separator}month=${month}`);
-  }
-
-  return (
-    <section className="work-surface">
-      <div className="page-header">
-        <div>
-          <span className="panel-kicker">Finance Imports</span>
-          <h1>导入中心</h1>
-        </div>
-        <div className="header-actions">
-          <label className="month-field">
-            <span>月份</span>
-            <input onChange={(event) => setMonth(event.target.value)} type="month" value={month} />
-          </label>
-          <button className="secondary-button" onClick={backToPayroll} type="button">
-            <ArrowRight size={16} />
-            返回核对
-          </button>
-        </div>
-      </div>
-
-      <section className="panel import-panel">
-        <div className="panel-title-row">
-          <div>
-            <h2>{importType === "salary_slip" ? "上传薪资表" : "上传文件"}</h2>
-            <p>支持 CSV、XLSX；旧版 XLS 会提示转换后再预览发布。</p>
-          </div>
-          <span className="type-chip">薪资表</span>
-        </div>
-        <label className="upload-zone">
-          <UploadCloud size={34} />
-          <strong>{file ? file.name : "选择薪资表文件"}</strong>
-          <span>.csv / .xlsx / .xls</span>
-          <input
-            accept=".csv,.xlsx,.xls"
-            onChange={(event) => void handleFile(event.target.files?.[0] ?? null)}
-            type="file"
-          />
-        </label>
-        {loading ? <div className="loading-row"><Loader2 className="spin" size={18} />正在解析并保存草稿...</div> : null}
-        {error ? <div className="alert danger"><AlertTriangle size={18} />{error}</div> : null}
-      </section>
-
-      {draft ? (
-        <>
-          <section className="panel">
-            <div className="panel-title-row">
-              <div>
-                <h2>上传预览</h2>
-                <p>发布批次：{draft.publishBatchId}</p>
-              </div>
-              <StatusPill status={draft.validation.status} />
-            </div>
-            <ValidationSummary draft={draft} />
-            <div className="review-row">
-              <button className="primary-button" onClick={backToPayroll} type="button">
-                <ArrowRight size={18} />
-                回到薪资核对页
-              </button>
-            </div>
-          </section>
-          <PayrollRowsTable rows={draft.rows} />
-        </>
-      ) : null}
     </section>
   );
 }
@@ -522,6 +450,25 @@ function ValidationSummary({ draft }: { draft: PayrollDraft }) {
   );
 }
 
+function DeductionCell({
+  amount,
+  items,
+}: {
+  amount: number;
+  items?: PayrollDraft["rows"][number]["deductionItems"];
+}) {
+  return (
+    <div className="deduction-cell">
+      <span>¥{formatAmount(amount)}</span>
+      {items?.length ? (
+        <small>
+          {items.map((item) => `${item.label} ¥${formatAmount(item.amount)}`).join(" / ")}
+        </small>
+      ) : null}
+    </div>
+  );
+}
+
 function PayrollRowsTable({ rows }: { rows: PayrollDraft["rows"] }) {
   if (rows.length === 0) {
     return null;
@@ -545,7 +492,7 @@ function PayrollRowsTable({ rows }: { rows: PayrollDraft["rows"] }) {
               <th>应发</th>
               <th>提成</th>
               <th>分润</th>
-              <th>扣款</th>
+              <th>个人承担合计</th>
               <th>实发</th>
               <th>差异</th>
             </tr>
@@ -559,7 +506,7 @@ function PayrollRowsTable({ rows }: { rows: PayrollDraft["rows"] }) {
                 <td>¥{formatAmount(row.grossAmount)}</td>
                 <td>¥{formatAmount(row.commissionAmount)}</td>
                 <td>¥{formatAmount(row.profitSharingAmount)}</td>
-                <td>¥{formatAmount(row.deductionAmount)}</td>
+                <td><DeductionCell amount={row.deductionAmount} items={row.deductionItems} /></td>
                 <td className="amount-strong">¥{formatAmount(row.netAmount)}</td>
                 <td>{row.differenceStatus === "resolved" ? "已处理" : "未处理"}</td>
               </tr>
@@ -668,14 +615,10 @@ export function App() {
     );
   }
 
-  const page = route.path === "/finance/imports"
-    ? <FinanceImportsPage route={route} setToast={setToast} user={user} />
-    : <PayrollBatchPage route={route} setToast={setToast} user={user} />;
-
   return (
     <AppShell onLogout={logout} route={route} user={user}>
       {toast ? <div className={`toast ${toast.tone}`}>{toast.message}</div> : null}
-      {page}
+      <PayrollBatchPage route={route} setToast={setToast} user={user} />
     </AppShell>
   );
 }
