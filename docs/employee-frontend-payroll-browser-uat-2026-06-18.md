@@ -1,75 +1,76 @@
-# 员工端薪资前端浏览器验收与候选包记录（2026-06-18）
+# 员工端薪资前端浏览器验收记录（2026-06-18）
 
 ## 结论
 
-员工端薪资前端已完成本地可操作浏览器验收，并重新生成候选静态包。
+员工端薪资前端已完成本地真实浏览器验收。
 
 - 验收页面：`apps/employee-frontend`
-- 验收方式：本地浏览器 + 本地隔离接口
-- 生产企微通道验证：已由双人 0 元测试批次覆盖
+- 验收方式：Chrome 实际点击 + 本地隔离 API
+- 上传文件：`/tmp/browser-uat-resolved.csv`
+- 验收月份：`2026-06`
+- 发布批次：`salary-publish-2026-06-20260618042059`
 - 正式员工端入口：未切换
 - 生产数据库：本次浏览器验收未写入
 - 企业微信：本次浏览器验收未发送
+- 部署 / 重启：未执行
 
 ## 浏览器验收结果
 
 已通过：
 
-- 登录页可输入账号和密码，并进入员工端。
+- 登录页可输入本地测试账号和密码，并进入员工端。
 - `/finance/imports?type=salary_slip&month=2026-06&returnTo=/payroll/batch` 能打开导入中心。
 - 导入中心显示上传薪资表、薪资表类型、返回核对入口。
-- `/payroll/batch?month=2026-06` 能显示薪资批量发送页。
-- 页面能显示薪资草稿文件名、发布批次、2 行明细、2 人可企微通知。
+- Chrome 文件选择器能选择 `/tmp/browser-uat-resolved.csv`。
+- 上传后页面显示 `已保存薪资表草稿，可返回核对。`
+- 上传预览显示 `可发布`，3 行明细均为 `已处理`。
+- `/payroll/batch?month=2026-06` 能读回薪资草稿。
+- 页面显示薪资草稿文件名、发布批次、3 行明细、实发合计 `¥19,500.00`、1 人可企微通知、2 人跳过通知。
 - 发布按钮在未勾选“我已核对原始薪资表 / 我已确认通知名单”前保持禁用。
 - 勾选两项确认后，发布按钮启用。
-- 点击发布后，本地隔离接口完成 dry-run 闭环，页面显示发布成功、发布追溯、正式薪资条和通知记录。
-- 浏览器控制台无 error。
+- 点击发布后，本地隔离接口完成 dry-run 闭环，页面提示：`已发布 3 条薪资条；本地 dry-run：可通知 1 人，未发送真实企业微信。`
+- 发布追溯读回：正式薪资条 `3 条`，通知记录 `1 条`。
 
-本轮浏览器接口限制：
+## 本地 API 调用记录
 
-- 当前可操作浏览器 API 不能直接向 `<input type="file">` 注入本地文件。
-- 因此文件选择动作只验证到上传 UI 可见；CSV/XLSX 解析能力由 `npm run build:employee`、既有 payroll 回归和本地隔离草稿继续覆盖。
+结果文件：
 
-## 候选包
+- `output/employee-frontend/payroll-browser-uat-20260618-pr38/local-api-calls.json`
+- `output/employee-frontend/payroll-browser-uat-20260618-pr38/browser-uat-result.json`
 
-- 候选 release id：`20260618121622`
-- 候选包目录：`output/employee-frontend/release-candidates/employee-frontend-payroll-20260618121622`
-- 来源 commit：`3b7bdfd8a2c4f4ef7fd44a2ede404600445cc3af`
-- 当前仓库员工端旧 release：`20260616090241`
-- 状态：`candidate_not_deployed`
-- 文件数：10
+本地 API 内存状态：
 
-候选包包含：
+- 草稿批次：`1`
+- 薪资条：`3`
+- 通知记录：`1`
 
-- `dist/**`
-- sourcemap 文件
-- `WW_verify_c3gCJkz4TJsbTeiJ.txt`
-- `favicon.svg`
-- `manifest.json`
-- `checksums.sha256`
-- `README.md`
+关键调用：
 
-校验结果：
+- `PUT /api/payroll/draft-batches/2026-06`：保存上传草稿。
+- `POST /api/salary-slips/sync`：本地同步 3 条薪资条。
+- `POST /api/salary-notify-logs/send`：本地 dry-run 通知记录 1 条；没有连接真实企业微信。
+- `GET /api/salary-slips` 和 `GET /api/salary-notify-logs`：发布后读回追溯数据。
 
-```text
-shasum -a 256 -c checksums.sha256
-全部 OK
-```
+## 安全边界
 
-## 已执行检查
+- 生产数据库 touched：否
+- 生产 SQL generated：否
+- 真实企业微信发送：否
+- 部署：否
+- 重启：否
+- 正式员工端 release 切换：否
+- rollback tag：否
 
-```text
-npm run lint:employee
-npm run build:employee
-本地可操作浏览器验收
-候选包 checksums.sha256 校验
-```
+## 已完成的配套检查
 
-## 当前上线判断
+- `npm run test:payroll`：通过，50 项。
+- `npm run test:wecom`：通过，9 项。
+- `npm run lint:employee`：通过。
+- PR #38 合并后生产只读门禁：通过，`deploymentAllowed=false` 仍保持。
+- PR #38 合并后 payroll DB verify：通过，blockers / failures / warnings 均为 0。
 
-后台大爱归心企微通道已经上线，双人 0 元真实测试发送已通过。
+## 当前判断
 
-员工端前端还未正式切换。进入正式可用仍需要下一步二选一：
+员工端薪资前端本地浏览器验收通过，支持进入最终发布决策。
 
-1. 先把候选包放到服务器灰度 URL，财务用真实浏览器打开灰度路径做最后确认。
-2. 用户明确 Go / No-Go 后，切换正式 `current` 到候选 release，并保留旧 release 回滚。
+仍未执行正式发布动作。下一步只能在用户明确授权后进入灰度 / 正式 release 切换，并保留旧 release 回滚路径。

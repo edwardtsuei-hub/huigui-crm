@@ -814,3 +814,36 @@
 - 回滚备份：`/opt/huigui-backups/huigui-crm-daai-payroll-wecom-channel-20260618.tar.gz`
 - 对应详细记录：
   - [2026-06-18 11:43:07 生产同步记录](./deployments/2026-06-18-114307-production-sync.md)
+
+## 2026-06-18 19:43:44
+
+- 环境：生产 `crm.hui-health.com` / `management.hui-health.com`
+- 服务器：`root@49.232.57.98`
+- 部署目录：`/opt/huigui-crm`
+- 部署方式：手动选择文件同步 + 远端 `docker compose build api app` + `npx prisma migrate deploy`
+- 部署标签：`salary-deduction-items-20260618-194012`
+- 本地构建：是
+- 本地源码备份：否
+- 执行 migrate：是
+- 执行 seed：否
+- 执行 HTTPS 回归检查：是
+- 回滚源码备份：`/opt/huigui-backups/huigui-crm-salary-deduction-items-20260618-194012.tar.gz`
+- 数据库备份：`/opt/huigui-backups/huigui-mysql-before-salary-deduction-items-20260618-194012.sql.gz`
+- 对应详细记录：
+  - [2026-06-18 19:43:44 薪资个人承担明细后端上线记录](./deployments/2026-06-18-194344-salary-deduction-items-backend.md)
+
+## 2026-06-18 20:32:59
+
+- 环境：生产 `management.hui-health.com`
+- 服务器：`root@49.232.57.98`
+- 部署目录：`/opt/huigui-crm`
+- 部署方式：独立静态路径 `/employee-payroll/` + nginx 最小路径配置
+- 部署标签：`employee-payroll-subpath-20260618202823`
+- 本地构建：是
+- 本地源码备份：否
+- 执行 migrate：否
+- 执行 seed：否
+- 执行 HTTPS 回归检查：是
+- nginx 配置备份：`/opt/huigui-backups/nginx-payroll-subpath/nginx-before-employee-payroll-20260618-202915.conf`
+- 对应详细记录：
+  - [2026-06-18 20:32:59 员工端薪资独立正式入口上线记录](./deployments/2026-06-18-203259-employee-payroll-subpath.md)
