@@ -143,8 +143,10 @@ const AMOUNT_HEADER_ALIASES = {
 const DEDUCTION_COMPONENT_HEADERS = ["社保扣费", "社保", "公积金", "个税"];
 const LEGACY_NAME_IDENTITY_MAP: Record<string, Pick<PayrollRow, "teacherId" | "userId" | "wecomUserId" | "loginAccount">> = {
   觉心: { teacherId: "JiaoXin", userId: "JiaoXin", wecomUserId: "JiaoXin", loginAccount: "JiaoXin" },
+  程素风: { teacherId: "ChengCheng", userId: "ChengCheng", wecomUserId: "ChengCheng", loginAccount: "ChengCheng" },
   马立新: { teacherId: "Malixin", userId: "Malixin", wecomUserId: "Malixin", loginAccount: "Malixin" },
   燕子: { teacherId: "Malixin", userId: "Malixin", wecomUserId: "Malixin", loginAccount: "Malixin" },
+  高美娟: { teacherId: "huixin", userId: "huixin", wecomUserId: "huixin", loginAccount: "huixin" },
   子青: {
     teacherId: "0da36207717ef93360b0e5115daba6ab",
     userId: "0da36207717ef93360b0e5115daba6ab",
