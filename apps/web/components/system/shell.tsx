@@ -512,6 +512,15 @@ function WorkspaceIcon({ icon }: { icon: WorkspaceIconKey }) {
           <path d="M15 4v4h4M9 12h6M9 16h6" {...common} />
         </>
       ) : null}
+      {icon === "finance" ? (
+        <>
+          <circle cx="12" cy="12" r="8" {...common} />
+          <path
+            d="M12 7v10M9.25 9.5c.55-1 1.45-1.5 2.75-1.5 1.75 0 2.9.85 2.9 2.1 0 1.35-1.05 1.9-2.9 1.9s-2.9.55-2.9 1.9c0 1.25 1.15 2.1 2.9 2.1 1.3 0 2.2-.5 2.75-1.5"
+            {...common}
+          />
+        </>
+      ) : null}
       {icon === "files" ? (
         <>
           <path

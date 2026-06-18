@@ -79,6 +79,7 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
   { code: "menu.solutions", name: "方案", module: "solutions", category: "MENU", sortOrder: 60 },
   { code: "menu.quotations", name: "报价", module: "quotations", category: "MENU", sortOrder: 70 },
   { code: "menu.orders", name: "订单", module: "orders", category: "MENU", sortOrder: 75 },
+  { code: "menu.finance", name: "财务", module: "finance", category: "MENU", sortOrder: 78 },
   { code: "menu.files", name: "档案", module: "files", category: "MENU", sortOrder: 80 },
   { code: "menu.management", name: "管理中心", module: "management", category: "MENU", sortOrder: 90 },
   { code: "menu.settings", name: "设置", module: "settings", category: "MENU", sortOrder: 100 },
@@ -113,6 +114,7 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
   { code: "page.orders.payments", name: "收款记录", module: "orders", category: "PAGE", sortOrder: 286 },
   { code: "page.orders.shipments", name: "发货记录", module: "orders", category: "PAGE", sortOrder: 288 },
   { code: "page.orders.channel_settlements", name: "渠道结算", module: "orders", category: "PAGE", sortOrder: 289 },
+  { code: "page.finance.payroll", name: "薪资上传与发送", module: "finance", category: "PAGE", sortOrder: 291 },
   { code: "page.files.center", name: "档案中心", module: "files", category: "PAGE", sortOrder: 290 },
   { code: "page.management.members", name: "成员管理", module: "management", category: "PAGE", sortOrder: 300 },
   { code: "page.management.roles", name: "角色权限", module: "management", category: "PAGE", sortOrder: 310 },
@@ -165,6 +167,7 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
   { code: "action.order.attach_file", name: "关联订单档案", module: "orders", category: "ACTION", sortOrder: 667 },
   { code: "action.order.settle_channel", name: "处理渠道结算", module: "orders", category: "ACTION", sortOrder: 668 },
   { code: "action.finance_account.update", name: "维护财务账户", module: "settings", category: "ACTION", sortOrder: 669 },
+  { code: "action.payroll.publish", name: "发布薪资条", module: "finance", category: "ACTION", sortOrder: 670 },
 
   { code: "action.work_management.create", name: "新建工作管理内容", module: "work_management", category: "ACTION", sortOrder: 670 },
   { code: "action.work_management.update", name: "编辑工作管理内容", module: "work_management", category: "ACTION", sortOrder: 671 },
@@ -359,6 +362,7 @@ export const DEFAULT_ROLE_PERMISSION_CODES: Record<string, string[]> = {
     "menu.solutions",
     "menu.quotations",
     "menu.orders",
+    "menu.finance",
     "menu.files",
     "page.dashboard.home",
     "page.work_management.overview",
@@ -375,6 +379,7 @@ export const DEFAULT_ROLE_PERMISSION_CODES: Record<string, string[]> = {
     "page.orders.payments",
     "page.orders.shipments",
     "page.orders.channel_settlements",
+    "page.finance.payroll",
     "page.files.center",
     "page.settings.finance_accounts",
     "action.work_management.create",
@@ -386,7 +391,8 @@ export const DEFAULT_ROLE_PERMISSION_CODES: Record<string, string[]> = {
     "action.quotation.export_pdf",
     "action.order.record_payment",
     "action.order.settle_channel",
-    "action.finance_account.update"
+    "action.finance_account.update",
+    "action.payroll.publish"
   ]
 };
 
