@@ -7,13 +7,13 @@
       "domain": "crm.hui-health.com",
       "recordsPendingSync": false,
       "lastKnownSync": {
-        "date": "2026-05-12",
-        "time": "20:40:18",
-        "label": "production-sync-20260512-204018",
+        "date": "2026-06-18",
+        "time": "09:58:21",
+        "label": "payroll-wecom-test-send-20260618",
         "method": "scripts/ops/deploy-local-to-production.sh",
-        "recordPath": "docs/deployments/2026-05-12-204018-production-sync.md",
+        "recordPath": "docs/deployments/2026-06-18-095821-production-sync.md",
         "logPath": "docs/deployment-log.md",
-        "gitRevision": "cd6fb7b"
+        "gitRevision": "eadf59f"
       }
     }
   }

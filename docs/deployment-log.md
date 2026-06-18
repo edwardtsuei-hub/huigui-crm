@@ -780,3 +780,20 @@
 - 回滚备份：`/opt/huigui-backups/huigui-crm-production-sync-20260512-204018.tar.gz`
 - 对应详细记录：
   - [2026-05-12 20:40:18 生产同步记录](./deployments/2026-05-12-204018-production-sync.md)
+
+## 2026-06-18 09:58:21
+
+- 环境：生产 `crm.hui-health.com`
+- 服务器：`root@49.232.57.98`
+- 部署目录：`/opt/huigui-crm`
+- 部署方式：`scripts/ops/deploy-local-to-production.sh`
+- 部署标签：`payroll-wecom-test-send-20260618`
+- 本地构建：是
+- 本地源码备份：是
+- 执行 migrate：是
+- 执行 seed：否
+- 执行 HTTPS 回归检查：是
+- 本地备份：`/Users/i-datsuei/Desktop/大爱归心系统/backups/huigui-crm-payroll-wecom-test-send-20260618.tar.gz`
+- 回滚备份：`/opt/huigui-backups/huigui-crm-payroll-wecom-test-send-20260618.tar.gz`
+- 对应详细记录：
+  - [2026-06-18 09:58:21 生产同步记录](./deployments/2026-06-18-095821-production-sync.md)
