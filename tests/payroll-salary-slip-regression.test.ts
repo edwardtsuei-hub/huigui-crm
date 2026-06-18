@@ -2444,6 +2444,135 @@ test("salary notify logs can be queried by month and publish batch id", async ()
   assert.equal(calls.salaryNotifyLogFindMany[0].take, 1000);
 });
 
+test("salary WeCom test send only targets explicit allowlist and records the result", async () => {
+  const { prisma, calls } = createPayrollPrismaMock([
+    salarySlip({
+      id: "salary-slip-chengcheng",
+      month: "2026-06",
+      publishBatchId: "salary-publish-test",
+      teacherId: "teacher-chengcheng",
+      teacherName: "程程",
+      wecomUserId: "chengcheng",
+      netAmount: 12400,
+    }),
+    salarySlip({
+      id: "salary-slip-limeng",
+      month: "2026-06",
+      publishBatchId: "salary-publish-test",
+      teacherId: "finance-zhoulimeng",
+      teacherName: "周立猛",
+      wecomUserId: "finance-zhoulimeng",
+      netAmount: 8800,
+    }),
+    salarySlip({
+      id: "salary-slip-other",
+      month: "2026-06",
+      publishBatchId: "salary-publish-test",
+      teacherId: "teacher-other",
+      teacherName: "其他员工",
+      wecomUserId: "other-wecom",
+      netAmount: 6000,
+    }),
+  ]);
+  const sent: Array<{ toUser: string; payload: Record<string, unknown> }> = [];
+  const service = new PayrollService(
+    prisma as never,
+    {
+      sendTextCardMessage: async (toUser: string, payload: Record<string, unknown>) => {
+        sent.push({ toUser, payload });
+        return { success: true };
+      },
+    } as never,
+    { get: () => "https://management.hui-health.com" } as never,
+  );
+
+  const result = await service.sendSalaryWecomTest({
+    month: "2026-06",
+    publishBatchId: "salary-publish-test",
+    testUserids: ["chengcheng", "finance-zhoulimeng"],
+    dryRun: false,
+    createdBy: "财务",
+  }, makeUser({ roleCode: "FINANCE", roleName: "财务" }));
+
+  assert.equal(result.status, "sent");
+  assert.deepEqual(sent.map((item) => item.toUser).sort(), ["chengcheng", "finance-zhoulimeng"]);
+  assert.equal(String(sent[0].payload.url).includes("/payroll/mine?month=2026-06"), true);
+  assert.deepEqual(result.delivered.map((person) => person.userid).sort(), ["chengcheng", "finance-zhoulimeng"]);
+  assert.deepEqual(result.skipped.map((person) => person.userid), ["other-wecom"]);
+  assert.equal(result.skipped[0].reason, "不在本次测试名单");
+  assert.equal(calls.salaryNotifyLogUpsert.length, 1);
+  const create = calls.salaryNotifyLogUpsert[0].create as Record<string, unknown>;
+  assert.equal(create.status, "sent");
+  assert.equal(create.modeLabel, "企业微信测试发送");
+  assert.equal(create.publishBatchId, "salary-publish-test");
+});
+
+test("salary WeCom test send skips already sent recipients to avoid duplicates", async () => {
+  const now = new Date("2026-06-17T01:00:00.000Z");
+  const { prisma, calls } = createPayrollPrismaMock([
+    salarySlip({
+      id: "salary-slip-chengcheng",
+      month: "2026-06",
+      publishBatchId: "salary-publish-test",
+      teacherId: "teacher-chengcheng",
+      teacherName: "程程",
+      wecomUserId: "chengcheng",
+    }),
+    salarySlip({
+      id: "salary-slip-limeng",
+      month: "2026-06",
+      publishBatchId: "salary-publish-test",
+      teacherId: "finance-zhoulimeng",
+      teacherName: "周立猛",
+      wecomUserId: "finance-zhoulimeng",
+    }),
+  ], {
+    salaryNotifyLogs: [{
+      id: "sent-before",
+      month: "2026-06",
+      publishBatchId: "salary-publish-test",
+      at: now,
+      actionLabel: "测试企微发送",
+      modeLabel: "企业微信测试发送",
+      status: "sent",
+      tone: "success",
+      message: "已发送 1 人。",
+      delivered: [{ id: "finance-zhoulimeng", name: "周立猛", userid: "finance-zhoulimeng", netAmount: 8800 }],
+      skipped: [],
+      failed: [],
+      notifyUrl: null,
+      createdBy: "财务",
+      createdAt: now,
+    }],
+  });
+  const sent: string[] = [];
+  const service = new PayrollService(
+    prisma as never,
+    {
+      sendTextCardMessage: async (toUser: string) => {
+        sent.push(toUser);
+        return { success: true };
+      },
+    } as never,
+    { get: () => "https://management.hui-health.com" } as never,
+  );
+
+  const result = await service.sendSalaryWecomTest({
+    month: "2026-06",
+    publishBatchId: "salary-publish-test",
+    testUserids: "chengcheng,finance-zhoulimeng",
+    dryRun: false,
+  }, makeUser({ roleCode: "FINANCE", roleName: "财务" }));
+
+  assert.deepEqual(sent, ["chengcheng"]);
+  assert.deepEqual(result.delivered.map((person) => person.userid), ["chengcheng"]);
+  assert.equal(result.skipped.find((person) => person.userid === "finance-zhoulimeng")?.reason, "本批次已发送过，避免重复");
+  assert.deepEqual(calls.salaryNotifyLogFindMany[0].where, {
+    month: "2026-06",
+    publishBatchId: "salary-publish-test",
+  });
+});
+
 test("payroll draft batch stores publish batch id for later reconciliation", async () => {
   const { prisma, calls } = createPayrollPrismaMock();
   const service = new PayrollService(prisma as never);

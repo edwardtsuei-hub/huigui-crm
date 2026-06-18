@@ -96,6 +96,28 @@
   gap: 12px;
 }
 
+.testSendGrid {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(240px, 1fr) auto;
+}
+
+.testSendField {
+  display: grid;
+  gap: 6px;
+}
+
+.testSendField span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.testSendField input {
+  min-height: 40px;
+}
+
 .checkboxLine {
   align-items: center;
   color: var(--text);
@@ -221,6 +243,11 @@
   .toolbar {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .testSendGrid {
+    align-items: stretch;
+    grid-template-columns: 1fr;
   }
 
   .tabs {

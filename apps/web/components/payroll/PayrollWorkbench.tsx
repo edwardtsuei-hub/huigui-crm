@@ -27,6 +27,7 @@ import {
   parseSalaryFile,
   recordNotifyLog,
   saveDraftBatch,
+  sendSalaryWecomTest,
   statusLabel,
   syncSalarySlips,
   type PayrollDraft,
@@ -44,6 +45,13 @@ type Toast = {
 
 function userDisplayName(user: CurrentUser | null) {
   return user?.displayName ?? user?.name ?? user?.username ?? "未登录";
+}
+
+function parseUseridInput(value: string) {
+  return Array.from(new Set(value
+    .split(/[\s,，|、]+/)
+    .map((item) => item.trim())
+    .filter(Boolean)));
 }
 
 function statusTone(status: PayrollDraft["validation"]["status"]) {
@@ -246,11 +254,27 @@ function PayrollBatchView({
 }) {
   const [reviewedOriginal, setReviewedOriginal] = useState(false);
   const [confirmedRecipients, setConfirmedRecipients] = useState(false);
+  const [testUserids, setTestUserids] = useState("");
   const [publishing, setPublishing] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
 
   const lists = useMemo(() => notifyLists(draft?.rows ?? []), [draft]);
+  const activePublishBatchId = draft?.publishBatchId ?? salarySlips[0]?.publishBatchId;
+  const defaultTestUserids = useMemo(() => {
+    return Array.from(new Set([
+      user?.wecomUserId ?? "",
+      "finance-zhoulimeng",
+    ].filter(Boolean)));
+  }, [user?.wecomUserId]);
   const ready = draftIsReady(draft);
   const canPublish = Boolean(ready && reviewedOriginal && confirmedRecipients && !publishing);
+  const canSendTest = Boolean(activePublishBatchId && salarySlips.length > 0 && testUserids.trim() && !sendingTest);
+
+  useEffect(() => {
+    if (!testUserids && defaultTestUserids.length > 0) {
+      setTestUserids(defaultTestUserids.join(", "));
+    }
+  }, [defaultTestUserids, testUserids]);
 
   async function publish() {
     if (!draft || !canPublish) {
@@ -279,6 +303,56 @@ function PayrollBatchView({
       });
     } finally {
       setPublishing(false);
+    }
+  }
+
+  async function sendTestWecom() {
+    if (!activePublishBatchId || !canSendTest) {
+      return;
+    }
+
+    const userids = parseUseridInput(testUserids);
+    if (userids.length === 0) {
+      setToast({ tone: "warning", message: "请填写测试企业微信账号。" });
+      return;
+    }
+    if (typeof window !== "undefined") {
+      const confirmed = window.confirm(`只向这些企业微信账号发送测试薪资条通知：${userids.join("、")}`);
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    setSendingTest(true);
+    try {
+      const response = await sendSalaryWecomTest({
+        month,
+        publishBatchId: activePublishBatchId,
+        testUserids: userids,
+        notifyUrl: typeof window === "undefined"
+          ? undefined
+          : `${window.location.origin}/payroll/mine?month=${encodeURIComponent(month)}`,
+        dryRun: false,
+        createdBy: userDisplayName(user),
+      });
+      if (draft) {
+        await saveDraftBatch(draft, {
+          notifyStatus: response.status,
+          updatedBy: userDisplayName(user),
+        });
+      }
+      setToast({
+        tone: response.status === "failed" ? "warning" : "success",
+        message: response.message,
+      });
+      await onRefresh();
+    } catch (caught) {
+      setToast({
+        tone: "danger",
+        message: caught instanceof Error ? caught.message : "测试发送失败",
+      });
+    } finally {
+      setSendingTest(false);
     }
   }
 
@@ -337,6 +411,32 @@ function PayrollBatchView({
           <PayrollRowsTable rows={draft.rows} />
           <NotifyPanel delivered={lists.delivered} skipped={lists.skipped} />
         </>
+      ) : null}
+
+      {!loading && activePublishBatchId ? (
+        <SectionCard
+          description={`发布批次：${activePublishBatchId}`}
+          title="小批次企微测试发送"
+        >
+          <div className={styles.testSendGrid}>
+            <label className={styles.testSendField}>
+              <span>测试企业微信账号</span>
+              <input
+                onChange={(event) => setTestUserids(event.target.value)}
+                placeholder="多个账号用逗号分隔"
+                value={testUserids}
+              />
+            </label>
+            <button
+              className="button secondary"
+              disabled={!canSendTest}
+              onClick={() => void sendTestWecom()}
+              type="button"
+            >
+              {sendingTest ? "发送中..." : "发送测试企微"}
+            </button>
+          </div>
+        </SectionCard>
       ) : null}
 
       {!loading && !draft ? (

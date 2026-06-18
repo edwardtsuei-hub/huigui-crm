@@ -277,6 +277,12 @@ export const searchCatalog: SearchCatalogItem[] = [
     permissionCode: "menu.dashboard",
   },
   {
+    href: "/payroll/mine",
+    label: "我的薪资条",
+    description: "查看本人可见的月度薪资条",
+    permissionCode: "menu.dashboard",
+  },
+  {
     href: "/work-management/home",
     label: "协同首页",
     description: "先进入协同首页，再分流到周报、月目标和团队入口",
@@ -788,6 +794,13 @@ const pageMetaMap: Array<{ prefixes: string[]; meta: PageMeta }> = [
     meta: {
       title: "薪资上传与发送",
       subtitle: "在主后台内完成薪资表上传、核对发布和通知追溯。",
+    },
+  },
+  {
+    prefixes: ["/payroll/mine"],
+    meta: {
+      title: "我的薪资条",
+      subtitle: "查看当前账号本人可见的月度薪资条。",
     },
   },
   {

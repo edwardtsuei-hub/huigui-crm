@@ -52,6 +52,14 @@ export class SalaryNotifyLogsController {
   ) {
     return this.payrollService.recordSalaryNotifyLog(body, req.user);
   }
+
+  @Post("salary-notify-logs/send-test")
+  sendSalaryWecomTest(
+    @Body() body: Record<string, unknown>,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.payrollService.sendSalaryWecomTest(body, req.user);
+  }
 }
 
 @Controller("payroll/draft-batches")

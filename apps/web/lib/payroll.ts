@@ -99,6 +99,19 @@ export type SalaryNotifyLog = {
   createdAt?: string;
 };
 
+export type SalaryWecomTestSendResponse = {
+  ok: boolean;
+  mode: "dry_run" | "live";
+  status: "sent" | "preview" | "skipped" | "failed";
+  month: string;
+  publishBatchId: string;
+  notifyUrl: string;
+  delivered: NotifyPerson[];
+  skipped: NotifyPerson[];
+  failed: NotifyPerson[];
+  message: string;
+};
+
 export type PayrollDraftBatchResponse = {
   month: string;
   publishBatchId?: string;
@@ -481,12 +494,30 @@ export function listSalarySlips(month: string, publishBatchId?: string) {
   return apiFetch<{ data: SalarySlip[] }>(`/salary-slips?${params.toString()}`);
 }
 
+export function listMySalarySlips() {
+  return apiFetch<{ data: SalarySlip[]; warnings?: string[] }>("/me/salary-slips");
+}
+
 export function listNotifyLogs(month: string, publishBatchId?: string) {
   const params = new URLSearchParams({ month, limit: "240" });
   if (publishBatchId) {
     params.set("publishBatchId", publishBatchId);
   }
   return apiFetch<{ data: SalaryNotifyLog[] }>(`/salary-notify-logs?${params.toString()}`);
+}
+
+export function sendSalaryWecomTest(input: {
+  month: string;
+  publishBatchId?: string;
+  testUserids: string[];
+  notifyUrl?: string;
+  dryRun?: boolean;
+  createdBy?: string;
+}) {
+  return apiFetch<SalaryWecomTestSendResponse>("/salary-notify-logs/send-test", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
 export function statusLabel(status: PayrollValidation["status"]) {
