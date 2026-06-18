@@ -283,6 +283,12 @@ if [[ "${RUN_LOCAL_BACKUP}" == "1" ]]; then
     mkdir -p "${LOCAL_BACKUP_ROOT}"
     tar \
       --exclude='.git' \
+      --exclude='.codex-backups' \
+      --exclude='.codex-tools' \
+      --exclude='.env' \
+      --exclude='.env.local' \
+      --exclude='.env.backup*' \
+      --exclude='.env.bak*' \
       --exclude='node_modules' \
       --exclude='.next' \
       --exclude='dist' \
@@ -309,6 +315,8 @@ if [[ "${RUN_REMOTE_BACKUP}" == "1" ]]; then
       if [ -d '${DEPLOY_PATH}' ]; then
         tar \
           --exclude='.git' \
+          --exclude='.codex-backups' \
+          --exclude='.codex-tools' \
           --exclude='node_modules' \
           --exclude='.next' \
           --exclude='dist' \
@@ -340,7 +348,13 @@ RSYNC_ARGS=(
   --exclude
   .env.local
   --exclude
+  ".env.backup*"
+  --exclude
   ".env.bak*"
+  --exclude
+  .codex-backups/
+  --exclude
+  .codex-tools/
   --exclude
   .npm-cache/
   --exclude
