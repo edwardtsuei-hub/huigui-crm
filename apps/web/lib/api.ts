@@ -342,6 +342,14 @@ export function hasPermission(
     return true;
   }
 
+  if (
+    ["menu.finance", "page.finance.payroll", "action.payroll.publish"].includes(
+      permissionCode,
+    )
+  ) {
+    return canMaintainPayroll(user);
+  }
+
   return user.permissions?.includes(permissionCode) ?? false;
 }
 
@@ -352,6 +360,15 @@ export function hasAnyPermission(
   return permissionCodes.some((permissionCode) =>
     hasPermission(user, permissionCode),
   );
+}
+
+export function canMaintainPayroll(user: CurrentUser | null | undefined) {
+  if (!user) {
+    return false;
+  }
+
+  return ["SUPER_ADMIN", "ADMIN", "FINANCE"].includes(user.roleCode)
+    || Boolean(user.permissions?.includes("action.payroll.publish"));
 }
 
 export function isExecutionSalesRole(user: CurrentUser | null | undefined) {

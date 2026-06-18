@@ -11,6 +11,7 @@ export type WorkspaceIconKey =
   | "products"
   | "solutions"
   | "quotations"
+  | "finance"
   | "files"
   | "management"
   | "settings"
@@ -223,6 +224,23 @@ export const navigationTree: NavigationItem[] = [
     ],
   },
   {
+    key: "finance",
+    href: "/finance/payroll",
+    icon: "finance",
+    label: "财务",
+    caption: "薪资上传、核对与发送追溯",
+    permissionCode: "menu.finance",
+    matchPrefixes: ["/finance"],
+    children: [
+      {
+        href: "/finance/payroll",
+        label: "薪资发送",
+        permissionCode: "page.finance.payroll",
+        matchPrefixes: ["/finance/payroll"],
+      },
+    ],
+  },
+  {
     key: "files",
     href: "/files",
     icon: "files",
@@ -385,6 +403,12 @@ export const searchCatalog: SearchCatalogItem[] = [
     permissionCode: "page.orders.channel_settlements",
   },
   {
+    href: "/finance/payroll",
+    label: "薪资上传与发送",
+    description: "上传薪资表、核对发布批次并查看通知追溯",
+    permissionCode: "page.finance.payroll",
+  },
+  {
     href: "/files",
     label: "档案中心",
     description: "正式资料与归档记录",
@@ -531,6 +555,7 @@ const MANAGEMENT_NAVIGATION_KEYS = new Set([
   "dashboard",
   "work-management",
   "schedule",
+  "finance",
   "management",
   "settings",
 ]);
@@ -756,6 +781,13 @@ const pageMetaMap: Array<{ prefixes: string[]; meta: PageMeta }> = [
     meta: {
       title: "协同总览",
       subtitle: "周报、目标、提醒与团队动态总览。",
+    },
+  },
+  {
+    prefixes: ["/finance/payroll"],
+    meta: {
+      title: "薪资上传与发送",
+      subtitle: "在主后台内完成薪资表上传、核对发布和通知追溯。",
     },
   },
   {
