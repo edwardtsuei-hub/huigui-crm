@@ -53,15 +53,46 @@ type Toast = {
   message: string;
 };
 
+const APP_BASE_PATH = normalizeBasePath(import.meta.env.BASE_URL);
+const IS_GRAY_RUNTIME = APP_BASE_PATH.startsWith("/employee-frontend-gray/");
+
+function normalizeBasePath(value: string | undefined) {
+  const trimmed = (value ?? "/").trim();
+  if (!trimmed || trimmed === "/") {
+    return "";
+  }
+  return `/${trimmed.replace(/^\/+|\/+$/g, "")}`;
+}
+
+function stripBasePath(pathname: string) {
+  if (!APP_BASE_PATH) {
+    return pathname;
+  }
+  if (pathname === APP_BASE_PATH) {
+    return "/";
+  }
+  if (pathname.startsWith(`${APP_BASE_PATH}/`)) {
+    return pathname.slice(APP_BASE_PATH.length) || "/";
+  }
+  return pathname;
+}
+
+function withBasePath(to: string) {
+  if (!APP_BASE_PATH || /^[a-z][a-z0-9+.-]*:/i.test(to)) {
+    return to;
+  }
+  return `${APP_BASE_PATH}${to.startsWith("/") ? to : `/${to}`}`;
+}
+
 function readRoute(): RouteState {
   return {
-    path: window.location.pathname,
+    path: stripBasePath(window.location.pathname),
     params: new URLSearchParams(window.location.search),
   };
 }
 
 function navigate(to: string) {
-  window.history.pushState(null, "", to);
+  window.history.pushState(null, "", withBasePath(to));
   window.dispatchEvent(new PopStateEvent("popstate"));
 }
 
@@ -253,7 +284,7 @@ function PayrollBatchPage({ route, user, setToast }: { route: RouteState; user: 
     setError("");
     try {
       const syncResponse = await syncSalarySlips(draft, user);
-      const sendResponse = await sendSalaryWecomNotifications(draft, user);
+      const sendResponse = await sendSalaryWecomNotifications(draft, user, { dryRun: IS_GRAY_RUNTIME });
       await saveDraftBatch(draft, {
         publishedAt: new Date().toISOString(),
         notifyStatus: sendResponse.status,
@@ -333,7 +364,7 @@ function PayrollBatchPage({ route, user, setToast }: { route: RouteState; user: 
               </label>
               <button className="primary-button" disabled={!canPublish} onClick={() => void publish()} type="button">
                 {publishing ? <Loader2 className="spin" size={18} /> : <Send size={18} />}
-                发布并发送企微
+                {IS_GRAY_RUNTIME ? "发布并预览企微" : "发布并发送企微"}
               </button>
             </div>
           </section>
