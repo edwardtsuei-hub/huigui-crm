@@ -19,6 +19,8 @@ export type PayrollRow = {
   differenceNote?: string;
   amountErrors: string[];
   hasExplicitIdentity: boolean;
+  identitySource: "explicit" | "known_mapping" | "name_fallback";
+  payableAmount?: number;
 };
 
 export type PayrollDraft = {
@@ -125,7 +127,33 @@ export type PayrollDraftBatchResponse = {
 
 const REQUIRED_HEADERS = ["姓名", "应发", "实发"];
 const IDENTITY_HEADERS = ["员工ID", "用户ID", "企业微信账号", "登录账号", "系统账号"];
-const EMPLOYEE_BASE_URL = import.meta.env.VITE_EMPLOYEE_BASE_URL?.replace(/\/$/, "");
+const REQUIRED_HEADER_ALIASES: Record<(typeof REQUIRED_HEADERS)[number], string[]> = {
+  姓名: ["姓名", "员工姓名", "名称"],
+  应发: ["应发", "基础工资", "基本工资"],
+  实发: ["实发", "实发工资", "实付工资"],
+};
+const AMOUNT_HEADER_ALIASES = {
+  grossAmount: ["应发", "基础工资", "基本工资"],
+  commissionAmount: ["提成"],
+  profitSharingAmount: ["分润", "奖金"],
+  deductionAmount: ["扣款", "扣除", "扣费"],
+  netAmount: ["实发", "实发工资", "实付工资"],
+  payableAmount: ["应付工资", "应发合计"],
+} as const;
+const DEDUCTION_COMPONENT_HEADERS = ["社保扣费", "社保", "公积金", "个税"];
+const LEGACY_NAME_IDENTITY_MAP: Record<string, Pick<PayrollRow, "teacherId" | "userId" | "wecomUserId" | "loginAccount">> = {
+  觉心: { teacherId: "JiaoXin", userId: "JiaoXin", wecomUserId: "JiaoXin", loginAccount: "JiaoXin" },
+  马立新: { teacherId: "Malixin", userId: "Malixin", wecomUserId: "Malixin", loginAccount: "Malixin" },
+  燕子: { teacherId: "Malixin", userId: "Malixin", wecomUserId: "Malixin", loginAccount: "Malixin" },
+  子青: {
+    teacherId: "0da36207717ef93360b0e5115daba6ab",
+    userId: "0da36207717ef93360b0e5115daba6ab",
+    wecomUserId: "0da36207717ef93360b0e5115daba6ab",
+    loginAccount: "0da36207717ef93360b0e5115daba6ab",
+  },
+};
+const VITE_ENV = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env ?? {};
+const EMPLOYEE_BASE_URL = VITE_ENV.VITE_EMPLOYEE_BASE_URL?.replace(/\/$/, "");
 
 export function currentMonth() {
   const now = new Date();
@@ -222,8 +250,16 @@ function tableRowsToObjects(tableRows: unknown[][]) {
     .filter((row) => row.some((cell) => cleanCell(cell)))
     .map((row) => {
       return Object.fromEntries(headers.map((header, index) => [header, cleanCell(row[index])]));
-    });
+    })
+    .filter((row) => !isSummaryRow(row));
   return { headers, rows };
+}
+
+function isSummaryRow(row: Record<string, string>) {
+  const name = text(row.姓名);
+  const sequence = text(row.序号);
+  const marker = sequence ?? name ?? "";
+  return /^(合计|總計|总计|小计|小計)$/i.test(marker);
 }
 
 function parseAmount(value: unknown, required: boolean) {
@@ -241,36 +277,112 @@ function text(value: unknown) {
   return String(value ?? "").trim() || undefined;
 }
 
+function normalizeIdentityKey(value: string) {
+  return value.replace(/\s+/g, "");
+}
+
+function hasAnyHeader(headers: string[], aliases: readonly string[]) {
+  return aliases.some((header) => headers.includes(header));
+}
+
+function valueFromHeaders(row: Record<string, string>, aliases: readonly string[]) {
+  for (const header of aliases) {
+    const value = text(row[header]);
+    if (value) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+function hasLegacySalaryHeaders(headers: string[]) {
+  return hasAnyHeader(headers, ["基础工资", "应付工资", "实发工资"]);
+}
+
+function isLegacySalaryRow(row: Record<string, string>) {
+  return ["基础工资", "应付工资", "实发工资"].some((header) => Object.prototype.hasOwnProperty.call(row, header));
+}
+
+function parseAmountFromHeaders(row: Record<string, string>, aliases: readonly string[], required: boolean) {
+  return parseAmount(valueFromHeaders(row, aliases), required);
+}
+
+function parseAmountSum(row: Record<string, string>, aliases: readonly string[]) {
+  let total = 0;
+  let valid = true;
+  let used = false;
+  aliases.forEach((header) => {
+    if (!Object.prototype.hasOwnProperty.call(row, header)) {
+      return;
+    }
+    const parsed = parseAmount(row[header], false);
+    if (!parsed.valid) {
+      valid = false;
+    }
+    if (text(row[header])) {
+      used = true;
+      total += parsed.value;
+    }
+  });
+  return { value: total, valid, used };
+}
+
 function toPayrollRow(row: Record<string, string>, index: number): PayrollRow {
-  const teacherName = text(row.姓名) ?? "未命名";
+  const teacherName = valueFromHeaders(row, REQUIRED_HEADER_ALIASES.姓名) ?? "未命名";
   const userId = text(row.用户ID);
   const wecomUserId = text(row.企业微信账号);
   const loginAccount = text(row.登录账号) ?? text(row.系统账号);
   const employeeId = text(row.员工ID);
-  const hasExplicitIdentity = Boolean(employeeId || userId || wecomUserId || loginAccount);
-  const teacherId = employeeId ?? wecomUserId ?? loginAccount ?? userId ?? `teacher-${teacherName}`;
-  const amountFields = [
-    ["应发", "grossAmount", true],
-    ["提成", "commissionAmount", false],
-    ["分润", "profitSharingAmount", false],
-    ["扣款", "deductionAmount", false],
-    ["实发", "netAmount", true],
-  ] as const;
-  const parsedAmounts = Object.fromEntries(amountFields.map(([header, field, required]) => {
-    return [field, parseAmount(row[header], required)];
-  })) as Record<string, { value: number; valid: boolean }>;
-  const amountErrors = amountFields
-    .filter(([, field]) => !parsedAmounts[field].valid)
-    .map(([header]) => header);
+  const mappedIdentity = LEGACY_NAME_IDENTITY_MAP[normalizeIdentityKey(teacherName)];
+  const legacyFallbackTeacherId = !mappedIdentity && isLegacySalaryRow(row)
+    ? `manual-${normalizeIdentityKey(teacherName)}`
+    : undefined;
+  const resolvedUserId = userId ?? mappedIdentity?.userId;
+  const resolvedWecomUserId = wecomUserId ?? mappedIdentity?.wecomUserId;
+  const resolvedLoginAccount = loginAccount ?? mappedIdentity?.loginAccount;
+  const teacherId = employeeId
+    ?? mappedIdentity?.teacherId
+    ?? resolvedWecomUserId
+    ?? resolvedLoginAccount
+    ?? resolvedUserId
+    ?? legacyFallbackTeacherId
+    ?? `teacher-${teacherName}`;
+  const identitySource = employeeId || userId || wecomUserId || loginAccount
+    ? "explicit"
+    : mappedIdentity
+      ? "known_mapping"
+      : "name_fallback";
+  const hasExplicitIdentity = Boolean(employeeId || resolvedUserId || resolvedWecomUserId || resolvedLoginAccount || legacyFallbackTeacherId);
+  const directDeduction = parseAmountFromHeaders(row, AMOUNT_HEADER_ALIASES.deductionAmount, false);
+  const componentDeduction = parseAmountSum(row, DEDUCTION_COMPONENT_HEADERS);
+  const parsedAmounts = {
+    grossAmount: parseAmountFromHeaders(row, AMOUNT_HEADER_ALIASES.grossAmount, true),
+    commissionAmount: parseAmountFromHeaders(row, AMOUNT_HEADER_ALIASES.commissionAmount, false),
+    profitSharingAmount: parseAmountFromHeaders(row, AMOUNT_HEADER_ALIASES.profitSharingAmount, false),
+    deductionAmount: componentDeduction.used ? componentDeduction : directDeduction,
+    netAmount: parseAmountFromHeaders(row, AMOUNT_HEADER_ALIASES.netAmount, true),
+    payableAmount: parseAmountFromHeaders(row, AMOUNT_HEADER_ALIASES.payableAmount, false),
+  };
+  const amountErrors = [
+    ["应发", parsedAmounts.grossAmount],
+    ["提成", parsedAmounts.commissionAmount],
+    ["分润/奖金", parsedAmounts.profitSharingAmount],
+    ["扣款", parsedAmounts.deductionAmount],
+    ["实发", parsedAmounts.netAmount],
+    ["应付工资", parsedAmounts.payableAmount],
+  ]
+    .filter(([, parsed]) => !(parsed as { valid: boolean }).valid)
+    .map(([header]) => header as string);
 
   return {
     rowNumber: index + 2,
     teacherName,
     teacherId,
-    userId,
-    wecomUserId,
-    loginAccount,
+    userId: resolvedUserId,
+    wecomUserId: resolvedWecomUserId,
+    loginAccount: resolvedLoginAccount,
     hasExplicitIdentity,
+    identitySource,
     department: text(row.部门) ?? "未分组",
     position: text(row.岗位) ?? "成员",
     employmentType: text(row.人员类型) ?? text(row.岗位) ?? "正式",
@@ -279,6 +391,7 @@ function toPayrollRow(row: Record<string, string>, index: number): PayrollRow {
     profitSharingAmount: parsedAmounts.profitSharingAmount.value,
     deductionAmount: parsedAmounts.deductionAmount.value,
     netAmount: parsedAmounts.netAmount.value,
+    payableAmount: parsedAmounts.payableAmount.valid ? parsedAmounts.payableAmount.value : undefined,
     differenceStatus: text(row.差异状态) === "unresolved" || text(row.差异状态) === "未处理"
       ? "unresolved"
       : "resolved",
@@ -288,9 +401,9 @@ function toPayrollRow(row: Record<string, string>, index: number): PayrollRow {
 }
 
 function validateRows(headers: string[], rows: PayrollRow[], supportedPreview: boolean): PayrollValidation {
-  const headerSet = new Set(headers);
-  const missingRequiredHeaders = REQUIRED_HEADERS.filter((header) => !headerSet.has(header));
-  if (!IDENTITY_HEADERS.some((header) => headerSet.has(header))) {
+  const missingRequiredHeaders = REQUIRED_HEADERS.filter((header) => !hasAnyHeader(headers, REQUIRED_HEADER_ALIASES[header]));
+  const identityHeadersPresent = IDENTITY_HEADERS.some((header) => headers.includes(header));
+  if (!identityHeadersPresent && !hasLegacySalaryHeaders(headers)) {
     missingRequiredHeaders.push("员工ID/用户ID/企业微信账号/登录账号/系统账号");
   }
 
@@ -302,12 +415,23 @@ function validateRows(headers: string[], rows: PayrollRow[], supportedPreview: b
     if (row.netAmount < 0) {
       rowWarnings.push(`${row.teacherName} 的实发金额为负数，请复核。`);
     }
+    if (row.identitySource === "name_fallback") {
+      rowWarnings.push(`${row.teacherName} 未匹配到系统或企业微信身份，已按姓名生成手工身份；可入库，但不会收到企业微信通知。`);
+    }
     const expectedNet = row.grossAmount
       + (row.commissionAmount ?? 0)
       + (row.profitSharingAmount ?? 0)
       - row.deductionAmount;
     if (Math.abs(row.netAmount - expectedNet) > 0.01) {
       rowWarnings.push(`${row.teacherName} 的实发与应发、提成、分润、扣款合计不一致。`);
+    }
+    if (row.payableAmount !== undefined) {
+      const expectedPayable = row.grossAmount
+        + (row.commissionAmount ?? 0)
+        + (row.profitSharingAmount ?? 0);
+      if (Math.abs(row.payableAmount - expectedPayable) > 0.01) {
+        rowWarnings.push(`${row.teacherName} 的应付工资与基础工资、提成、奖金合计不一致。`);
+      }
     }
     return rowWarnings;
   });

@@ -24,9 +24,10 @@ const USER_KEY = "huigui_user";
 const AUTH_EXPIRES_AT_KEY = "huigui_auth_expires_at";
 const AUTH_LAST_LOGIN_AT_KEY = "huigui_auth_last_login_at";
 const AUTH_SESSION_MONTHS = 2;
+const VITE_ENV = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env ?? {};
 
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ?? "/api";
+  VITE_ENV.VITE_API_BASE_URL?.replace(/\/$/, "") ?? "/api";
 
 function buildUrl(path: string) {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
