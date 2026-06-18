@@ -24,6 +24,19 @@ function totalNet(slips: SalarySlip[]) {
   return slips.reduce((total, slip) => total + slip.netAmount, 0);
 }
 
+function DeductionCell({ slip }: { slip: SalarySlip }) {
+  return (
+    <div className={styles.deductionCell}>
+      <span>¥{formatAmount(slip.deductionAmount)}</span>
+      {slip.deductionItems?.length ? (
+        <small>
+          {slip.deductionItems.map((item) => `${item.label} ¥${formatAmount(item.amount)}`).join(" / ")}
+        </small>
+      ) : null}
+    </div>
+  );
+}
+
 export function MySalarySlips() {
   const searchParams = useSearchParams();
   const [slips, setSlips] = useState<SalarySlip[]>([]);
@@ -130,7 +143,7 @@ export function MySalarySlips() {
                 <th>应发</th>
                 <th>提成</th>
                 <th>分润</th>
-                <th>扣款</th>
+                <th>个人承担合计</th>
                 <th>实发</th>
                 <th>发布时间</th>
               </tr>
@@ -143,7 +156,7 @@ export function MySalarySlips() {
                   <td>¥{formatAmount(slip.grossAmount)}</td>
                   <td>¥{formatAmount(slip.commissionAmount)}</td>
                   <td>¥{formatAmount(slip.profitSharingAmount)}</td>
-                  <td>¥{formatAmount(slip.deductionAmount)}</td>
+                  <td><DeductionCell slip={slip} /></td>
                   <td className={styles.amount}>¥{formatAmount(slip.netAmount)}</td>
                   <td>{slip.syncedAt ? new Date(slip.syncedAt).toLocaleString("zh-CN") : "-"}</td>
                 </tr>

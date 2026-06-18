@@ -35,6 +35,25 @@
   font-weight: 800;
 }
 
+.deductionCell {
+  display: grid;
+  gap: 4px;
+  min-width: 130px;
+}
+
+.deductionCell span {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.deductionCell small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  max-width: 210px;
+  overflow-wrap: anywhere;
+}
+
 .notice {
   background: rgba(179, 120, 44, 0.12);
   border-radius: 8px;

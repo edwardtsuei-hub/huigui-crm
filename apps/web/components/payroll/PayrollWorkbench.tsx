@@ -110,6 +110,25 @@ function ValidationSummary({ draft }: { draft: PayrollDraft }) {
   );
 }
 
+function DeductionCell({
+  amount,
+  items,
+}: {
+  amount: number;
+  items?: PayrollDraft["rows"][number]["deductionItems"];
+}) {
+  return (
+    <div className={styles.deductionCell}>
+      <span>¥{formatAmount(amount)}</span>
+      {items?.length ? (
+        <small>
+          {items.map((item) => `${item.label} ¥${formatAmount(item.amount)}`).join(" / ")}
+        </small>
+      ) : null}
+    </div>
+  );
+}
+
 function PayrollRowsTable({ rows }: { rows: PayrollDraft["rows"] }) {
   if (rows.length === 0) {
     return null;
@@ -129,7 +148,7 @@ function PayrollRowsTable({ rows }: { rows: PayrollDraft["rows"] }) {
             <th>应发</th>
             <th>提成</th>
             <th>分润</th>
-            <th>扣款</th>
+            <th>个人承担合计</th>
             <th>实发</th>
             <th>差异</th>
           </tr>
@@ -143,7 +162,7 @@ function PayrollRowsTable({ rows }: { rows: PayrollDraft["rows"] }) {
               <td>¥{formatAmount(row.grossAmount)}</td>
               <td>¥{formatAmount(row.commissionAmount)}</td>
               <td>¥{formatAmount(row.profitSharingAmount)}</td>
-              <td>¥{formatAmount(row.deductionAmount)}</td>
+              <td><DeductionCell amount={row.deductionAmount} items={row.deductionItems} /></td>
               <td className={styles.amountStrong}>¥{formatAmount(row.netAmount)}</td>
               <td>{row.differenceStatus === "resolved" ? "已处理" : "未处理"}</td>
             </tr>

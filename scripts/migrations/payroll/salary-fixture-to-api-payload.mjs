@@ -5,6 +5,16 @@ import path from "node:path";
 
 const REQUIRED_HEADERS = ["姓名", "应发", "实发"];
 const IDENTITY_HEADERS = ["员工ID", "用户ID", "企业微信账号", "登录账号", "系统账号"];
+const DEDUCTION_COMPONENT_HEADERS = ["社保扣费", "社保", "公积金", "个税"];
+const DEDUCTION_DISPLAY_LABELS = {
+  扣款: "其他调整",
+  扣除: "其他调整",
+  扣费: "其他调整",
+  社保扣费: "社保个人部分",
+  社保: "社保个人部分",
+  公积金: "公积金个人部分",
+  个税: "个人所得税",
+};
 
 function parseArgs(argv) {
   const args = {
@@ -141,6 +151,40 @@ function parseAmount(value, required) {
     : { value: 0, valid: false };
 }
 
+function parseDeductionItems(row) {
+  const items = [];
+  let total = 0;
+  let valid = true;
+  let used = false;
+  DEDUCTION_COMPONENT_HEADERS.forEach((header) => {
+    if (!Object.prototype.hasOwnProperty.call(row, header)) {
+      return;
+    }
+    const parsed = parseAmount(row[header], false);
+    if (!parsed.valid) {
+      valid = false;
+    }
+    if (text(row[header])) {
+      used = true;
+      total += parsed.value;
+      if (Math.abs(parsed.value) > 0.001) {
+        items.push({ label: DEDUCTION_DISPLAY_LABELS[header] ?? header, amount: parsed.value });
+      }
+    }
+  });
+  if (used) {
+    return { value: total, valid, items };
+  }
+  const parsed = parseAmount(row.扣款, false);
+  return {
+    value: parsed.value,
+    valid: parsed.valid,
+    items: parsed.valid && Math.abs(parsed.value) > 0.001
+      ? [{ label: "其他调整", amount: parsed.value }]
+      : [],
+  };
+}
+
 function text(value) {
   return String(value ?? "").trim() || undefined;
 }
@@ -157,15 +201,18 @@ function toDraftRow(row, index) {
     ["应发", "grossAmount", true],
     ["提成", "commissionAmount", false],
     ["分润", "profitSharingAmount", false],
-    ["扣款", "deductionAmount", false],
     ["实发", "netAmount", true],
   ];
   const parsedAmounts = Object.fromEntries(amountFields.map(([header, field, required]) => {
     return [field, parseAmount(row[header], required)];
   }));
+  const parsedDeduction = parseDeductionItems(row);
   const amountErrors = amountFields
     .filter(([, field]) => !parsedAmounts[field].valid)
     .map(([header]) => header);
+  if (!parsedDeduction.valid) {
+    amountErrors.push("个人承担");
+  }
 
   return {
     rowNumber: index + 2,
@@ -181,7 +228,8 @@ function toDraftRow(row, index) {
     grossAmount: parsedAmounts.grossAmount.value,
     commissionAmount: parsedAmounts.commissionAmount.value,
     profitSharingAmount: parsedAmounts.profitSharingAmount.value,
-    deductionAmount: parsedAmounts.deductionAmount.value,
+    deductionAmount: parsedDeduction.value,
+    deductionItems: parsedDeduction.items,
     netAmount: parsedAmounts.netAmount.value,
     amountErrors,
     differenceStatus: text(row.差异状态) ?? "resolved",
@@ -288,6 +336,7 @@ function buildPayloads(args) {
         commissionAmount: row.commissionAmount,
         profitSharingAmount: row.profitSharingAmount,
         deductionAmount: row.deductionAmount,
+        deductionItems: row.deductionItems,
         netAmount: row.netAmount,
       })),
     },

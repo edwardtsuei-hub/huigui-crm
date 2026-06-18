@@ -1992,6 +1992,7 @@ model SalarySlip {
   commissionAmount    Decimal? @db.Decimal(12, 2)
   profitSharingAmount Decimal? @db.Decimal(12, 2)
   deductionAmount     Decimal  @db.Decimal(12, 2)
+  deductionItems      Json?
   netAmount           Decimal  @db.Decimal(12, 2)
   source              String   @db.VarChar(32)
   sourceLabel         String?  @db.VarChar(255)

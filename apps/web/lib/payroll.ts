@@ -14,6 +14,7 @@ export type PayrollRow = {
   commissionAmount?: number;
   profitSharingAmount?: number;
   deductionAmount: number;
+  deductionItems?: PayrollDeductionItem[];
   netAmount: number;
   differenceStatus: "resolved" | "unresolved";
   differenceNote?: string;
@@ -21,6 +22,11 @@ export type PayrollRow = {
   hasExplicitIdentity: boolean;
   identitySource: "explicit" | "known_mapping" | "name_fallback";
   payableAmount?: number;
+};
+
+export type PayrollDeductionItem = {
+  label: string;
+  amount: number;
 };
 
 export type PayrollDraft = {
@@ -79,6 +85,7 @@ export type SalarySlip = {
   commissionAmount?: number;
   profitSharingAmount?: number;
   deductionAmount: number;
+  deductionItems?: PayrollDeductionItem[];
   netAmount: number;
   source?: string;
   sourceLabel?: string;
@@ -141,6 +148,15 @@ const AMOUNT_HEADER_ALIASES = {
   payableAmount: ["应付工资", "应发合计"],
 } as const;
 const DEDUCTION_COMPONENT_HEADERS = ["社保扣费", "社保", "公积金", "个税"];
+const DEDUCTION_DISPLAY_LABELS: Record<string, string> = {
+  扣款: "其他调整",
+  扣除: "其他调整",
+  扣费: "其他调整",
+  社保扣费: "社保个人部分",
+  社保: "社保个人部分",
+  公积金: "公积金个人部分",
+  个税: "个人所得税",
+};
 const LEGACY_NAME_IDENTITY_MAP: Record<string, Pick<PayrollRow, "teacherId" | "userId" | "wecomUserId" | "loginAccount">> = {
   觉心: { teacherId: "JiaoXin", userId: "JiaoXin", wecomUserId: "JiaoXin", loginAccount: "JiaoXin" },
   程素风: { teacherId: "ChengCheng", userId: "ChengCheng", wecomUserId: "ChengCheng", loginAccount: "ChengCheng" },
@@ -286,6 +302,25 @@ function valueFromHeaders(row: Record<string, string>, aliases: readonly string[
   return undefined;
 }
 
+function deductionDisplayLabel(header: string) {
+  return DEDUCTION_DISPLAY_LABELS[header] ?? header;
+}
+
+function deductionItemsFromHeaders(row: Record<string, string>, aliases: readonly string[]) {
+  for (const header of aliases) {
+    const value = text(row[header]);
+    if (!value) {
+      continue;
+    }
+    const parsed = parseAmount(value, false);
+    if (parsed.valid && Math.abs(parsed.value) > 0.001) {
+      return [{ label: deductionDisplayLabel(header), amount: parsed.value }];
+    }
+    return [];
+  }
+  return [];
+}
+
 function hasLegacySalaryHeaders(headers: string[]) {
   return hasAnyHeader(headers, ["基础工资", "应付工资", "实发工资"]);
 }
@@ -302,6 +337,7 @@ function parseAmountSum(row: Record<string, string>, aliases: readonly string[])
   let total = 0;
   let valid = true;
   let used = false;
+  const items: PayrollDeductionItem[] = [];
   aliases.forEach((header) => {
     if (!Object.prototype.hasOwnProperty.call(row, header)) {
       return;
@@ -313,9 +349,12 @@ function parseAmountSum(row: Record<string, string>, aliases: readonly string[])
     if (text(row[header])) {
       used = true;
       total += parsed.value;
+      if (parsed.valid && Math.abs(parsed.value) > 0.001) {
+        items.push({ label: deductionDisplayLabel(header), amount: parsed.value });
+      }
     }
   });
-  return { value: total, valid, used };
+  return { value: total, valid, used, items };
 }
 
 function toPayrollRow(row: Record<string, string>, index: number): PayrollRow {
@@ -346,6 +385,9 @@ function toPayrollRow(row: Record<string, string>, index: number): PayrollRow {
   const hasExplicitIdentity = Boolean(employeeId || resolvedUserId || resolvedWecomUserId || resolvedLoginAccount || legacyFallbackTeacherId);
   const directDeduction = parseAmountFromHeaders(row, AMOUNT_HEADER_ALIASES.deductionAmount, false);
   const componentDeduction = parseAmountSum(row, DEDUCTION_COMPONENT_HEADERS);
+  const deductionItems = componentDeduction.used
+    ? componentDeduction.items
+    : deductionItemsFromHeaders(row, AMOUNT_HEADER_ALIASES.deductionAmount);
   const parsedAmounts = {
     grossAmount: parseAmountFromHeaders(row, AMOUNT_HEADER_ALIASES.grossAmount, true),
     commissionAmount: parseAmountFromHeaders(row, AMOUNT_HEADER_ALIASES.commissionAmount, false),
@@ -358,7 +400,7 @@ function toPayrollRow(row: Record<string, string>, index: number): PayrollRow {
     ["应发", parsedAmounts.grossAmount],
     ["提成", parsedAmounts.commissionAmount],
     ["分润/奖金", parsedAmounts.profitSharingAmount],
-    ["扣款", parsedAmounts.deductionAmount],
+    ["个人承担", parsedAmounts.deductionAmount],
     ["实发", parsedAmounts.netAmount],
     ["应付工资", parsedAmounts.payableAmount],
   ]
@@ -381,6 +423,7 @@ function toPayrollRow(row: Record<string, string>, index: number): PayrollRow {
     commissionAmount: parsedAmounts.commissionAmount.value,
     profitSharingAmount: parsedAmounts.profitSharingAmount.value,
     deductionAmount: parsedAmounts.deductionAmount.value,
+    deductionItems,
     netAmount: parsedAmounts.netAmount.value,
     payableAmount: parsedAmounts.payableAmount.valid ? parsedAmounts.payableAmount.value : undefined,
     differenceStatus: text(row.差异状态) === "unresolved" || text(row.差异状态) === "未处理"
@@ -414,7 +457,7 @@ function validateRows(headers: string[], rows: PayrollRow[], supportedPreview: b
       + (row.profitSharingAmount ?? 0)
       - row.deductionAmount;
     if (Math.abs(row.netAmount - expectedNet) > 0.01) {
-      rowWarnings.push(`${row.teacherName} 的实发与应发、提成、分润、扣款合计不一致。`);
+      rowWarnings.push(`${row.teacherName} 的实发与应发、提成、分润、个人承担合计不一致。`);
     }
     if (row.payableAmount !== undefined) {
       const expectedPayable = row.grossAmount
@@ -586,6 +629,7 @@ export function syncSalarySlips(draft: PayrollDraft, user: CurrentUser | null) {
         commissionAmount: row.commissionAmount,
         profitSharingAmount: row.profitSharingAmount,
         deductionAmount: row.deductionAmount,
+        deductionItems: row.deductionItems,
         netAmount: row.netAmount,
       })),
     }),

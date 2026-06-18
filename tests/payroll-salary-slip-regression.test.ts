@@ -31,6 +31,9 @@ type SalaryUploadRow = {
   提成?: string | number;
   分润?: string | number;
   扣款?: string | number;
+  社保扣费?: string | number;
+  公积金?: string | number;
+  个税?: string | number;
   实发?: string | number;
   人员类型?: string;
   差异状态?: string;
@@ -49,6 +52,7 @@ type SalaryDraftRow = {
   commissionAmount: number;
   profitSharingAmount: number;
   deductionAmount: number;
+  deductionItems?: Array<{ label: string; amount: number }>;
   netAmount: number;
   differenceStatus: string;
 };
@@ -101,6 +105,27 @@ function shouldNotifyWecom(row: SalaryDraftRow) {
   return Boolean(row.wecomUserId)
     && !/合作|外部|partner/i.test(row.employmentType)
     && !/合作/.test(row.position);
+}
+
+function deductionItemsFromUploadRow(row: SalaryUploadRow) {
+  const components = [
+    ["社保个人部分", row.社保扣费],
+    ["公积金个人部分", row.公积金],
+    ["个人所得税", row.个税],
+  ] as const;
+  const items = components.flatMap(([label, value]) => {
+    const amount = asAmount(value);
+    return value !== undefined && value !== "" && Math.abs(amount) > 0.001
+      ? [{ label, amount }]
+      : [];
+  });
+  if (items.length > 0) {
+    return items;
+  }
+  const deductionAmount = asAmount(row.扣款);
+  return Math.abs(deductionAmount) > 0.001
+    ? [{ label: "其他调整", amount: deductionAmount }]
+    : [];
 }
 
 class PayrollSalarySlipMockApi {
@@ -216,6 +241,7 @@ class PayrollSalarySlipMockApi {
         commissionAmount: row.commissionAmount,
         profitSharingAmount: row.profitSharingAmount,
         deductionAmount: row.deductionAmount,
+        deductionItems: row.deductionItems,
         netAmount: row.netAmount,
       })),
     });
@@ -264,6 +290,7 @@ class PayrollSalarySlipMockApi {
       commissionAmount: asAmount(row.提成),
       profitSharingAmount: asAmount(row.分润),
       deductionAmount: asAmount(row.扣款),
+      deductionItems: deductionItemsFromUploadRow(row),
       netAmount: asAmount(row.实发),
       differenceStatus: String(row.差异状态 ?? "resolved").trim() || "resolved",
     };
@@ -365,6 +392,7 @@ function salarySlip(overrides: Record<string, unknown>) {
     commissionAmount: 2000,
     profitSharingAmount: 500,
     deductionAmount: 100,
+    deductionItems: null,
     netAmount: 12400,
     source: "manual_import",
     sourceLabel: null,
@@ -2034,6 +2062,84 @@ test("SalarySlips sync warns about amount mismatches without blocking publish", 
   assert.equal(calls.createMany.length, 1);
   const createdRows = calls.createMany[0].data as Array<Record<string, unknown>>;
   assert.equal(createdRows[0].netAmount, 120);
+});
+
+test("SalarySlips sync stores deduction item details and returns them to employees", async () => {
+  const deductionItems = [
+    { label: "社保个人部分", amount: 80 },
+    { label: "公积金个人部分", amount: 20 },
+  ];
+  const syncMock = createPayrollPrismaMock([], { salarySlipDeleteCount: 0 });
+  const syncService = new PayrollService(syncMock.prisma as never);
+  const syncResult = await syncService.syncSalarySlips({
+    month: "2026-06",
+    publishBatchId: "salary-publish-deduction-items",
+    items: [
+      {
+        teacherId: "teacher-deduction",
+        teacherName: "个人承担明细老师",
+        userId: "user-deduction",
+        wecomUserId: "wecom-deduction",
+        loginAccount: "login-deduction",
+        grossAmount: 1000,
+        deductionAmount: 100,
+        deductionItems,
+        netAmount: 900,
+      },
+    ],
+  }, makeUser({ roleCode: "FINANCE", roleName: "财务" }));
+  const createdRows = syncMock.calls.createMany[0].data as Array<Record<string, unknown>>;
+
+  assert.equal(syncResult.ok, true);
+  assert.deepEqual(createdRows[0].deductionItems, deductionItems);
+
+  const readMock = createPayrollPrismaMock([
+    salarySlip({
+      id: "slip-deduction-items",
+      teacherId: "teacher-deduction",
+      userId: "user-deduction",
+      wecomUserId: "wecom-deduction",
+      loginAccount: "login-deduction",
+      teacherName: "个人承担明细老师",
+      deductionAmount: 100,
+      deductionItems,
+      netAmount: 900,
+    }),
+  ]);
+  const readService = new PayrollService(readMock.prisma as never);
+  const readResult = await readService.getMySalarySlips(makeUser({
+    id: "user-deduction",
+    loginAccount: "login-deduction",
+    wecomUserId: "wecom-deduction",
+    name: "个人承担明细老师",
+  }));
+
+  assert.deepEqual(readResult.data[0].deductionItems, deductionItems);
+});
+
+test("SalarySlips sync rejects deduction item totals that disagree with deduction amount", async () => {
+  const { prisma, calls } = createPayrollPrismaMock();
+  const service = new PayrollService(prisma as never);
+
+  await assert.rejects(
+    () => service.syncSalarySlips({
+      month: "2026-06",
+      publishBatchId: "salary-publish-bad-deduction-items",
+      items: [
+        {
+          teacherId: "teacher-bad-deduction",
+          teacherName: "个人承担错误老师",
+          grossAmount: 1000,
+          deductionAmount: 100,
+          deductionItems: [{ label: "社保个人部分", amount: 80 }],
+          netAmount: 900,
+        },
+      ],
+    }, makeUser({ roleCode: "FINANCE", roleName: "财务" })),
+    (error) => error instanceof Error && /个人承担明细合计与个人承担总额不一致/.test(error.message),
+  );
+  assert.equal(calls.deleteMany.length, 0);
+  assert.equal(calls.createMany.length, 0);
 });
 
 test("SalarySlips sync replaces only the current publish batch", async () => {

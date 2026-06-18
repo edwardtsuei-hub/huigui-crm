@@ -29,6 +29,11 @@ type NotifyPerson = {
   reason?: string;
 };
 
+type PayrollDeductionItem = {
+  label: string;
+  amount: number;
+};
+
 type SalaryWecomSendMode = "batch" | "test";
 
 @Injectable()
@@ -75,7 +80,14 @@ export class PayrollService {
       const grossAmount = this.payrollAmount(item.grossAmount, 0, "应发", teacherName);
       const commissionAmount = this.optionalPayrollAmount(item.commissionAmount, "提成", teacherName);
       const profitSharingAmount = this.optionalPayrollAmount(item.profitSharingAmount, "分润", teacherName);
-      const deductionAmount = this.payrollAmount(item.deductionAmount, 0, "扣款", teacherName);
+      const deductionAmount = this.payrollAmount(item.deductionAmount, 0, "个人承担", teacherName);
+      const deductionItems = this.payrollDeductionItems(item.deductionItems, teacherName);
+      if (deductionItems.length > 0) {
+        const deductionItemsTotal = deductionItems.reduce((total, entry) => total + entry.amount, 0);
+        if (Math.abs(deductionItemsTotal - deductionAmount) > 0.01) {
+          throw new BadRequestException(`个人承担明细合计与个人承担总额不一致：${teacherName}。`);
+        }
+      }
       const netAmount = this.payrollAmount(item.netAmount, grossAmount, "实发", teacherName);
       this.appendAmountWarnings(warnings, {
         teacherName,
@@ -98,6 +110,7 @@ export class PayrollService {
         commissionAmount,
         profitSharingAmount,
         deductionAmount,
+        deductionItems: deductionItems.length > 0 ? this.toInputJsonValue(deductionItems) : undefined,
         netAmount,
         source,
         sourceLabel: this.optionalText(item.sourceLabel),
@@ -351,7 +364,7 @@ export class PayrollService {
       try {
         await this.wecomMessageService.sendTextCardMessage(slip.wecomUserId, {
           title: `${month} 薪资条已发布`,
-          description: "点击查看本人薪资条。页面只显示当前登录账号可查看的薪资内容。",
+          description: "点击查看本人薪资条和个人承担明细。页面只显示当前登录账号可查看的薪资内容。",
           url: notifyUrl,
           buttonText: "查看薪资条",
         });
@@ -737,6 +750,39 @@ export class PayrollService {
     return this.payrollAmount(value, 0, fieldLabel, teacherName);
   }
 
+  private payrollDeductionItems(value: unknown, teacherName: string): PayrollDeductionItem[] {
+    if (value === undefined || value === null || value === "") {
+      return [];
+    }
+    if (!Array.isArray(value)) {
+      throw new BadRequestException(`个人承担明细格式错误：${teacherName}。`);
+    }
+    return value.map((rawItem, index) => {
+      const item = this.asRecord(rawItem);
+      const label = this.optionalText(item.label ?? item.name ?? item.type);
+      if (!label) {
+        throw new BadRequestException(`个人承担明细缺少名称：${teacherName} / 第 ${index + 1} 项。`);
+      }
+      return {
+        label: this.payrollDeductionLabel(label),
+        amount: this.payrollAmount(item.amount, 0, `个人承担明细：${label}`, teacherName),
+      };
+    }).filter((item) => Math.abs(item.amount) > 0.001);
+  }
+
+  private payrollDeductionLabel(label: string) {
+    const displayLabels: Record<string, string> = {
+      扣款: "其他调整",
+      扣除: "其他调整",
+      扣费: "其他调整",
+      社保扣费: "社保个人部分",
+      社保: "社保个人部分",
+      公积金: "公积金个人部分",
+      个税: "个人所得税",
+    };
+    return displayLabels[label] ?? label;
+  }
+
   private appendAmountWarnings(warnings: string[], input: {
     teacherName: string;
     grossAmount: number;
@@ -749,7 +795,7 @@ export class PayrollService {
       ["应发", input.grossAmount],
       ["提成", input.commissionAmount],
       ["分润", input.profitSharingAmount],
-      ["扣款", input.deductionAmount],
+      ["个人承担", input.deductionAmount],
       ["实发", input.netAmount],
     ] as const;
     amountEntries.forEach(([label, amount]) => {
@@ -763,7 +809,7 @@ export class PayrollService {
       + (input.profitSharingAmount ?? 0)
       - input.deductionAmount;
     if (Math.abs(input.netAmount - expectedNet) > 0.01) {
-      warnings.push(`金额异常需复核：${input.teacherName} / 实发与应发、提成、分润、扣款合计不一致。`);
+      warnings.push(`金额异常需复核：${input.teacherName} / 实发与应发、提成、分润、个人承担合计不一致。`);
     }
   }
 
@@ -946,6 +992,7 @@ export class PayrollService {
     commissionAmount: Prisma.Decimal | null;
     profitSharingAmount: Prisma.Decimal | null;
     deductionAmount: Prisma.Decimal;
+    deductionItems?: Prisma.JsonValue | null;
     netAmount: Prisma.Decimal;
     source: string;
     sourceLabel: string | null;
@@ -968,6 +1015,7 @@ export class PayrollService {
       commissionAmount: slip.commissionAmount === null ? undefined : Number(slip.commissionAmount),
       profitSharingAmount: slip.profitSharingAmount === null ? undefined : Number(slip.profitSharingAmount),
       deductionAmount: Number(slip.deductionAmount),
+      deductionItems: this.serializeDeductionItems(slip.deductionItems),
       netAmount: Number(slip.netAmount),
       source: slip.source,
       sourceLabel: slip.sourceLabel ?? undefined,
@@ -977,6 +1025,21 @@ export class PayrollService {
       createdAt: slip.createdAt.toISOString(),
       updatedAt: slip.updatedAt.toISOString(),
     };
+  }
+
+  private serializeDeductionItems(value: Prisma.JsonValue | null | undefined): PayrollDeductionItem[] | undefined {
+    if (!Array.isArray(value)) {
+      return undefined;
+    }
+    const items = value.flatMap((rawItem) => {
+      const item = this.asRecord(rawItem);
+      const label = this.optionalText(item.label);
+      const amount = this.decimalAmount(item.amount);
+      return label && Math.abs(amount) > 0.001
+        ? [{ label: this.payrollDeductionLabel(label), amount }]
+        : [];
+    });
+    return items.length > 0 ? items : undefined;
   }
 
   private serializeSalaryNotifyLog(log: {
