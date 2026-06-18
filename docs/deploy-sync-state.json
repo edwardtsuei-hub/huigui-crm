@@ -8,12 +8,12 @@
       "recordsPendingSync": false,
       "lastKnownSync": {
         "date": "2026-06-18",
-        "time": "09:58:21",
-        "label": "payroll-wecom-test-send-20260618",
+        "time": "11:43:07",
+        "label": "daai-payroll-wecom-channel-20260618",
         "method": "scripts/ops/deploy-local-to-production.sh",
-        "recordPath": "docs/deployments/2026-06-18-095821-production-sync.md",
+        "recordPath": "docs/deployments/2026-06-18-114307-production-sync.md",
         "logPath": "docs/deployment-log.md",
-        "gitRevision": "eadf59f"
+        "gitRevision": "b752bd9"
       }
     }
   }
