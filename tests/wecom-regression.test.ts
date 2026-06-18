@@ -6,6 +6,7 @@ import { ConfigService } from "@nestjs/config";
 import { WecomSyncStatus } from "@prisma/client";
 import { NotificationService } from "../apps/api/src/modules/notifications/notification.service";
 import { WecomCalendarService } from "../apps/api/src/modules/wecom/wecom-calendar.service";
+import { resolveWecomAppConfig } from "../apps/api/src/modules/wecom/wecom-app-config";
 import { WecomMessageService } from "../apps/api/src/modules/wecom/wecom-message.service";
 import { WecomService } from "../apps/api/src/modules/wecom/wecom.service";
 
@@ -27,6 +28,37 @@ function config(values: Record<string, string | undefined>) {
     get: (key: string) => values[key]
   } as unknown as ConfigService;
 }
+
+test("WeCom app config keeps employee domain on the Daai channel", () => {
+  const resolved = resolveWecomAppConfig(config({
+    WECOM_CORP_ID: "corp-1",
+    WECOM_CRM_DOMAIN: "crm.hui-health.com",
+    WECOM_CRM_AGENT_ID: "100001",
+    WECOM_CRM_SECRET: "crm-secret",
+    WECOM_EMPLOYEE_DOMAIN: "management.hui-health.com",
+    WECOM_EMPLOYEE_AGENT_ID: "200001",
+    WECOM_EMPLOYEE_SECRET: "employee-secret",
+  }), "https://management.hui-health.com");
+
+  assert.equal(resolved.appKey, "employee");
+  assert.equal(resolved.agentId, "200001");
+  assert.equal(resolved.secret, "employee-secret");
+  assert.equal(resolved.redirectUri, "https://management.hui-health.com/login/wecom/callback");
+});
+
+test("WeCom app config does not fall back to CRM credentials for employee domain", () => {
+  const resolved = resolveWecomAppConfig(config({
+    WECOM_CORP_ID: "corp-1",
+    WECOM_CRM_DOMAIN: "crm.hui-health.com",
+    WECOM_CRM_AGENT_ID: "100001",
+    WECOM_CRM_SECRET: "crm-secret",
+    WECOM_EMPLOYEE_DOMAIN: "management.hui-health.com",
+  }), "https://management.hui-health.com/payroll/mine");
+
+  assert.equal(resolved.appKey, "employee");
+  assert.equal(resolved.agentId, "");
+  assert.equal(resolved.secret, "");
+});
 
 function createCalendarPrisma(existing?: Record<string, unknown> | null) {
   const calls = {

@@ -34,8 +34,8 @@ import {
   netAmountTotal,
   notifyLists,
   parseSalaryFile,
-  recordNotifyLog,
   saveDraftBatch,
+  sendSalaryWecomNotifications,
   statusLabel,
   syncSalarySlips,
   type PayrollDraft,
@@ -253,16 +253,16 @@ function PayrollBatchPage({ route, user, setToast }: { route: RouteState; user: 
     setError("");
     try {
       const syncResponse = await syncSalarySlips(draft, user);
-      await recordNotifyLog(draft, user);
+      const sendResponse = await sendSalaryWecomNotifications(draft, user);
       await saveDraftBatch(draft, {
         publishedAt: new Date().toISOString(),
-        notifyStatus: "preview",
+        notifyStatus: sendResponse.status,
         excelReviewedAt: new Date().toISOString(),
         updatedBy: userDisplayName(user),
       });
       setToast({
-        tone: "success",
-        message: `已发布 ${syncResponse.createdCount + syncResponse.updatedCount} 条薪资条，发布批次 ${syncResponse.publishBatchId}`,
+        tone: sendResponse.ok ? "success" : "warning",
+        message: `已发布 ${syncResponse.createdCount + syncResponse.updatedCount} 条薪资条；${sendResponse.message}`,
       });
       await refresh(month);
     } catch (caught) {
@@ -333,7 +333,7 @@ function PayrollBatchPage({ route, user, setToast }: { route: RouteState; user: 
               </label>
               <button className="primary-button" disabled={!canPublish} onClick={() => void publish()} type="button">
                 {publishing ? <Loader2 className="spin" size={18} /> : <Send size={18} />}
-                发布并记录通知
+                发布并发送企微
               </button>
             </div>
           </section>

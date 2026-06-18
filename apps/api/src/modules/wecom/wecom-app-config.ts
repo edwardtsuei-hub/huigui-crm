@@ -49,16 +49,21 @@ function resolveHost(url: string) {
 function readDomainConfig(
   configService: ConfigService,
   key: string,
-  defaultDomain: string
+  defaultDomain: string,
+  appKey = key,
 ) {
   const prefix = `WECOM_${key.toUpperCase()}`;
 
   return {
-    appKey: key,
+    appKey,
     domain: normalizeHost(configService.get<string>(`${prefix}_DOMAIN`) ?? defaultDomain),
     agentId: trim(configService.get<string>(`${prefix}_AGENT_ID`)),
     secret: trim(configService.get<string>(`${prefix}_SECRET`))
   };
+}
+
+function hasDomainCredentials(config: { agentId: string; secret: string }) {
+  return Boolean(config.agentId && config.secret);
 }
 
 export function resolveWecomAppConfig(
@@ -76,13 +81,16 @@ export function resolveWecomAppConfig(
     secret: trim(configService.get<string>("WECOM_SECRET"))
   };
   const candidates = [
-    readDomainConfig(configService, "crm", DEFAULT_CRM_DOMAIN),
-    readDomainConfig(configService, "management", DEFAULT_MANAGEMENT_DOMAIN)
+    readDomainConfig(configService, "employee", DEFAULT_MANAGEMENT_DOMAIN, "employee"),
+    readDomainConfig(configService, "daai", DEFAULT_MANAGEMENT_DOMAIN, "employee"),
+    readDomainConfig(configService, "management", DEFAULT_MANAGEMENT_DOMAIN, "management"),
+    readDomainConfig(configService, "crm", DEFAULT_CRM_DOMAIN, "crm")
   ];
-  const matched = candidates.find((candidate) => candidate.domain && candidate.domain === host);
+  const matchedCandidates = candidates.filter((candidate) => candidate.domain && candidate.domain === host);
+  const matched = matchedCandidates.find(hasDomainCredentials) ?? matchedCandidates[0];
   const appKey = matched?.appKey ?? fallback.appKey;
-  const agentId = matched?.agentId || fallback.agentId;
-  const secret = matched?.secret || fallback.secret;
+  const agentId = matched ? matched.agentId : fallback.agentId;
+  const secret = matched ? matched.secret : fallback.secret;
   const redirectUri = appBaseUrl ? `${appBaseUrl}${LOGIN_CALLBACK_PATH}` : "";
 
   return {
