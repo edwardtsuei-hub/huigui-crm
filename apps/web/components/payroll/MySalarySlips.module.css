@@ -1,0 +1,56 @@
+.workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.stats {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.toolbar {
+  align-items: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.monthField {
+  display: grid;
+  gap: 6px;
+  min-width: 180px;
+}
+
+.monthField span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.amount {
+  color: var(--brand-strong);
+  font-weight: 800;
+}
+
+.notice {
+  background: rgba(179, 120, 44, 0.12);
+  border-radius: 8px;
+  color: var(--warning);
+  font-size: 13px;
+  line-height: 1.55;
+  padding: 10px 12px;
+}
+
+@media (max-width: 720px) {
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

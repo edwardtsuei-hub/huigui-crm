@@ -1,11 +1,14 @@
-import { BadRequestException, ForbiddenException, Injectable } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, ServiceUnavailableException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { Prisma } from "@prisma/client";
 import { createHash, randomUUID } from "node:crypto";
 import type { AuthenticatedUser } from "../common/types/authenticated-user";
+import { WecomMessageService } from "../modules/wecom/wecom-message.service";
 import { PrismaService } from "../prisma/prisma.service";
 
 const MONTH_PATTERN = /^\d{4}-\d{2}$/;
 const NOTIFY_STATUSES = new Set(["sent", "preview", "skipped", "failed"]);
+const MAX_TEST_SEND_RECIPIENTS = 5;
 
 type JsonRecord = Record<string, unknown>;
 type PayrollIdentityCandidates = {
@@ -16,9 +19,23 @@ type PayrollIdentityCandidates = {
   nameHints: string[];
 };
 
+type NotifyPerson = {
+  id: string;
+  name: string;
+  department: string;
+  role: string;
+  userid?: string;
+  netAmount: number;
+  reason?: string;
+};
+
 @Injectable()
 export class PayrollService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly wecomMessageService?: WecomMessageService,
+    private readonly configService?: ConfigService,
+  ) {}
 
   async syncSalarySlips(input: unknown, user: AuthenticatedUser) {
     this.assertCanMaintainPayroll(user);
@@ -250,6 +267,128 @@ export class PayrollService {
     });
 
     return { ok: true, publishBatchId: data.publishBatchId };
+  }
+
+  async sendSalaryWecomTest(input: unknown, user: AuthenticatedUser) {
+    this.assertCanMaintainPayroll(user);
+    if (!this.wecomMessageService) {
+      throw new ServiceUnavailableException("企业微信发送服务尚未就绪。");
+    }
+
+    const body = this.asRecord(input);
+    const month = this.requiredMonth(body.month, "薪资企微测试发送缺少月份。");
+    const publishBatchId = this.optionalText(body.publishBatchId)
+      ?? await this.inferSinglePublishBatchId(month);
+    const testUserids = this.normalizeUseridList(
+      body.testUserids ?? body.userids ?? body.toUserids ?? body.toUser,
+    );
+    const dryRun = body.dryRun !== false;
+    const notifyUrl = this.resolveSalaryNotifyUrl(body.notifyUrl, month);
+
+    if (!publishBatchId) {
+      throw new BadRequestException("薪资企微测试发送缺少发布批次号。");
+    }
+    if (testUserids.length === 0) {
+      throw new BadRequestException("请提供本次测试要发送的企业微信账号。");
+    }
+    if (testUserids.length > MAX_TEST_SEND_RECIPIENTS) {
+      throw new BadRequestException(`测试发送一次最多 ${MAX_TEST_SEND_RECIPIENTS} 个企业微信账号。`);
+    }
+
+    const slips = await this.prisma.salarySlip.findMany({
+      where: { month, publishBatchId },
+      orderBy: [
+        { syncedAt: "desc" },
+        { teacherName: "asc" },
+      ],
+      take: 1000,
+    });
+    if (slips.length === 0) {
+      throw new BadRequestException("当前发布批次没有可发送的正式薪资条。");
+    }
+
+    const allowedUserids = new Set(testUserids);
+    const alreadySentUserids = await this.findAlreadySentUserids(month, publishBatchId);
+    const delivered: NotifyPerson[] = [];
+    const skipped: NotifyPerson[] = [];
+    const failed: NotifyPerson[] = [];
+
+    for (const slip of slips) {
+      const person = this.notifyPersonFromSalarySlip(slip);
+      if (!slip.wecomUserId) {
+        skipped.push({ ...person, reason: "缺少企业微信账号" });
+        continue;
+      }
+      if (!allowedUserids.has(slip.wecomUserId)) {
+        skipped.push({ ...person, reason: "不在本次测试名单" });
+        continue;
+      }
+      if (alreadySentUserids.has(slip.wecomUserId)) {
+        skipped.push({ ...person, reason: "本批次已发送过，避免重复" });
+        continue;
+      }
+
+      if (dryRun) {
+        delivered.push(person);
+        continue;
+      }
+
+      try {
+        await this.wecomMessageService.sendTextCardMessage(slip.wecomUserId, {
+          title: `${month} 薪资条已发布`,
+          description: "点击查看本人薪资条。页面只显示当前登录账号可查看的薪资内容。",
+          url: notifyUrl,
+          buttonText: "查看薪资条",
+        });
+        delivered.push(person);
+      } catch (error) {
+        failed.push({
+          ...person,
+          reason: error instanceof Error ? error.message : "企业微信发送失败",
+        });
+      }
+    }
+
+    const status = failed.length > 0
+      ? "failed"
+      : delivered.length > 0
+        ? dryRun ? "preview" : "sent"
+        : "skipped";
+    const modeLabel = dryRun ? "企业微信测试预览" : "企业微信测试发送";
+    const actionLabel = dryRun ? "测试企微预览" : "测试企微发送";
+    const message = failed.length > 0
+      ? `测试发送完成：已发送 ${delivered.length} 人，失败 ${failed.length} 人，跳过 ${skipped.length} 人。`
+      : dryRun
+        ? `测试预览完成：可发送 ${delivered.length} 人，跳过 ${skipped.length} 人。`
+        : `测试发送完成：已发送 ${delivered.length} 人，跳过 ${skipped.length} 人。`;
+
+    const log = await this.recordSalaryNotifyLog({
+      month,
+      publishBatchId,
+      actionLabel,
+      modeLabel,
+      status,
+      tone: status === "failed" ? "danger" : status === "sent" ? "success" : "warning",
+      message,
+      delivered,
+      skipped,
+      failed,
+      notifyUrl,
+      createdBy: this.optionalText(body.createdBy) ?? user.name ?? "财务",
+    }, user);
+
+    return {
+      ok: failed.length === 0,
+      mode: dryRun ? "dry_run" : "live",
+      status,
+      month,
+      publishBatchId: log.publishBatchId,
+      notifyUrl,
+      delivered,
+      skipped,
+      failed,
+      message,
+    };
   }
 
   async listSalaryNotifyLogs(input: unknown, user: AuthenticatedUser) {
@@ -671,6 +810,75 @@ export class PayrollService {
       : [];
 
     return this.toInputJsonValue(people);
+  }
+
+  private normalizeUseridList(value: unknown) {
+    const rawItems = Array.isArray(value)
+      ? value
+      : typeof value === "string"
+        ? value.split(/[\s,，|、]+/)
+        : [];
+    return Array.from(new Set(rawItems
+      .map((item) => this.optionalText(item))
+      .filter((item): item is string => Boolean(item))));
+  }
+
+  private async findAlreadySentUserids(month: string, publishBatchId: string) {
+    const logs = await this.prisma.salaryNotifyLog.findMany({
+      where: { month, publishBatchId },
+      orderBy: [{ createdAt: "desc" }],
+      take: 1000,
+    });
+    const sent = new Set<string>();
+    logs.forEach((log) => {
+      if (!["sent", "failed"].includes(log.status)) {
+        return;
+      }
+      if (!Array.isArray(log.delivered)) {
+        return;
+      }
+      log.delivered.forEach((item) => {
+        const person = this.asRecord(item);
+        const userid = this.optionalText(person.userid);
+        if (userid) {
+          sent.add(userid);
+        }
+      });
+    });
+    return sent;
+  }
+
+  private resolveSalaryNotifyUrl(value: unknown, month: string) {
+    const baseUrl = this.configService?.get<string>("APP_BASE_URL")?.replace(/\/$/, "")
+      ?? "https://management.hui-health.com";
+    const target = this.optionalText(value)
+      ?? `/payroll/mine?month=${encodeURIComponent(month)}`;
+
+    try {
+      const url = new URL(target, baseUrl);
+      if (!["http:", "https:"].includes(url.protocol)) {
+        throw new Error("invalid protocol");
+      }
+      return url.toString();
+    } catch {
+      throw new BadRequestException("薪资条通知链接不是有效 URL。");
+    }
+  }
+
+  private notifyPersonFromSalarySlip(slip: {
+    teacherId: string;
+    teacherName: string;
+    wecomUserId: string | null;
+    netAmount: Prisma.Decimal;
+  }): NotifyPerson {
+    return {
+      id: slip.teacherId,
+      name: slip.teacherName,
+      department: "薪资条",
+      role: "员工",
+      userid: slip.wecomUserId ?? undefined,
+      netAmount: Number(slip.netAmount),
+    };
   }
 
   private serializeSalarySlip(slip: {
