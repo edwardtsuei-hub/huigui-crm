@@ -2573,6 +2573,63 @@ test("salary WeCom test send skips already sent recipients to avoid duplicates",
   });
 });
 
+test("salary WeCom batch send uses Daai employee frontend URL and sends eligible recipients", async () => {
+  const { prisma, calls } = createPayrollPrismaMock([
+    salarySlip({
+      id: "salary-slip-chengcheng",
+      month: "2026-06",
+      publishBatchId: "salary-publish-daai",
+      teacherId: "teacher-chengcheng",
+      teacherName: "程程",
+      wecomUserId: "chengcheng",
+    }),
+    salarySlip({
+      id: "salary-slip-limeng",
+      month: "2026-06",
+      publishBatchId: "salary-publish-daai",
+      teacherId: "teacher-limeng",
+      teacherName: "周立猛",
+      wecomUserId: "DaDiShangDeYiXiangZhe",
+    }),
+    salarySlip({
+      id: "salary-slip-no-wecom",
+      month: "2026-06",
+      publishBatchId: "salary-publish-daai",
+      teacherId: "teacher-no-wecom",
+      teacherName: "未绑定员工",
+      wecomUserId: null,
+    }),
+  ]);
+  const sent: Array<{ toUser: string; payload: Record<string, unknown> }> = [];
+  const service = new PayrollService(
+    prisma as never,
+    {
+      sendTextCardMessage: async (toUser: string, payload: Record<string, unknown>) => {
+        sent.push({ toUser, payload });
+        return { success: true };
+      },
+    } as never,
+    { get: (key: string) => key === "WECOM_EMPLOYEE_DOMAIN" ? "management.hui-health.com" : undefined } as never,
+  );
+
+  const result = await service.sendSalaryWecom({
+    month: "2026-06",
+    publishBatchId: "salary-publish-daai",
+    dryRun: false,
+    createdBy: "财务",
+  }, makeUser({ roleCode: "FINANCE", roleName: "财务" }));
+
+  assert.equal(result.status, "sent");
+  assert.equal(result.notifyUrl, "https://management.hui-health.com/payroll/mine?month=2026-06");
+  assert.deepEqual(sent.map((item) => item.toUser).sort(), ["DaDiShangDeYiXiangZhe", "chengcheng"]);
+  assert.equal(sent.every((item) => item.payload.url === "https://management.hui-health.com/payroll/mine?month=2026-06"), true);
+  assert.equal(result.skipped.find((person) => person.name === "未绑定员工")?.reason, "缺少企业微信账号");
+  assert.equal(calls.salaryNotifyLogUpsert.length, 1);
+  const create = calls.salaryNotifyLogUpsert[0].create as Record<string, unknown>;
+  assert.equal(create.modeLabel, "企业微信群发");
+  assert.equal(create.actionLabel, "企微群发");
+});
+
 test("payroll draft batch stores publish batch id for later reconciliation", async () => {
   const { prisma, calls } = createPayrollPrismaMock();
   const service = new PayrollService(prisma as never);

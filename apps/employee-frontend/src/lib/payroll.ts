@@ -99,6 +99,19 @@ export type SalaryNotifyLog = {
   createdAt?: string;
 };
 
+export type SalaryWecomSendResponse = {
+  ok: boolean;
+  mode: "dry_run" | "live";
+  status: "sent" | "preview" | "skipped" | "failed";
+  month: string;
+  publishBatchId: string;
+  notifyUrl: string;
+  delivered: NotifyPerson[];
+  skipped: NotifyPerson[];
+  failed: NotifyPerson[];
+  message: string;
+};
+
 export type PayrollDraftBatchResponse = {
   month: string;
   publishBatchId?: string;
@@ -112,6 +125,7 @@ export type PayrollDraftBatchResponse = {
 
 const REQUIRED_HEADERS = ["姓名", "应发", "实发"];
 const IDENTITY_HEADERS = ["员工ID", "用户ID", "企业微信账号", "登录账号", "系统账号"];
+const EMPLOYEE_BASE_URL = import.meta.env.VITE_EMPLOYEE_BASE_URL?.replace(/\/$/, "");
 
 export function currentMonth() {
   const now = new Date();
@@ -132,6 +146,15 @@ export function buildUploadUrl(month: string, returnTo = "/payroll/batch") {
     returnTo,
   });
   return `/finance/imports?${params.toString()}`;
+}
+
+export function buildSalaryNotifyUrl(month: string) {
+  const baseUrl = EMPLOYEE_BASE_URL || window.location.origin;
+  const params = new URLSearchParams({
+    month,
+    from: "wecom",
+  });
+  return `${baseUrl}/payroll/mine?${params.toString()}`;
 }
 
 export function parseCsvRows(content: string) {
@@ -468,6 +491,27 @@ export function recordNotifyLog(draft: PayrollDraft, user: CurrentUser | null) {
       delivered: lists.delivered,
       skipped: lists.skipped,
       failed: lists.failed,
+      createdBy: user?.displayName ?? user?.name ?? "财务",
+    }),
+  });
+}
+
+export function sendSalaryWecomNotifications(
+  draft: PayrollDraft,
+  user: CurrentUser | null,
+  options?: { dryRun?: boolean },
+) {
+  const lists = notifyLists(draft.rows);
+  return apiFetch<SalaryWecomSendResponse>("/salary-notify-logs/send", {
+    method: "POST",
+    body: JSON.stringify({
+      month: draft.month,
+      publishBatchId: draft.publishBatchId,
+      userids: lists.delivered
+        .map((person) => person.userid)
+        .filter((userid): userid is string => Boolean(userid)),
+      notifyUrl: buildSalaryNotifyUrl(draft.month),
+      dryRun: options?.dryRun ?? false,
       createdBy: user?.displayName ?? user?.name ?? "财务",
     }),
   });

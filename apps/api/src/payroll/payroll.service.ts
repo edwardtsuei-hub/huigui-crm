@@ -29,6 +29,8 @@ type NotifyPerson = {
   reason?: string;
 };
 
+type SalaryWecomSendMode = "batch" | "test";
+
 @Injectable()
 export class PayrollService {
   constructor(
@@ -269,7 +271,19 @@ export class PayrollService {
     return { ok: true, publishBatchId: data.publishBatchId };
   }
 
+  async sendSalaryWecom(input: unknown, user: AuthenticatedUser) {
+    return this.sendSalaryWecomForBatch(input, user, "batch");
+  }
+
   async sendSalaryWecomTest(input: unknown, user: AuthenticatedUser) {
+    return this.sendSalaryWecomForBatch(input, user, "test");
+  }
+
+  private async sendSalaryWecomForBatch(
+    input: unknown,
+    user: AuthenticatedUser,
+    mode: SalaryWecomSendMode,
+  ) {
     this.assertCanMaintainPayroll(user);
     if (!this.wecomMessageService) {
       throw new ServiceUnavailableException("企业微信发送服务尚未就绪。");
@@ -279,19 +293,20 @@ export class PayrollService {
     const month = this.requiredMonth(body.month, "薪资企微测试发送缺少月份。");
     const publishBatchId = this.optionalText(body.publishBatchId)
       ?? await this.inferSinglePublishBatchId(month);
-    const testUserids = this.normalizeUseridList(
+    const targetUserids = this.normalizeUseridList(
       body.testUserids ?? body.userids ?? body.toUserids ?? body.toUser,
     );
     const dryRun = body.dryRun !== false;
     const notifyUrl = this.resolveSalaryNotifyUrl(body.notifyUrl, month);
+    const isTestMode = mode === "test";
 
     if (!publishBatchId) {
       throw new BadRequestException("薪资企微测试发送缺少发布批次号。");
     }
-    if (testUserids.length === 0) {
+    if (isTestMode && targetUserids.length === 0) {
       throw new BadRequestException("请提供本次测试要发送的企业微信账号。");
     }
-    if (testUserids.length > MAX_TEST_SEND_RECIPIENTS) {
+    if (isTestMode && targetUserids.length > MAX_TEST_SEND_RECIPIENTS) {
       throw new BadRequestException(`测试发送一次最多 ${MAX_TEST_SEND_RECIPIENTS} 个企业微信账号。`);
     }
 
@@ -307,7 +322,7 @@ export class PayrollService {
       throw new BadRequestException("当前发布批次没有可发送的正式薪资条。");
     }
 
-    const allowedUserids = new Set(testUserids);
+    const allowedUserids = targetUserids.length > 0 ? new Set(targetUserids) : null;
     const alreadySentUserids = await this.findAlreadySentUserids(month, publishBatchId);
     const delivered: NotifyPerson[] = [];
     const skipped: NotifyPerson[] = [];
@@ -319,8 +334,8 @@ export class PayrollService {
         skipped.push({ ...person, reason: "缺少企业微信账号" });
         continue;
       }
-      if (!allowedUserids.has(slip.wecomUserId)) {
-        skipped.push({ ...person, reason: "不在本次测试名单" });
+      if (allowedUserids && !allowedUserids.has(slip.wecomUserId)) {
+        skipped.push({ ...person, reason: isTestMode ? "不在本次测试名单" : "不在本次发送名单" });
         continue;
       }
       if (alreadySentUserids.has(slip.wecomUserId)) {
@@ -354,13 +369,18 @@ export class PayrollService {
       : delivered.length > 0
         ? dryRun ? "preview" : "sent"
         : "skipped";
-    const modeLabel = dryRun ? "企业微信测试预览" : "企业微信测试发送";
-    const actionLabel = dryRun ? "测试企微预览" : "测试企微发送";
+    const modeLabel = dryRun
+      ? isTestMode ? "企业微信测试预览" : "企业微信群发预览"
+      : isTestMode ? "企业微信测试发送" : "企业微信群发";
+    const actionLabel = dryRun
+      ? isTestMode ? "测试企微预览" : "企微群发预览"
+      : isTestMode ? "测试企微发送" : "企微群发";
+    const actionName = isTestMode ? "测试发送" : "群发";
     const message = failed.length > 0
-      ? `测试发送完成：已发送 ${delivered.length} 人，失败 ${failed.length} 人，跳过 ${skipped.length} 人。`
+      ? `${actionName}完成：已发送 ${delivered.length} 人，失败 ${failed.length} 人，跳过 ${skipped.length} 人。`
       : dryRun
-        ? `测试预览完成：可发送 ${delivered.length} 人，跳过 ${skipped.length} 人。`
-        : `测试发送完成：已发送 ${delivered.length} 人，跳过 ${skipped.length} 人。`;
+        ? `${actionName}预览完成：可发送 ${delivered.length} 人，跳过 ${skipped.length} 人。`
+        : `${actionName}完成：已发送 ${delivered.length} 人，跳过 ${skipped.length} 人。`;
 
     const log = await this.recordSalaryNotifyLog({
       month,
@@ -849,8 +869,7 @@ export class PayrollService {
   }
 
   private resolveSalaryNotifyUrl(value: unknown, month: string) {
-    const baseUrl = this.configService?.get<string>("APP_BASE_URL")?.replace(/\/$/, "")
-      ?? "https://management.hui-health.com";
+    const baseUrl = this.resolveSalaryNotifyBaseUrl();
     const target = this.optionalText(value)
       ?? `/payroll/mine?month=${encodeURIComponent(month)}`;
 
@@ -863,6 +882,39 @@ export class PayrollService {
     } catch {
       throw new BadRequestException("薪资条通知链接不是有效 URL。");
     }
+  }
+
+  private resolveSalaryNotifyBaseUrl() {
+    const directKeys = [
+      "PAYROLL_EMPLOYEE_BASE_URL",
+      "EMPLOYEE_FRONTEND_BASE_URL",
+      "EMPLOYEE_APP_BASE_URL",
+    ];
+    for (const key of directKeys) {
+      const value = this.optionalText(this.configService?.get<string>(key));
+      if (value) {
+        return this.normalizeBaseUrl(value);
+      }
+    }
+
+    const domainKeys = [
+      "WECOM_EMPLOYEE_DOMAIN",
+      "WECOM_DAAI_DOMAIN",
+      "WECOM_MANAGEMENT_DOMAIN",
+    ];
+    for (const key of domainKeys) {
+      const value = this.optionalText(this.configService?.get<string>(key));
+      if (value) {
+        return this.normalizeBaseUrl(value);
+      }
+    }
+
+    return "https://management.hui-health.com";
+  }
+
+  private normalizeBaseUrl(value: string) {
+    const trimmed = value.trim().replace(/\/$/, "");
+    return trimmed.includes("://") ? trimmed : `https://${trimmed}`;
   }
 
   private notifyPersonFromSalarySlip(slip: {
