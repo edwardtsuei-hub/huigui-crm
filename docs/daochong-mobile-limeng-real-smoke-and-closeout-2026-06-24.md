@@ -146,6 +146,35 @@
 - 企业微信发送仍关闭。
 - 最近日志未发现业务异常。
 
+## 发布后源码归档
+
+源码归档提交：
+
+| 项目 | 值 |
+| --- | --- |
+| 本地仓库 | `/Users/i-datsuei/Desktop/大爱归心系统` |
+| 分支 | `main` |
+| 远端 | `origin/main` |
+| 源码提交 | `c727e0aa15ef15278fa0620c270eb3a4e4363835` |
+| 提交标题 | `feat: add Daochong mobile source and Limeng review gate` |
+| 推送结果 | `e4c412a..c727e0a main -> main` |
+
+源码包范围：
+
+- 道冲手机端前端页面与组件。
+- 道冲手机端 API 控制器、服务、DTO 与专用权限常量。
+- 道冲服务纪要、充值、金额只读、财务只读与立猛权限相关 Prisma 模型和迁移。
+- 道冲手机端灰度路由、Nginx 路由、Docker 环境参数、应用入口注册。
+- 道冲手机端只读/写入验收脚本、窄发布脚本和回归测试。
+- 本归档文档。
+
+源码推送后复核：
+
+- `HEAD` 与 `origin/main` 均为 `c727e0aa15ef15278fa0620c270eb3a4e4363835`。
+- 源码提交推送完成后，暂存区已清空；本段发布后归档补丁另行暂存和提交。
+- `package.json` 提交中只包含道冲相关脚本，finance、meeting-minutes、verify-local 等旁支脚本未纳入本次提交。
+- payroll、meeting-minutes、employee frontend releases、finance smoke、历史 DCM 阶段文档等旁支内容仍留在工作区，未纳入本次源码归档提交。
+
 ## 保持关闭
 
 收口后仍保持关闭：
