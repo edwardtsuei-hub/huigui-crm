@@ -27,6 +27,17 @@ const FILES = {
 };
 
 const CHECKS = [];
+const CURRENT_GRAY_MARKER = /DCM-00 到 DCM-176/;
+const ALLOWED_WRITE_DECORATORS = [
+  '@Patch("recharges/:rechargeId/chengcheng-approval")',
+  '@Patch("recharges/:rechargeId/chengcheng-return")',
+  '@Patch("recharges/:rechargeId/limeng-return")',
+  '@Patch("recharges/:rechargeId/limeng-review")',
+  '@Patch("service-notes/:serviceNoteId")',
+  '@Post("recharges")',
+  '@Post("service-notes")',
+  '@Post("wecom-reminders/send-test")',
+];
 
 function parseArgs(argv) {
   const args = {
@@ -159,20 +170,24 @@ function addSourceChecks(sources) {
   );
 
   const apiForbidden = forbiddenHits([sources.controller, sources.service].join("\n"), [
-    /@(Post|Put|Patch|Delete)\b/,
-    /\.create\s*\(/,
-    /\.update\s*\(/,
     /\.delete\s*\(/,
-    /sendWecom/i,
-    /wecom.*send/i,
   ]);
+  const writeDecorators = [...sources.controller.matchAll(/@(Post|Patch|Put|Delete)\("[^"]+"\)/g)]
+    .map((match) => match[0])
+    .sort();
   addCheck(
-    "api-write-actions-absent",
-    apiForbidden.length === 0,
-    apiForbidden.length === 0 ? "No write delegates or WeCom send calls found in Daochong API source." : apiForbidden.join(", "),
+    "api-readonly-and-write-gates-separated",
+    apiForbidden.length === 0 &&
+      JSON.stringify(writeDecorators) === JSON.stringify(ALLOWED_WRITE_DECORATORS) &&
+      /DAOCHONG_MOBILE_WRITE_ENABLED/.test(sources.service) &&
+      /assertWriteEnabled\(\)/.test(sources.service) &&
+      /DAOCHONG_WECOM_TEST_ALLOWLIST/.test(sources.service),
+    apiForbidden.length === 0
+      ? "Readonly routes remain GET-only; approved write routes are present behind explicit write and WeCom gates."
+      : apiForbidden.join(", "),
   );
 
-  const frontendForbidden = forbiddenHits([sources.fetch, sources.app].join("\n"), [
+  const frontendForbidden = forbiddenHits(sources.fetch, [
     /method:\s*["'](POST|PUT|PATCH|DELETE)["']/,
     /\.create\s*\(/,
     /\.update\s*\(/,
@@ -181,9 +196,9 @@ function addSourceChecks(sources) {
     /wecom.*send/i,
   ]);
   addCheck(
-    "frontend-write-actions-absent",
+    "frontend-readonly-fetch-actions-absent",
     frontendForbidden.length === 0,
-    frontendForbidden.length === 0 ? "Frontend readonly fetch/runtime has no write methods." : frontendForbidden.join(", "),
+    frontendForbidden.length === 0 ? "Readonly fetch client has no write methods." : frontendForbidden.join(", "),
   );
 
   const dangerousSql = forbiddenHits([sources.moneyMigration, sources.financeMigration].join("\n"), [
@@ -201,8 +216,8 @@ function addSourceChecks(sources) {
 
   addCheck(
     "frontend-gray-marker",
-    /DCM-00 到 DCM-168/.test(sources.app),
-    "Gray route source marker should show DCM-00 to DCM-168.",
+    CURRENT_GRAY_MARKER.test(sources.app),
+    "Gray route source marker should show DCM-00 to DCM-176.",
   );
 
   addCheck(
@@ -265,11 +280,12 @@ async function addGrayUrlCheck(url) {
       signal: controller.signal,
     });
     const body = await response.text();
+    const markerFound = CURRENT_GRAY_MARKER.test(body);
     addCheck(
       "gray-url-render",
-      response.ok && /DCM-00 到 DCM-168/.test(body),
+      response.ok && markerFound,
       response.ok
-        ? `GET ${url} returned ${response.status}; DCM-168 marker ${/DCM-00 到 DCM-168/.test(body) ? "found" : "missing"}.`
+        ? `GET ${url} returned ${response.status}; DCM-176 marker ${markerFound ? "found" : "missing"}.`
         : `GET ${url} returned ${response.status}.`,
     );
   } catch (error) {

@@ -86,6 +86,39 @@ import {
 import { daochongReadonlyEndpointSpecs } from "../apps/web/components/daochong/mobile/daochongMobile.api";
 import type { DaochongMobileDataSource, DaochongMobileSnapshot } from "../apps/web/components/daochong/mobile/daochongMobile.types";
 
+const DAOCHONG_CURRENT_GRAY_MARKER = /DCM-00 到 DCM-176/;
+const DAOCHONG_READONLY_FORBIDDEN_FETCH =
+  /method:\s*["'](POST|PUT|PATCH|DELETE)["']|sendWecom|wecom.*send/i;
+const DAOCHONG_ALLOWED_WRITE_DECORATORS = [
+  '@Patch("recharges/:rechargeId/chengcheng-approval")',
+  '@Patch("recharges/:rechargeId/chengcheng-return")',
+  '@Patch("recharges/:rechargeId/limeng-return")',
+  '@Patch("recharges/:rechargeId/limeng-review")',
+  '@Patch("service-notes/:serviceNoteId")',
+  '@Post("recharges")',
+  '@Post("service-notes")',
+  '@Post("wecom-reminders/send-test")',
+];
+
+function assertDaochongReadonlyFetchOnly(fetchSource: string) {
+  assert.match(fetchSource, /method: "GET"/);
+  assert.doesNotMatch(fetchSource, DAOCHONG_READONLY_FORBIDDEN_FETCH);
+}
+
+function assertDaochongWriteSurfaceIsGuarded(controllerSource: string, serviceSource: string) {
+  const decorators = [...controllerSource.matchAll(/@(Post|Patch|Put|Delete)\("[^"]+"\)/g)]
+    .map((match) => match[0])
+    .sort();
+
+  assert.deepEqual(decorators, DAOCHONG_ALLOWED_WRITE_DECORATORS);
+  assert.doesNotMatch(controllerSource, /@(Put|Delete)\b/);
+  assert.match(serviceSource, /DAOCHONG_MOBILE_WRITE_ENABLED/);
+  assert.match(serviceSource, /assertWriteEnabled\(\)/);
+  assert.match(serviceSource, /DAOCHONG_WECOM_TEST_SEND_ENABLED/);
+  assert.match(serviceSource, /DAOCHONG_WECOM_TEST_ALLOWLIST/);
+  assert.match(serviceSource, /assertWecomTestTargetAllowed/);
+}
+
 function installReadonlyFetchWindowStorage(values: Record<string, string>) {
   const globalWithWindow = globalThis as typeof globalThis & { window?: unknown };
   const previousWindow = globalWithWindow.window;
@@ -1070,8 +1103,7 @@ test("Daochong DCM-85 to DCM-88 formal readonly source stays GET-only", () => {
   assert.match(combinedSource, /model DaochongCustomerPreference/);
   assert.match(controllerSource, /@Get\("service-notes"\)/);
   assert.match(controllerSource, /@Get\("customer-preferences"\)/);
-  assert.doesNotMatch(controllerSource, /@Post|@Patch|@Delete|@Put/);
-  assert.doesNotMatch(serviceSource, /\.create\s*\(|\.update\s*\(|\.delete\s*\(|sendWecom|wecom.*send/i);
+  assertDaochongWriteSurfaceIsGuarded(controllerSource, serviceSource);
   assert.match(serviceSource, /DAOCHONG_MOBILE_SHADOW_READONLY/);
   assert.equal(
     apiPlanBlockerRows.find((row) => row.label === "迁移运行确认")?.value,
@@ -1173,8 +1205,7 @@ test("Daochong DCM-101 to DCM-104 high-risk readonly endpoints stay GET-only", (
   assert.ok(apiPlanTimeline.some((item) => item.meta === "DCM-104"));
   assert.match(serviceSource, /DAOCHONG_MOBILE_HIGH_RISK_READONLY/);
   assert.match(serviceSource, /source_mapping_pending/);
-  assert.doesNotMatch(controllerSource, /@(Post|Put|Patch|Delete)\b/);
-  assert.doesNotMatch(serviceSource, /\.create\s*\(|\.update\s*\(|\.delete\s*\(/);
+  assertDaochongWriteSurfaceIsGuarded(controllerSource, serviceSource);
 
   for (const path of highRiskPaths) {
     assert.match(controllerSource, new RegExp(`@Get\\("${path}"\\)`));
@@ -1233,6 +1264,7 @@ test("Daochong DCM-105 to DCM-108 high-risk source map stays read-only", () => {
 });
 
 test("Daochong DCM-109 to DCM-112 evidence and meeting readonly mappings stay read-only", () => {
+  const controllerSource = readFileSync("apps/api/src/daochong-mobile/daochong-mobile.controller.ts", "utf8");
   const serviceSource = readFileSync("apps/api/src/daochong-mobile/daochong-mobile.service.ts", "utf8");
 
   assert.ok(apiPlanTimeline.some((item) => item.meta === "DCM-112"));
@@ -1242,7 +1274,7 @@ test("Daochong DCM-109 to DCM-112 evidence and meeting readonly mappings stay re
   assert.match(serviceSource, /listMeetingNotes/);
   assert.match(serviceSource, /meetingMinutesRecord\.findMany/);
   assert.match(serviceSource, /mapMeetingNote/);
-  assert.doesNotMatch(serviceSource, /\.create\s*\(|\.update\s*\(|\.delete\s*\(|sendWecom|wecom.*send/i);
+  assertDaochongWriteSurfaceIsGuarded(controllerSource, serviceSource);
   assert.equal(
     apiPlanRiskRows.find((row) => row.label === "凭证会议映射护栏")?.value,
     "拦截",
@@ -1269,8 +1301,8 @@ test("Daochong DCM-113 to DCM-116 frontend evidence and meeting fetch stays read
   assert.match(adapterSource, /adaptReadonlyEvidenceAssetsToFields/);
   assert.match(adapterSource, /adaptReadonlyMeetingNotesToFields/);
   assert.match(appSource, /fetchDaochongReadonlyHighRisk/);
-  assert.match(appSource, /DCM-00 到 DCM-168/);
-  assert.doesNotMatch(fetchSource, /method:\s*"(POST|PUT|PATCH|DELETE)"|\.create\s*\(|\.update\s*\(|\.delete\s*\(|sendWecom|wecom.*send/i);
+  assert.match(appSource, DAOCHONG_CURRENT_GRAY_MARKER);
+  assertDaochongReadonlyFetchOnly(fetchSource);
   assert.doesNotMatch(adapterSource, /\.create\s*\(|\.update\s*\(|\.delete\s*\(|sendWecom|wecom.*send/i);
   assert.equal(
     apiPlanEndpointRows.find((row) => row.label === "evidence / meeting frontend fetch")?.value,
@@ -1291,6 +1323,7 @@ test("Daochong DCM-113 to DCM-116 frontend evidence and meeting fetch stays read
 });
 
 test("Daochong DCM-117 to DCM-120 project communication readonly mapping stays read-only", () => {
+  const controllerSource = readFileSync("apps/api/src/daochong-mobile/daochong-mobile.controller.ts", "utf8");
   const serviceSource = readFileSync("apps/api/src/daochong-mobile/daochong-mobile.service.ts", "utf8");
   const fetchSource = readFileSync("apps/web/components/daochong/mobile/daochongMobile.readonly-fetch.ts", "utf8");
   const adapterSource = readFileSync("apps/web/components/daochong/mobile/daochongMobile.readonly-adapters.ts", "utf8");
@@ -1303,9 +1336,9 @@ test("Daochong DCM-117 to DCM-120 project communication readonly mapping stays r
   assert.match(fetchSource, /getDaochongReadonlyProjectCommunicationsPath/);
   assert.match(adapterSource, /adaptReadonlyProjectCommunicationsToFields/);
   assert.match(appSource, /runtimeData\.communicationFields/);
-  assert.match(appSource, /DCM-00 到 DCM-168/);
-  assert.doesNotMatch(serviceSource, /\.create\s*\(|\.update\s*\(|\.delete\s*\(|sendWecom|wecom.*send/i);
-  assert.doesNotMatch(fetchSource, /method:\s*"(POST|PUT|PATCH|DELETE)"|\.create\s*\(|\.update\s*\(|\.delete\s*\(|sendWecom|wecom.*send/i);
+  assert.match(appSource, DAOCHONG_CURRENT_GRAY_MARKER);
+  assertDaochongWriteSurfaceIsGuarded(controllerSource, serviceSource);
+  assertDaochongReadonlyFetchOnly(fetchSource);
   assert.equal(
     apiPlanEndpointRows.find((row) => row.label === "projectCommunications / meetingNotes")?.value,
     "已接",
@@ -1355,7 +1388,7 @@ test("Daochong DCM-121 to DCM-124 money model drafts stay review-only", () => {
     combinedDrafts,
     /@Post|@Patch|@Delete|@Put|\.create\s*\(|\.update\s*\(|\.delete\s*\(|sendWecom|wecom.*send|prisma\s+migrate/i,
   );
-  assert.match(appSource, /DCM-00 到 DCM-168/);
+  assert.match(appSource, DAOCHONG_CURRENT_GRAY_MARKER);
   assert.equal(
     apiPlanEndpointRows.find((row) => row.label === "money model draft files")?.value,
     "待审",
@@ -1405,7 +1438,7 @@ test("Daochong DCM-125 to DCM-128 finance model drafts stay review-only", () => 
     combinedDrafts,
     /@Post|@Patch|@Delete|@Put|\.create\s*\(|\.update\s*\(|\.delete\s*\(|sendWecom|wecom.*send|prisma\s+migrate/i,
   );
-  assert.match(appSource, /DCM-00 到 DCM-168/);
+  assert.match(appSource, DAOCHONG_CURRENT_GRAY_MARKER);
   assert.equal(
     apiPlanEndpointRows.find((row) => row.label === "finance model draft files")?.value,
     "待审",
@@ -1454,7 +1487,7 @@ test("Daochong DCM-129 to DCM-132 finance review package stays review-only", () 
     combinedDrafts,
     /@Post|@Patch|@Delete|@Put|\.create\s*\(|\.update\s*\(|\.delete\s*\(|sendWecom|wecom.*send|prisma\s+migrate/i,
   );
-  assert.match(appSource, /DCM-00 到 DCM-168/);
+  assert.match(appSource, DAOCHONG_CURRENT_GRAY_MARKER);
   assert.equal(
     apiPlanEndpointRows.find((row) => row.label === "finance review package")?.value,
     "待审",
@@ -1503,7 +1536,7 @@ test("Daochong DCM-133 to DCM-136 finance readonly source plan stays non executi
     combinedDrafts,
     /@Post|@Patch|@Delete|@Put|\.create\s*\(|\.update\s*\(|\.delete\s*\(|sendWecom|wecom.*send|prisma\s+migrate|child_process|spawn\(|exec\(|writeFile/i,
   );
-  assert.match(appSource, /DCM-00 到 DCM-168/);
+  assert.match(appSource, DAOCHONG_CURRENT_GRAY_MARKER);
   assert.equal(
     apiPlanEndpointRows.find((row) => row.label === "finance source plan")?.value,
     "计划",
@@ -1556,11 +1589,10 @@ test("Daochong DCM-137 to DCM-140 finance readonly source stays GET-only", () =>
   assert.match(adapterSource, /adaptReadonlyFinanceSummariesToRows/);
   assert.match(adapterSource, /adaptReadonlyFinanceExceptionsToRows/);
   assert.match(adapterSource, /adaptReadonlyBonusExpenseItemsToRows/);
-  assert.match(appSource, /DCM-00 到 DCM-168/);
+  assert.match(appSource, DAOCHONG_CURRENT_GRAY_MARKER);
   assert.match(appSource, /runtimeData\.financeRows/);
-  assert.doesNotMatch(controllerSource, /@(Post|Put|Patch|Delete)\b/);
-  assert.doesNotMatch(serviceSource, /\.create\s*\(|\.update\s*\(|\.delete\s*\(|sendWecom|wecom.*send/i);
-  assert.doesNotMatch(fetchSource, /method:\s*"(POST|PUT|PATCH|DELETE)"|\.create\s*\(|\.update\s*\(|\.delete\s*\(|sendWecom|wecom.*send/i);
+  assertDaochongWriteSurfaceIsGuarded(controllerSource, serviceSource);
+  assertDaochongReadonlyFetchOnly(fetchSource);
   assert.equal(
     apiPlanEndpointRows.find((row) => row.label === "finance readonly GET source")?.value,
     "已接",
@@ -1617,13 +1649,12 @@ test("Daochong DCM-141 to DCM-144 money readonly source stays GET-only", () => {
   assert.match(adapterSource, /adaptReadonlyRechargesToFields/);
   assert.match(adapterSource, /adaptReadonlySettlementDraftsToRows/);
   assert.match(adapterSource, /adaptReadonlyConsumptionApprovalsToTimeline/);
-  assert.match(appSource, /DCM-00 到 DCM-168/);
+  assert.match(appSource, DAOCHONG_CURRENT_GRAY_MARKER);
   assert.match(appSource, /runtimeData\.rechargeFields/);
   assert.match(appSource, /runtimeData\.settlementDraftFields/);
   assert.match(appSource, /runtimeData\.approvalStatuses/);
-  assert.doesNotMatch(controllerSource, /@(Post|Put|Patch|Delete)\b/);
-  assert.doesNotMatch(serviceSource, /\.create\s*\(|\.update\s*\(|\.delete\s*\(|sendWecom|wecom.*send/i);
-  assert.doesNotMatch(fetchSource, /method:\s*"(POST|PUT|PATCH|DELETE)"|\.create\s*\(|\.update\s*\(|\.delete\s*\(|sendWecom|wecom.*send/i);
+  assertDaochongWriteSurfaceIsGuarded(controllerSource, serviceSource);
+  assertDaochongReadonlyFetchOnly(fetchSource);
   assert.equal(
     apiPlanEndpointRows.find((row) => row.label === "money readonly GET source")?.value,
     "已接",
@@ -1665,7 +1696,7 @@ test("Daochong DCM-145 to DCM-148 readonly acceptance verifier stays non executi
   assert.match(verifierSource, /writesFiles: false/);
   assert.match(verifierSource, /fetch\(url/);
   assert.match(verifierSource, /method: "GET"/);
-  assert.match(verifierSource, /DCM-00 到 DCM-168/);
+  assert.match(verifierSource, DAOCHONG_CURRENT_GRAY_MARKER);
   assert.doesNotMatch(
     verifierSource,
     /child_process|spawn\(|exec\(|writeFile|prisma\s+migrate|docker\s+|\.create\([^/]|\.update\([^/]|\.delete\([^/]|sendWecom\(|wecom\.[A-Za-z0-9_]*send/i,
@@ -1674,7 +1705,7 @@ test("Daochong DCM-145 to DCM-148 readonly acceptance verifier stays non executi
     packageSource,
     /"verify:daochong-mobile-readonly"\s*:\s*"node scripts\/local\/daochong-mobile-readonly-acceptance\.mjs"/,
   );
-  assert.match(appSource, /DCM-00 到 DCM-168/);
+  assert.match(appSource, DAOCHONG_CURRENT_GRAY_MARKER);
   assert.match(taskBreakdown, /DCM-19C-12 只读验收收口/);
   assert.match(fieldMap, /只读验收收口（DCM-145 到 DCM-148）/);
   assert.match(resultDoc, /未运行 migration/);
@@ -1742,7 +1773,7 @@ test("Daochong DCM-149 to DCM-152 remaining gap contract plan stays review-only"
   assert.doesNotMatch(planner, /\bsendWecom\s*\([^/]/);
   assert.doesNotMatch(planner, /\bwecom\.[A-Za-z0-9_]*send\s*\([^/]/i);
   assert.match(packageSource, /"plan:daochong-gap-contract"\s*:\s*"node scripts\/local\/daochong-remaining-gap-contract-plan\.mjs"/);
-  assert.match(appSource, /DCM-00 到 DCM-168/);
+  assert.match(appSource, DAOCHONG_CURRENT_GRAY_MARKER);
   assert.match(taskBreakdown, /DCM-19C-13 剩余真实口径缺口契约/);
   assert.match(fieldMap, /剩余真实口径缺口契约（DCM-149 到 DCM-152）/);
   assert.match(resultDoc, /未新增源码层/);
@@ -1793,14 +1824,13 @@ test("Daochong DCM-153 to DCM-156 appointment detail readonly source stays GET-o
   assert.match(adapterSource, /adaptReadonlyAppointmentDetailToStatuses/);
   assert.match(appSource, /openAppointment/);
   assert.match(appSource, /runtimeData\.appointmentDetailFields/);
-  assert.match(appSource, /DCM-00 到 DCM-168/);
+  assert.match(appSource, DAOCHONG_CURRENT_GRAY_MARKER);
   assert.match(apiSpec, /key: "appointmentDetail"/);
   assert.match(taskBreakdown, /DCM-19C-14 预约详情真实只读源码层/);
   assert.match(fieldMap, /预约详情真实只读源码层（DCM-153 到 DCM-156）/);
   assert.match(resultDoc, /未改约/);
-  assert.doesNotMatch(controllerSource, /@(Post|Put|Patch|Delete)\b/);
-  assert.doesNotMatch(serviceSource, /\.create\s*\(|\.update\s*\(|\.delete\s*\(|sendWecom|wecom.*send/i);
-  assert.doesNotMatch(fetchSource, /method:\s*["'](POST|PUT|PATCH|DELETE)["']|sendWecom|wecom.*send/i);
+  assertDaochongWriteSurfaceIsGuarded(controllerSource, serviceSource);
+  assertDaochongReadonlyFetchOnly(fetchSource);
   assert.equal(
     apiPlanEndpointRows.find((row) => row.label === "appointment detail readonly GET")?.value,
     "已接",
@@ -1854,15 +1884,14 @@ test("Daochong DCM-157 to DCM-160 customer card balance readonly preview stays G
   assert.match(appSource, /adaptReadonlyCustomerCardBalancesToRows/);
   assert.match(appSource, /customerCardBalances/);
   assert.match(appSource, /customerCardBalancesDiagnostic/);
-  assert.match(appSource, /DCM-00 到 DCM-168/);
+  assert.match(appSource, DAOCHONG_CURRENT_GRAY_MARKER);
   assert.match(apiSpec, /key: "customerCardBalances"/);
   assert.match(taskBreakdown, /DCM-19C-15 客户卡项余额只读预览/);
   assert.match(fieldMap, /客户卡项余额只读预览（DCM-157 到 DCM-160）/);
   assert.match(resultDoc, /未开户/);
   assert.match(resultDoc, /未写流水/);
-  assert.doesNotMatch(controllerSource, /@(Post|Put|Patch|Delete)\b/);
-  assert.doesNotMatch(serviceSource, /\.create\s*\(|\.update\s*\(|\.delete\s*\(|sendWecom|wecom.*send/i);
-  assert.doesNotMatch(fetchSource, /method:\s*["'](POST|PUT|PATCH|DELETE)["']|sendWecom|wecom.*send/i);
+  assertDaochongWriteSurfaceIsGuarded(controllerSource, serviceSource);
+  assertDaochongReadonlyFetchOnly(fetchSource);
   assert.equal(
     apiPlanEndpointRows.find((row) => row.label === "customer card balance readonly preview")?.value,
     "预览",
@@ -1909,15 +1938,14 @@ test("Daochong DCM-161 to DCM-164 compensation rules readonly source stays GET-o
   assert.match(adapterSource, /adaptReadonlyCompensationRulesToRows/);
   assert.match(adapterSource, /不从工资单反推/);
   assert.match(appSource, /runtimeData\.compensationRows/);
-  assert.match(appSource, /DCM-00 到 DCM-168/);
+  assert.match(appSource, DAOCHONG_CURRENT_GRAY_MARKER);
   assert.match(apiSpec, /key: "compensation"/);
   assert.match(taskBreakdown, /DCM-19C-16 薪酬配置只读来源确认/);
   assert.match(fieldMap, /薪酬配置只读来源确认（DCM-161 到 DCM-164）/);
   assert.match(resultDoc, /不从薪资单反推/);
   assert.match(resultDoc, /未生成薪资条/);
-  assert.doesNotMatch(controllerSource, /@(Post|Put|Patch|Delete)\b/);
-  assert.doesNotMatch(serviceSource, /\.create\s*\(|\.update\s*\(|\.delete\s*\(|sendWecom|wecom.*send/i);
-  assert.doesNotMatch(fetchSource, /method:\s*["'](POST|PUT|PATCH|DELETE)["']|sendWecom|wecom.*send/i);
+  assertDaochongWriteSurfaceIsGuarded(controllerSource, serviceSource);
+  assertDaochongReadonlyFetchOnly(fetchSource);
   assert.equal(
     apiPlanEndpointRows.find((row) => row.label === "compensation rules readonly GET")?.value,
     "待源",
@@ -1966,15 +1994,14 @@ test("Daochong DCM-165 to DCM-168 wecom reminder dry-run readonly preview stays 
   assert.match(adapterSource, /DaochongReadonlyWecomReminderDryRunResponse/);
   assert.match(adapterSource, /wecom-reminder-dry-runs GET/);
   assert.match(appSource, /wecomReminderDryRuns/);
-  assert.match(appSource, /DCM-00 到 DCM-168/);
+  assert.match(appSource, DAOCHONG_CURRENT_GRAY_MARKER);
   assert.match(apiSpec, /key: "wecomReminderDryRuns"/);
   assert.match(taskBreakdown, /DCM-19C-17 企微提醒 dry-run 只读源码层/);
   assert.match(fieldMap, /企微提醒 dry-run 只读源码层（DCM-165 到 DCM-168）/);
   assert.match(resultDoc, /不创建通知/);
   assert.match(resultDoc, /未调用企业微信/);
-  assert.doesNotMatch(controllerSource, /@(Post|Put|Patch|Delete)\b/);
-  assert.doesNotMatch(serviceSource, /\.create\s*\(|\.update\s*\(|\.delete\s*\(|sendWecom|wecom.*send/i);
-  assert.doesNotMatch(fetchSource, /method:\s*["'](POST|PUT|PATCH|DELETE)["']|sendWecom|wecom.*send/i);
+  assertDaochongWriteSurfaceIsGuarded(controllerSource, serviceSource);
+  assertDaochongReadonlyFetchOnly(fetchSource);
   assert.equal(
     apiPlanEndpointRows.find((row) => row.label === "wecom reminder dry-run readonly GET")?.value,
     "已接",
