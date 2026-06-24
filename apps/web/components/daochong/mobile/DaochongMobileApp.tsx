@@ -15,8 +15,10 @@ import {
   adaptReadonlyCustomerDetailToServiceNoteReminderTimeline,
   adaptReadonlyCustomerDetailToServiceNoteStatuses,
   adaptReadonlyCustomerDetailToServiceHistory,
+  adaptReadonlyConsumptionApprovalsToActionItems,
   adaptReadonlyRechargesToApprovalActionItems,
   buildReadonlyApiSnapshot,
+  type DaochongConsumptionApprovalActionItem,
   type DaochongRechargeApprovalActionItem,
   type DaochongReadonlyRechargeResponse,
   type DaochongReadonlyServiceNoteRecord,
@@ -264,6 +266,7 @@ function cx(...classes: Array<string | false | null | undefined>) {
 
 type DaochongServiceNoteStatus = "PENDING" | "COMPLETED";
 type DaochongRechargePaymentMethod = "WECHAT" | "ALIPAY" | "BANK_TRANSFER" | "CASH" | "OTHER";
+type DaochongSettlementCardMode = "NO_CARD" | "PREPAID_CARD" | "PACKAGE_CARD";
 
 type DaochongServiceNoteFormState = {
   customerFeedback: string;
@@ -338,6 +341,75 @@ type DaochongRechargeApprovalState = {
   status: "idle" | "saving" | "success" | "error";
 };
 
+type DaochongSettlementDraftFormState = {
+  appointmentId: string;
+  cardId: string;
+  cardMode: DaochongSettlementCardMode;
+  consumeAmount: string;
+  discountAmount: string;
+  discountReason: string;
+  evidenceAssetIds: string;
+  finalAmount: string;
+  originalAmount: string;
+  projectId: string;
+  referralBonusAmount: string;
+  referrerName: string;
+};
+
+type DaochongSettlementDraftWriteState = {
+  action?: "save" | "submit";
+  dirty: boolean;
+  draftId?: string;
+  message: string;
+  status: "idle" | "saving" | "success" | "error";
+};
+
+type DaochongSettlementDraftWriteResponse = {
+  action?: "settlement_draft_saved" | "settlement_submitted_pending_consumption_approval";
+  approval?: {
+    id?: string;
+    approvalStatus?: string | null;
+  };
+  item?: {
+    id?: string;
+    draftStatus?: string | null;
+  };
+  ok?: boolean;
+  safety?: {
+    approvalCreated?: boolean;
+    balanceApplied?: boolean;
+    cardDeducted?: boolean;
+    financeConfirmed?: boolean;
+    wecomSent?: boolean;
+  };
+};
+
+type DaochongConsumptionApprovalState = {
+  action?: "approve" | "return";
+  approvalId?: string;
+  message: string;
+  status: "idle" | "saving" | "success" | "error";
+};
+
+type DaochongConsumptionApprovalWriteResponse = {
+  action?: "consumption_approved_no_card_deduction" | "consumption_returned_to_settlement_draft";
+  item?: {
+    id?: string;
+    approvalStatus?: string | null;
+  };
+  ok?: boolean;
+  safety?: {
+    balanceApplied?: boolean;
+    cardDeducted?: boolean;
+    financeConfirmed?: boolean;
+    wecomSent?: boolean;
+  };
+  settlementDraft?: {
+    id?: string;
+    draftStatus?: string | null;
+  };
+};
+
 const initialServiceNoteFormState: DaochongServiceNoteFormState = {
   customerFeedback: "",
   nextSuggestion: "",
@@ -368,6 +440,32 @@ const initialRechargeWriteState: DaochongRechargeWriteState = {
 };
 
 const initialRechargeApprovalState: DaochongRechargeApprovalState = {
+  message: "",
+  status: "idle",
+};
+
+const initialSettlementDraftFormState: DaochongSettlementDraftFormState = {
+  appointmentId: "",
+  cardId: "",
+  cardMode: "NO_CARD",
+  consumeAmount: "",
+  discountAmount: "",
+  discountReason: "",
+  evidenceAssetIds: "",
+  finalAmount: "",
+  originalAmount: "",
+  projectId: "",
+  referralBonusAmount: "",
+  referrerName: "",
+};
+
+const initialSettlementDraftWriteState: DaochongSettlementDraftWriteState = {
+  dirty: false,
+  message: "",
+  status: "idle",
+};
+
+const initialConsumptionApprovalState: DaochongConsumptionApprovalState = {
   message: "",
   status: "idle",
 };
@@ -426,6 +524,65 @@ function validateRechargeForm(form: DaochongRechargeFormState) {
     }
   }
   return null;
+}
+
+function validateMoneyInput(value: string, label: string, options: { allowZero?: boolean } = {}) {
+  const amount = value.trim().replace(/,/g, "");
+  if (!amount) {
+    return `${label}不能为空。`;
+  }
+  if (!/^\d+(\.\d{1,2})?$/.test(amount)) {
+    return `${label}必须是最多两位小数的金额。`;
+  }
+  const numeric = Number(amount);
+  if (!Number.isFinite(numeric) || (options.allowZero ? numeric < 0 : numeric <= 0)) {
+    return options.allowZero ? `${label}不能小于 0。` : `${label}必须大于 0。`;
+  }
+  return null;
+}
+
+function validateSettlementDraftForm(form: DaochongSettlementDraftFormState) {
+  return validateMoneyInput(form.originalAmount, "结算原价")
+    ?? validateMoneyInput(form.finalAmount, "结算实收金额")
+    ?? (
+      form.discountAmount.trim()
+        ? validateMoneyInput(form.discountAmount, "优惠金额", { allowZero: true })
+        : null
+    )
+    ?? (
+      form.referralBonusAmount.trim()
+        ? validateMoneyInput(form.referralBonusAmount, "推荐奖金", { allowZero: true })
+        : null
+    )
+    ?? (
+      form.consumeAmount.trim()
+        ? validateMoneyInput(form.consumeAmount, "耗卡金额")
+        : null
+    );
+}
+
+function buildSettlementDraftPayload(
+  form: DaochongSettlementDraftFormState,
+  customerId: string,
+  teacherId: string,
+) {
+  const evidenceAssetIds = splitRechargeIdList(form.evidenceAssetIds);
+  return {
+    appointmentId: trimOptionalText(form.appointmentId),
+    cardId: form.cardMode === "NO_CARD" ? undefined : trimOptionalText(form.cardId),
+    cardMode: form.cardMode,
+    consumeAmount: trimOptionalText(form.consumeAmount.trim().replace(/,/g, "")),
+    customerId,
+    discountAmount: trimOptionalText(form.discountAmount.trim().replace(/,/g, "")),
+    discountReason: trimOptionalText(form.discountReason),
+    evidenceAssetIds,
+    finalAmount: form.finalAmount.trim().replace(/,/g, ""),
+    originalAmount: form.originalAmount.trim().replace(/,/g, ""),
+    projectId: trimOptionalText(form.projectId),
+    referralBonusAmount: trimOptionalText(form.referralBonusAmount.trim().replace(/,/g, "")),
+    referrerName: trimOptionalText(form.referrerName),
+    teacherId,
+  };
 }
 
 function getServiceNoteRecordsForWrite(response: DaochongReadonlyServiceNoteResponse | null | undefined) {
@@ -1057,15 +1214,314 @@ function RechargeApprovalPanel({
   );
 }
 
+function SettlementDraftWritePanel({
+  customerName,
+  form,
+  onChange,
+  onSave,
+  onSubmit,
+  userName,
+  writeState,
+}: {
+  customerName?: string;
+  form: DaochongSettlementDraftFormState;
+  onChange: (patch: Partial<DaochongSettlementDraftFormState>) => void;
+  onSave: () => void;
+  onSubmit: () => void;
+  userName?: string;
+  writeState: DaochongSettlementDraftWriteState;
+}) {
+  const isSaving = writeState.status === "saving";
+  const disabled = isSaving || !customerName || !userName;
+  const canSubmit = Boolean(writeState.draftId && !writeState.dirty && !isSaving);
+  const statusTone =
+    writeState.status === "error"
+      ? styles.writeStatusError
+      : writeState.status === "success"
+        ? styles.writeStatusSuccess
+        : "";
+
+  return (
+    <section className={cx(styles.formPreview, styles.writePanel)} data-testid="daochong-settlement-draft-write-panel">
+      <div className={styles.sectionTitle}>
+        <strong>结算草稿</strong>
+        <small>{customerName ? `${customerName} · ${userName ?? "未登录"}` : "未选择客户"}</small>
+      </div>
+      <div className={styles.writeGrid}>
+        <label>
+          <span>结算原价</span>
+          <input
+            data-testid="daochong-settlement-original-amount"
+            inputMode="decimal"
+            onChange={(event) => onChange({ originalAmount: event.target.value })}
+            placeholder="例如 688.00"
+            value={form.originalAmount}
+          />
+        </label>
+        <label>
+          <span>实收金额</span>
+          <input
+            data-testid="daochong-settlement-final-amount"
+            inputMode="decimal"
+            onChange={(event) => onChange({ finalAmount: event.target.value })}
+            placeholder="例如 688.00"
+            value={form.finalAmount}
+          />
+        </label>
+      </div>
+      <div className={styles.writeGrid}>
+        <label>
+          <span>卡模式</span>
+          <select
+            data-testid="daochong-settlement-card-mode"
+            onChange={(event) => onChange({ cardMode: event.target.value as DaochongSettlementCardMode })}
+            value={form.cardMode}
+          >
+            <option value="NO_CARD">无卡结算</option>
+            <option value="PREPAID_CARD">储值卡</option>
+            <option value="PACKAGE_CARD">套餐卡</option>
+          </select>
+        </label>
+        <label>
+          <span>耗卡金额</span>
+          <input
+            data-testid="daochong-settlement-consume-amount"
+            inputMode="decimal"
+            onChange={(event) => onChange({ consumeAmount: event.target.value })}
+            placeholder={form.cardMode === "NO_CARD" ? "无卡可留空" : "例如 688.00"}
+            value={form.consumeAmount}
+          />
+        </label>
+      </div>
+      {form.cardMode !== "NO_CARD" ? (
+        <label>
+          <span>卡 ID</span>
+          <input
+            data-testid="daochong-settlement-card-id"
+            onChange={(event) => onChange({ cardId: event.target.value })}
+            placeholder="来自客户卡项余额"
+            value={form.cardId}
+          />
+        </label>
+      ) : null}
+      <div className={styles.writeGrid}>
+        <label>
+          <span>优惠金额</span>
+          <input
+            inputMode="decimal"
+            onChange={(event) => onChange({ discountAmount: event.target.value })}
+            placeholder="可选"
+            value={form.discountAmount}
+          />
+        </label>
+        <label>
+          <span>项目 ID</span>
+          <input
+            onChange={(event) => onChange({ projectId: event.target.value })}
+            placeholder="可选"
+            value={form.projectId}
+          />
+        </label>
+      </div>
+      <label>
+        <span>优惠原因</span>
+        <textarea
+          onChange={(event) => onChange({ discountReason: event.target.value })}
+          placeholder="有优惠时填写"
+          value={form.discountReason}
+        />
+      </label>
+      <label>
+        <span>结算凭证 ID</span>
+        <textarea
+          data-testid="daochong-settlement-evidence"
+          onChange={(event) => onChange({ evidenceAssetIds: event.target.value })}
+          placeholder="多个 ID 可用逗号、空格或换行分隔"
+          value={form.evidenceAssetIds}
+        />
+        <small className={styles.fieldHint}>保存草稿可先留空；提交审批前后端会校验凭证。</small>
+      </label>
+      <div className={styles.writeGrid}>
+        <label>
+          <span>推荐人</span>
+          <input
+            onChange={(event) => onChange({ referrerName: event.target.value })}
+            placeholder="可选"
+            value={form.referrerName}
+          />
+        </label>
+        <label>
+          <span>推荐奖金</span>
+          <input
+            inputMode="decimal"
+            onChange={(event) => onChange({ referralBonusAmount: event.target.value })}
+            placeholder="可选"
+            value={form.referralBonusAmount}
+          />
+        </label>
+      </div>
+      <label>
+        <span>预约 ID</span>
+        <input
+          onChange={(event) => onChange({ appointmentId: event.target.value })}
+          placeholder="可选"
+          value={form.appointmentId}
+        />
+      </label>
+      <div className={styles.approvalActions}>
+        <button
+          className={styles.primaryButton}
+          data-testid="daochong-settlement-draft-save"
+          disabled={disabled}
+          onClick={onSave}
+          type="button"
+        >
+          {isSaving && writeState.action === "save" ? "保存中" : "保存草稿"}
+        </button>
+        <button
+          className={styles.primaryButton}
+          data-testid="daochong-settlement-draft-submit"
+          disabled={!canSubmit}
+          onClick={onSubmit}
+          type="button"
+        >
+          {isSaving && writeState.action === "submit" ? "提交中" : "提交审批"}
+        </button>
+      </div>
+      {writeState.message ? (
+        <span className={cx(styles.writeStatus, statusTone)} data-testid="daochong-settlement-draft-write-status">
+          {writeState.message}
+        </span>
+      ) : null}
+    </section>
+  );
+}
+
+function ConsumptionApprovalPanel({
+  items,
+  onApprove,
+  onReturn,
+  onReturnReasonChange,
+  onSelect,
+  onSupplementChange,
+  returnReason,
+  role,
+  selectedId,
+  supplementRequirements,
+  writeState,
+}: {
+  items: DaochongConsumptionApprovalActionItem[];
+  onApprove: () => void;
+  onReturn: () => void;
+  onReturnReasonChange: (value: string) => void;
+  onSelect: (id: string) => void;
+  onSupplementChange: (value: string) => void;
+  returnReason: string;
+  role: DaochongRole;
+  selectedId: string | null;
+  supplementRequirements: string;
+  writeState: DaochongConsumptionApprovalState;
+}) {
+  const selected = items.find((item) => item.id === selectedId) ?? items[0] ?? null;
+  const isAllowedRole = hasPermission(role, "approveConsumption");
+  const isSaving = writeState.status === "saving";
+  const canApprove = Boolean(!isSaving && isAllowedRole && selected?.canApprove);
+  const canReturn = canApprove && Boolean(returnReason.trim());
+  const statusTone =
+    writeState.status === "error"
+      ? styles.writeStatusError
+      : writeState.status === "success"
+        ? styles.writeStatusSuccess
+        : "";
+
+  return (
+    <section className={cx(styles.formPreview, styles.writePanel)} data-testid="daochong-consumption-approval-panel">
+      <div className={styles.sectionTitle}>
+        <strong>耗卡审批</strong>
+        <small>{isAllowedRole ? "程程/授权管理员" : "切换程程或管理员后操作"}</small>
+      </div>
+      <div className={styles.approvalList}>
+        {items.length ? items.map((item) => (
+          <button
+            className={cx(styles.approvalItem, selected?.id === item.id && styles.approvalItemActive)}
+            data-testid="daochong-consumption-approval-item"
+            key={item.id}
+            onClick={() => onSelect(item.id)}
+            type="button"
+          >
+            <span>
+              <strong>{item.label}</strong>
+              <small>{item.note}</small>
+            </span>
+            <span className={styles.approvalMeta}>
+              <strong>{item.amount}</strong>
+              <StatusBadge tone={item.tone}>{item.status}</StatusBadge>
+            </span>
+          </button>
+        )) : (
+          <div className={styles.approvalEmpty}>暂无耗卡审批候选</div>
+        )}
+      </div>
+      <label>
+        <span>退回原因</span>
+        <textarea
+          data-testid="daochong-consumption-return-reason"
+          disabled={!isAllowedRole || isSaving}
+          onChange={(event) => onReturnReasonChange(event.target.value)}
+          placeholder="退回时填写"
+          value={returnReason}
+        />
+      </label>
+      <label>
+        <span>补充要求</span>
+        <textarea
+          data-testid="daochong-consumption-supplement"
+          disabled={!isAllowedRole || isSaving}
+          onChange={(event) => onSupplementChange(event.target.value)}
+          placeholder="可选"
+          value={supplementRequirements}
+        />
+      </label>
+      <div className={styles.approvalActions}>
+        <button
+          className={styles.primaryButton}
+          data-testid="daochong-consumption-approve"
+          disabled={!canApprove}
+          onClick={onApprove}
+          type="button"
+        >
+          {isSaving && writeState.action === "approve" ? "通过中" : "通过"}
+        </button>
+        <button
+          className={styles.returnButton}
+          data-testid="daochong-consumption-return"
+          disabled={!canReturn}
+          onClick={onReturn}
+          type="button"
+        >
+          {isSaving && writeState.action === "return" ? "退回中" : "退回"}
+        </button>
+      </div>
+      {writeState.message ? (
+        <span className={cx(styles.writeStatus, statusTone)} data-testid="daochong-consumption-approval-status">
+          {writeState.message}
+        </span>
+      ) : null}
+    </section>
+  );
+}
+
 function renderPage(
   page: DaochongPageKey,
   role: DaochongRole,
   openPage: (page: DaochongPageKey) => void,
   openAppointment: (appointment: DaochongAppointment) => void,
   openCustomerDetail: (customer: DaochongCustomer) => void,
+  consumptionApprovalPanel: ReactNode,
   rechargeApprovalPanel: ReactNode,
   rechargeWritePanel: ReactNode,
   runtimeData: DaochongRuntimeData,
+  settlementDraftWritePanel: ReactNode,
   serviceNoteWritePanel: ReactNode,
 ) {
   if (!canOpenPage(role, page)) {
@@ -1191,6 +1647,7 @@ function renderPage(
       <>
         <AccessCard role={role} />
         <StateBoard items={runtimeData.approvalStatuses} title="耗卡审批状态" />
+        {consumptionApprovalPanel}
         <FieldPreview fields={runtimeData.approvalDetailFields} note="审批详情" title="耗卡审批详情" />
         <MoneyList rows={runtimeData.approvalRows} />
         <FieldPreview fields={approvalDecisionFields} note="退回补充" title="审批操作字段" />
@@ -1213,6 +1670,7 @@ function renderPage(
     return (
       <>
         <AccessCard role={role} />
+        {settlementDraftWritePanel}
         <FieldPreview fields={settlementFields} note="提交前校验" title="服务结算表单" />
         <FieldPreview fields={runtimeData.settlementDraftFields} note="草稿预览" title="结算草稿字段" />
         <MoneyList rows={runtimeData.settlementDraftRows} />
@@ -1580,6 +2038,13 @@ export function DaochongMobileApp({ grayEnabled }: { grayEnabled: boolean }) {
   const [selectedRechargeApprovalId, setSelectedRechargeApprovalId] = useState<string | null>(null);
   const [rechargeReturnReason, setRechargeReturnReason] = useState("");
   const [rechargeApprovalState, setRechargeApprovalState] = useState<DaochongRechargeApprovalState>(initialRechargeApprovalState);
+  const [settlementDraftForm, setSettlementDraftForm] = useState<DaochongSettlementDraftFormState>(initialSettlementDraftFormState);
+  const [settlementDraftWriteState, setSettlementDraftWriteState] = useState<DaochongSettlementDraftWriteState>(initialSettlementDraftWriteState);
+  const [consumptionApprovalItems, setConsumptionApprovalItems] = useState<DaochongConsumptionApprovalActionItem[]>([]);
+  const [selectedConsumptionApprovalId, setSelectedConsumptionApprovalId] = useState<string | null>(null);
+  const [consumptionReturnReason, setConsumptionReturnReason] = useState("");
+  const [consumptionSupplementRequirements, setConsumptionSupplementRequirements] = useState("");
+  const [consumptionApprovalState, setConsumptionApprovalState] = useState<DaochongConsumptionApprovalState>(initialConsumptionApprovalState);
   const currentUser = getCurrentUser();
 
   function applyRechargeApprovalCandidates(response: DaochongReadonlyRechargeResponse | null | undefined) {
@@ -1587,6 +2052,14 @@ export function DaochongMobileApp({ grayEnabled }: { grayEnabled: boolean }) {
     setRechargeApprovalItems(items);
     setSelectedRechargeApprovalId((current) => {
       return getPreferredRechargeApprovalId(items, activeRole.key, current);
+    });
+  }
+
+  function applyConsumptionApprovalCandidates(response: Parameters<typeof adaptReadonlyConsumptionApprovalsToActionItems>[0]) {
+    const items = adaptReadonlyConsumptionApprovalsToActionItems(response);
+    setConsumptionApprovalItems(items);
+    setSelectedConsumptionApprovalId((current) => {
+      return items.find((item) => item.id === current)?.id ?? items.find((item) => item.canApprove)?.id ?? items[0]?.id ?? null;
     });
   }
 
@@ -1668,6 +2141,7 @@ export function DaochongMobileApp({ grayEnabled }: { grayEnabled: boolean }) {
       result.diagnostics,
     );
     applyRechargeApprovalCandidates(result.recharges);
+    applyConsumptionApprovalCandidates(result.consumptionApprovals);
     setRuntimeData((current) => ({
       ...current,
       approvalDetailFields: nextSnapshot.approvalDetailFields,
@@ -1753,6 +2227,7 @@ export function DaochongMobileApp({ grayEnabled }: { grayEnabled: boolean }) {
           },
         );
         applyRechargeApprovalCandidates(highRiskInput.recharges);
+        applyConsumptionApprovalCandidates(highRiskInput.consumptionApprovals);
         setRuntimeData((current) => ({
           ...current,
           appointments: nextSnapshot.appointments,
@@ -1816,6 +2291,7 @@ export function DaochongMobileApp({ grayEnabled }: { grayEnabled: boolean }) {
           },
         );
         applyRechargeApprovalCandidates(null);
+        applyConsumptionApprovalCandidates(null);
         setRuntimeData((current) => ({
           ...current,
           appointments: nextSnapshot.appointments,
@@ -2412,6 +2888,290 @@ export function DaochongMobileApp({ grayEnabled }: { grayEnabled: boolean }) {
     }
   }
 
+  function updateSettlementDraftForm(patch: Partial<DaochongSettlementDraftFormState>) {
+    setSettlementDraftForm((current) => ({
+      ...current,
+      ...patch,
+    }));
+    setSettlementDraftWriteState((current) => ({
+      ...current,
+      dirty: current.draftId ? true : current.dirty,
+      message: current.status === "error" ? "" : current.message,
+      status: current.status === "error" ? "idle" : current.status,
+    }));
+  }
+
+  async function saveSettlementDraft() {
+    const validationMessage = validateSettlementDraftForm(settlementDraftForm);
+    if (validationMessage) {
+      setSettlementDraftWriteState((current) => ({
+        ...current,
+        action: "save",
+        message: validationMessage,
+        status: "error",
+      }));
+      return;
+    }
+
+    if (!selectedCustomer?.id) {
+      setSettlementDraftWriteState((current) => ({
+        ...current,
+        action: "save",
+        message: "请先从客户列表选择客户。",
+        status: "error",
+      }));
+      return;
+    }
+
+    if (!currentUser?.id) {
+      setSettlementDraftWriteState((current) => ({
+        ...current,
+        action: "save",
+        message: "请先登录后保存结算草稿。",
+        status: "error",
+      }));
+      return;
+    }
+
+    const draftId = settlementDraftWriteState.draftId;
+    const payload = buildSettlementDraftPayload(settlementDraftForm, selectedCustomer.id, currentUser.id);
+    setSettlementDraftWriteState((current) => ({
+      ...current,
+      action: "save",
+      message: "正在保存结算草稿...",
+      status: "saving",
+    }));
+
+    try {
+      const response = await apiFetch<DaochongSettlementDraftWriteResponse>(
+        draftId
+          ? `/daochong/mobile/settlement-drafts/${encodeURIComponent(draftId)}`
+          : "/daochong/mobile/settlement-drafts",
+        {
+          body: JSON.stringify(payload),
+          method: draftId ? "PATCH" : "POST",
+        },
+      );
+      const nextDraftId = response.item?.id ?? draftId;
+      const draftStatus = response.item?.draftStatus ? `，状态 ${response.item.draftStatus}` : "";
+      setSettlementDraftWriteState({
+        action: "save",
+        dirty: false,
+        draftId: nextDraftId,
+        message: `结算草稿已保存${nextDraftId ? `：${nextDraftId}` : ""}${draftStatus}`,
+        status: "success",
+      });
+
+      if (isDaochongReadonlyFetchEnabled(daochongDataSource)) {
+        try {
+          applyHighRiskResult(await fetchDaochongReadonlyHighRisk());
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : "结算只读数据刷新失败";
+          setSettlementDraftWriteState({
+            action: "save",
+            dirty: false,
+            draftId: nextDraftId,
+            message: `结算草稿已保存，但刷新失败：${message}`,
+            status: "success",
+          });
+        }
+      }
+    } catch (error: unknown) {
+      setSettlementDraftWriteState((current) => ({
+        ...current,
+        action: "save",
+        message: error instanceof Error ? error.message : "结算草稿保存失败。",
+        status: "error",
+      }));
+    }
+  }
+
+  async function submitSettlementDraft() {
+    const draftId = settlementDraftWriteState.draftId;
+    if (!draftId) {
+      setSettlementDraftWriteState((current) => ({
+        ...current,
+        action: "submit",
+        message: "请先保存结算草稿，再提交审批。",
+        status: "error",
+      }));
+      return;
+    }
+    if (settlementDraftWriteState.dirty) {
+      setSettlementDraftWriteState((current) => ({
+        ...current,
+        action: "submit",
+        message: "表单已修改，请先保存草稿再提交审批。",
+        status: "error",
+      }));
+      return;
+    }
+
+    setSettlementDraftWriteState((current) => ({
+      ...current,
+      action: "submit",
+      message: "正在提交耗卡审批...",
+      status: "saving",
+    }));
+
+    try {
+      const response = await apiFetch<DaochongSettlementDraftWriteResponse>(
+        `/daochong/mobile/settlement-drafts/${encodeURIComponent(draftId)}/submit`,
+        {
+          method: "POST",
+        },
+      );
+      const approvalId = response.approval?.id;
+      setSettlementDraftWriteState({
+        action: "submit",
+        dirty: false,
+        draftId,
+        message: `已提交耗卡审批${approvalId ? `：${approvalId}` : ""}，不会扣卡或入账`,
+        status: "success",
+      });
+
+      if (isDaochongReadonlyFetchEnabled(daochongDataSource)) {
+        try {
+          applyHighRiskResult(await fetchDaochongReadonlyHighRisk());
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : "耗卡审批只读数据刷新失败";
+          setSettlementDraftWriteState({
+            action: "submit",
+            dirty: false,
+            draftId,
+            message: `已提交耗卡审批，但刷新失败：${message}`,
+            status: "success",
+          });
+        }
+      }
+    } catch (error: unknown) {
+      setSettlementDraftWriteState((current) => ({
+        ...current,
+        action: "submit",
+        message: error instanceof Error ? error.message : "耗卡审批提交失败。",
+        status: "error",
+      }));
+    }
+  }
+
+  function selectConsumptionApprovalItem(id: string) {
+    setSelectedConsumptionApprovalId(id);
+    setConsumptionApprovalState((current) => (
+      current.status === "error" ? initialConsumptionApprovalState : current
+    ));
+  }
+
+  function updateConsumptionReturnReason(value: string) {
+    setConsumptionReturnReason(value);
+    setConsumptionApprovalState((current) => (
+      current.status === "error" ? initialConsumptionApprovalState : current
+    ));
+  }
+
+  function updateConsumptionSupplementRequirements(value: string) {
+    setConsumptionSupplementRequirements(value);
+    setConsumptionApprovalState((current) => (
+      current.status === "error" ? initialConsumptionApprovalState : current
+    ));
+  }
+
+  async function submitConsumptionApprovalDecision(action: "approve" | "return") {
+    const selected = consumptionApprovalItems.find((item) => item.id === selectedConsumptionApprovalId) ?? consumptionApprovalItems[0] ?? null;
+    if (!selected) {
+      setConsumptionApprovalState({
+        action,
+        message: "暂无可处理的耗卡审批记录。",
+        status: "error",
+      });
+      return;
+    }
+
+    if (!hasPermission(activeRole, "approveConsumption")) {
+      setConsumptionApprovalState({
+        action,
+        approvalId: selected.id,
+        message: "请切换程程或授权管理员角色后操作。",
+        status: "error",
+      });
+      return;
+    }
+
+    if (!selected.canApprove) {
+      setConsumptionApprovalState({
+        action,
+        approvalId: selected.id,
+        message: "当前耗卡审批不在待审批状态。",
+        status: "error",
+      });
+      return;
+    }
+
+    const reason = consumptionReturnReason.trim();
+    if (action === "return" && !reason) {
+      setConsumptionApprovalState({
+        action,
+        approvalId: selected.id,
+        message: "请填写退回原因。",
+        status: "error",
+      });
+      return;
+    }
+
+    setConsumptionApprovalState({
+      action,
+      approvalId: selected.id,
+      message: action === "approve" ? "正在通过耗卡审批..." : "正在退回耗卡审批...",
+      status: "saving",
+    });
+
+    try {
+      const response = await apiFetch<DaochongConsumptionApprovalWriteResponse>(
+        `/daochong/mobile/consumption-approvals/${encodeURIComponent(selected.id)}/${action === "approve" ? "approve" : "return"}`,
+        {
+          body: action === "return"
+            ? JSON.stringify({
+                returnReason: reason,
+                supplementRequirements: trimOptionalText(consumptionSupplementRequirements),
+              })
+            : undefined,
+          method: "PATCH",
+        },
+      );
+      const approvalId = response.item?.id ?? selected.id;
+      setConsumptionReturnReason("");
+      setConsumptionSupplementRequirements("");
+      setConsumptionApprovalState({
+        action,
+        approvalId,
+        message: action === "approve"
+          ? `耗卡审批已通过：${approvalId}，不会扣卡或入账`
+          : `耗卡审批已退回：${approvalId}`,
+        status: "success",
+      });
+
+      if (isDaochongReadonlyFetchEnabled(daochongDataSource)) {
+        try {
+          applyHighRiskResult(await fetchDaochongReadonlyHighRisk());
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : "耗卡审批只读数据刷新失败";
+          setConsumptionApprovalState({
+            action,
+            approvalId,
+            message: `${action === "approve" ? "耗卡审批已通过" : "耗卡审批已退回"}，但刷新失败：${message}`,
+            status: "success",
+          });
+        }
+      }
+    } catch (error: unknown) {
+      setConsumptionApprovalState({
+        action,
+        approvalId: selected.id,
+        message: error instanceof Error ? error.message : "耗卡审批提交失败。",
+        status: "error",
+      });
+    }
+  }
+
   function openPage(page: DaochongPageKey) {
     setActivePage(canOpenPage(activeRole, page) ? page : getFallbackPage(activeRole));
     setCreateOpen(false);
@@ -2435,6 +3195,11 @@ export function DaochongMobileApp({ grayEnabled }: { grayEnabled: boolean }) {
     setRechargeWriteState(initialRechargeWriteState);
     setRechargeReturnReason("");
     setRechargeApprovalState(initialRechargeApprovalState);
+    setSettlementDraftForm(initialSettlementDraftFormState);
+    setSettlementDraftWriteState(initialSettlementDraftWriteState);
+    setConsumptionReturnReason("");
+    setConsumptionSupplementRequirements("");
+    setConsumptionApprovalState(initialConsumptionApprovalState);
     openPage("customerDetail");
   }
 
@@ -2451,6 +3216,11 @@ export function DaochongMobileApp({ grayEnabled }: { grayEnabled: boolean }) {
     setRechargeWriteState(initialRechargeWriteState);
     setRechargeReturnReason("");
     setRechargeApprovalState(initialRechargeApprovalState);
+    setSettlementDraftForm(initialSettlementDraftFormState);
+    setSettlementDraftWriteState(initialSettlementDraftWriteState);
+    setConsumptionReturnReason("");
+    setConsumptionSupplementRequirements("");
+    setConsumptionApprovalState(initialConsumptionApprovalState);
     setCreateOpen(false);
   }
 
@@ -2489,6 +3259,32 @@ export function DaochongMobileApp({ grayEnabled }: { grayEnabled: boolean }) {
       role={activeRole}
       selectedId={selectedRechargeApprovalId}
       writeState={rechargeApprovalState}
+    />
+  );
+  const settlementDraftWritePanel = (
+    <SettlementDraftWritePanel
+      customerName={selectedCustomer?.name}
+      form={settlementDraftForm}
+      onChange={updateSettlementDraftForm}
+      onSave={saveSettlementDraft}
+      onSubmit={submitSettlementDraft}
+      userName={currentUser?.displayName ?? currentUser?.name ?? currentUser?.username}
+      writeState={settlementDraftWriteState}
+    />
+  );
+  const consumptionApprovalPanel = (
+    <ConsumptionApprovalPanel
+      items={consumptionApprovalItems}
+      onApprove={() => submitConsumptionApprovalDecision("approve")}
+      onReturn={() => submitConsumptionApprovalDecision("return")}
+      onReturnReasonChange={updateConsumptionReturnReason}
+      onSelect={selectConsumptionApprovalItem}
+      onSupplementChange={updateConsumptionSupplementRequirements}
+      returnReason={consumptionReturnReason}
+      role={activeRole}
+      selectedId={selectedConsumptionApprovalId}
+      supplementRequirements={consumptionSupplementRequirements}
+      writeState={consumptionApprovalState}
     />
   );
 
@@ -2554,9 +3350,11 @@ export function DaochongMobileApp({ grayEnabled }: { grayEnabled: boolean }) {
               openPage,
               openAppointment,
               openCustomerDetail,
+              consumptionApprovalPanel,
               rechargeApprovalPanel,
               rechargeWritePanel,
               runtimeData,
+              settlementDraftWritePanel,
               serviceNoteWritePanel,
             )}
           </div>

@@ -17,6 +17,7 @@ import {
   adaptReadonlyCustomerDetailToServiceNoteStatuses,
   adaptReadonlyCustomerDetailToServiceHistory,
   adaptReadonlyCustomersToCustomers,
+  adaptReadonlyConsumptionApprovalsToActionItems,
   adaptReadonlyConsumptionApprovalsToFields,
   adaptReadonlyConsumptionApprovalsToRows,
   adaptReadonlyConsumptionApprovalsToStatuses,
@@ -90,13 +91,18 @@ const DAOCHONG_CURRENT_GRAY_MARKER = /DCM-00 到 DCM-176/;
 const DAOCHONG_READONLY_FORBIDDEN_FETCH =
   /method:\s*["'](POST|PUT|PATCH|DELETE)["']|sendWecom|wecom.*send/i;
 const DAOCHONG_ALLOWED_WRITE_DECORATORS = [
+  '@Patch("consumption-approvals/:approvalId/approve")',
+  '@Patch("consumption-approvals/:approvalId/return")',
   '@Patch("recharges/:rechargeId/chengcheng-approval")',
   '@Patch("recharges/:rechargeId/chengcheng-return")',
   '@Patch("recharges/:rechargeId/limeng-return")',
   '@Patch("recharges/:rechargeId/limeng-review")',
   '@Patch("service-notes/:serviceNoteId")',
+  '@Patch("settlement-drafts/:settlementDraftId")',
   '@Post("recharges")',
   '@Post("service-notes")',
+  '@Post("settlement-drafts")',
+  '@Post("settlement-drafts/:settlementDraftId/submit")',
   '@Post("wecom-reminders/send-test")',
 ];
 
@@ -861,6 +867,17 @@ test("Daochong readonly money adapters prefer formal money source records", () =
   const approvalRows = adaptReadonlyConsumptionApprovalsToRows(approvals, fallbackApprovalRows);
   const approvalStatuses = adaptReadonlyConsumptionApprovalsToStatuses(approvals, fallbackApprovalStatuses);
   const approvalTimeline = adaptReadonlyConsumptionApprovalsToTimeline(approvals, fallbackApprovalTimeline);
+  const approvalActionItems = adaptReadonlyConsumptionApprovalsToActionItems({
+    items: [
+      {
+        ...approvals.items[0],
+        approvalStatus: "PENDING",
+        id: "approval-pending",
+        updatedAt: "2026-06-23T20:30:00+08:00",
+      },
+      approvals.items[0],
+    ],
+  });
 
   assert.equal(rechargeFields[0].value, "林女士");
   assert.equal(rechargeRows[0].value, "立猛待复核");
@@ -878,6 +895,9 @@ test("Daochong readonly money adapters prefer formal money source records", () =
   assert.equal(approvalStatuses.find((item) => item.title === "退回补充")?.status, "1 条");
   assert.equal(approvalTimeline[0].title, "审批只读退回");
   assert.match(approvalTimeline[0].note, /补传扣款原图/);
+  assert.equal(approvalActionItems[0].id, "approval-pending");
+  assert.equal(approvalActionItems[0].canApprove, true);
+  assert.equal(approvalActionItems[1].canApprove, false);
 });
 
 test("Daochong readonly money adapters keep fallback when empty", () => {

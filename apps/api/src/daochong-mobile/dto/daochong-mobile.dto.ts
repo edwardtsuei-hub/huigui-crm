@@ -45,6 +45,12 @@ export enum DaochongPaymentMethodQuery {
   OTHER = "OTHER",
 }
 
+export enum DaochongCardModeQuery {
+  NO_CARD = "NO_CARD",
+  PREPAID_CARD = "PREPAID_CARD",
+  PACKAGE_CARD = "PACKAGE_CARD",
+}
+
 export const DaochongServiceNoteSourceTypes = [
   "APPOINTMENT_COMPLETED",
   "SETTLEMENT_DRAFT_CREATED",
@@ -278,6 +284,75 @@ export class ReturnDaochongRechargeByChengchengDto {
 export class ReturnDaochongRechargeByLimengDto {
   @IsString()
   returnReason!: string;
+}
+
+export class SaveDaochongSettlementDraftDto {
+  @IsOptional()
+  @IsString()
+  appointmentId?: string;
+
+  @IsString()
+  customerId!: string;
+
+  @IsString()
+  teacherId!: string;
+
+  @IsOptional()
+  @IsString()
+  projectId?: string;
+
+  @IsOptional()
+  @IsEnum(DaochongCardModeQuery)
+  cardMode?: DaochongCardModeQuery;
+
+  @IsOptional()
+  @IsString()
+  cardId?: string;
+
+  @Transform(({ value }) => value === null || value === undefined ? value : String(value))
+  @IsString()
+  originalAmount!: string;
+
+  @IsOptional()
+  @Transform(({ value }) => value === null || value === undefined ? value : String(value))
+  @IsString()
+  discountAmount?: string;
+
+  @IsOptional()
+  @IsString()
+  discountReason?: string;
+
+  @Transform(({ value }) => value === null || value === undefined ? value : String(value))
+  @IsString()
+  finalAmount!: string;
+
+  @IsOptional()
+  @Transform(({ value }) => value === null || value === undefined ? value : String(value))
+  @IsString()
+  consumeAmount?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  evidenceAssetIds?: string[];
+
+  @IsOptional()
+  @IsString()
+  referrerName?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => value === null || value === undefined ? value : String(value))
+  @IsString()
+  referralBonusAmount?: string;
+}
+
+export class ReturnDaochongConsumptionApprovalDto {
+  @IsString()
+  returnReason!: string;
+
+  @IsOptional()
+  @IsString()
+  supplementRequirements?: string;
 }
 
 export class DaochongServiceNotesReadonlyQueryDto {

@@ -221,6 +221,100 @@ function rechargeRecord(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function settlementDraftRecord(overrides: Record<string, unknown> = {}) {
+  const now = new Date("2026-06-23T04:00:00.000Z");
+  return {
+    id: "settlement-1",
+    appointmentId: null,
+    customerId: "customer-1",
+    teacherId: "teacher-1",
+    projectId: null,
+    cardMode: "PREPAID_CARD",
+    cardId: "card-1",
+    originalAmount: "688.00",
+    discountAmount: "0.00",
+    discountReason: null,
+    finalAmount: "688.00",
+    consumeAmount: "688.00",
+    evidenceAssetIds: ["asset-1"],
+    referrerName: null,
+    referralBonusAmount: null,
+    validationStatus: "READY_FOR_APPROVAL",
+    canSubmitApproval: true,
+    draftStatus: "READY_FOR_APPROVAL",
+    submittedByUserId: null,
+    submittedAt: null,
+    returnedReason: null,
+    dataScope: RecordDataScope.REAL,
+    partitionKey: "REAL",
+    testBatchId: null,
+    createdAt: now,
+    updatedAt: now,
+    customer: {
+      id: "customer-1",
+      customerName: "Lin",
+      contactName: null,
+      companyName: null,
+    },
+    teacher: {
+      id: "teacher-1",
+      loginAccount: "teacher",
+      name: "Teacher",
+    },
+    project: null,
+    submittedBy: null,
+    ...overrides,
+  };
+}
+
+function consumptionApprovalRecord(overrides: Record<string, unknown> = {}) {
+  const now = new Date("2026-06-23T04:00:00.000Z");
+  return {
+    id: "approval-1",
+    settlementDraftId: "settlement-1",
+    customerId: "customer-1",
+    teacherId: "teacher-1",
+    cardId: "card-1",
+    consumeAmount: "688.00",
+    evidenceAssetIds: ["asset-1"],
+    discountReason: null,
+    referrerName: null,
+    referralBonusAmount: null,
+    approvalStatus: "PENDING",
+    approvedByUserId: null,
+    approvedAt: null,
+    returnedByUserId: null,
+    returnedAt: null,
+    returnReason: null,
+    supplementRequirements: null,
+    financeSummaryMonth: null,
+    dataScope: RecordDataScope.REAL,
+    partitionKey: "REAL",
+    testBatchId: null,
+    createdAt: now,
+    updatedAt: now,
+    settlementDraft: {
+      id: "settlement-1",
+      appointmentId: null,
+      draftStatus: "SUBMITTED_FOR_APPROVAL",
+    },
+    customer: {
+      id: "customer-1",
+      customerName: "Lin",
+      contactName: null,
+      companyName: null,
+    },
+    teacher: {
+      id: "teacher-1",
+      loginAccount: "teacher",
+      name: "Teacher",
+    },
+    approvedBy: null,
+    returnedBy: null,
+    ...overrides,
+  };
+}
+
 function createPrisma(calls: {
   noteCreates?: Array<Record<string, unknown>>;
   noteUpdates?: Array<Record<string, unknown>>;
@@ -229,6 +323,14 @@ function createPrisma(calls: {
   rechargeUpdates?: Array<Record<string, unknown>>;
   rechargeFindFirst?: Record<string, unknown> | null;
   rechargeFindFirstArgs?: Array<Record<string, unknown>>;
+  settlementCreates?: Array<Record<string, unknown>>;
+  settlementUpdates?: Array<Record<string, unknown>>;
+  settlementFindFirst?: Record<string, unknown> | null;
+  settlementFindFirstArgs?: Array<Record<string, unknown>>;
+  approvalCreates?: Array<Record<string, unknown>>;
+  approvalUpdates?: Array<Record<string, unknown>>;
+  approvalFindFirst?: Record<string, unknown> | null;
+  approvalFindFirstArgs?: Array<Record<string, unknown>>;
 }) {
   return {
     customer: {
@@ -285,6 +387,34 @@ function createPrisma(calls: {
         return rechargeRecord(args.data as Record<string, unknown>);
       },
     },
+    daochongServiceSettlementDraft: {
+      findFirst: async (args: Record<string, unknown>) => {
+        calls.settlementFindFirstArgs?.push(args);
+        return calls.settlementFindFirst === undefined ? settlementDraftRecord() : calls.settlementFindFirst;
+      },
+      create: async (args: Record<string, unknown>) => {
+        calls.settlementCreates?.push(args);
+        return settlementDraftRecord(args.data as Record<string, unknown>);
+      },
+      update: async (args: Record<string, unknown>) => {
+        calls.settlementUpdates?.push(args);
+        return settlementDraftRecord(args.data as Record<string, unknown>);
+      },
+    },
+    daochongCardConsumptionApproval: {
+      findFirst: async (args: Record<string, unknown>) => {
+        calls.approvalFindFirstArgs?.push(args);
+        return calls.approvalFindFirst === undefined ? consumptionApprovalRecord() : calls.approvalFindFirst;
+      },
+      create: async (args: Record<string, unknown>) => {
+        calls.approvalCreates?.push(args);
+        return consumptionApprovalRecord(args.data as Record<string, unknown>);
+      },
+      update: async (args: Record<string, unknown>) => {
+        calls.approvalUpdates?.push(args);
+        return consumptionApprovalRecord(args.data as Record<string, unknown>);
+      },
+    },
     $transaction: async (run: (tx: unknown) => Promise<unknown>) => run({
       daochongServiceNote: {
         create: async (args: Record<string, unknown>) => {
@@ -300,6 +430,34 @@ function createPrisma(calls: {
         create: async (args: Record<string, unknown>) => {
           calls.preferenceCreates?.push(args);
           return args.data;
+        },
+      },
+      daochongServiceSettlementDraft: {
+        findFirst: async (args: Record<string, unknown>) => {
+          calls.settlementFindFirstArgs?.push(args);
+          return calls.settlementFindFirst === undefined ? settlementDraftRecord() : calls.settlementFindFirst;
+        },
+        create: async (args: Record<string, unknown>) => {
+          calls.settlementCreates?.push(args);
+          return settlementDraftRecord(args.data as Record<string, unknown>);
+        },
+        update: async (args: Record<string, unknown>) => {
+          calls.settlementUpdates?.push(args);
+          return settlementDraftRecord(args.data as Record<string, unknown>);
+        },
+      },
+      daochongCardConsumptionApproval: {
+        findFirst: async (args: Record<string, unknown>) => {
+          calls.approvalFindFirstArgs?.push(args);
+          return calls.approvalFindFirst === undefined ? consumptionApprovalRecord() : calls.approvalFindFirst;
+        },
+        create: async (args: Record<string, unknown>) => {
+          calls.approvalCreates?.push(args);
+          return consumptionApprovalRecord(args.data as Record<string, unknown>);
+        },
+        update: async (args: Record<string, unknown>) => {
+          calls.approvalUpdates?.push(args);
+          return consumptionApprovalRecord(args.data as Record<string, unknown>);
         },
       },
     }),
@@ -361,6 +519,205 @@ test("Daochong service note write creates the note and synced preference rows", 
   assert.equal(calls.preferenceCreates.length, 1);
   assert.equal((calls.preferenceCreates[0].data as Record<string, unknown>).sourceServiceNoteId, "note-1");
   assert.equal((calls.preferenceCreates[0].data as Record<string, unknown>).preferenceType, "ROOM");
+});
+
+test("Daochong settlement draft save does not create approval or apply balance", async () => {
+  const calls = {
+    settlementCreates: [] as Array<Record<string, unknown>>,
+    approvalCreates: [] as Array<Record<string, unknown>>,
+  };
+  const service = createService({ prisma: createPrisma(calls) });
+
+  const result = await service.createSettlementDraft({
+    customerId: "customer-1",
+    teacherId: "teacher-1",
+    cardMode: "PREPAID_CARD",
+    cardId: "card-1",
+    originalAmount: "688",
+    discountAmount: "0",
+    finalAmount: "688",
+    consumeAmount: "688",
+    evidenceAssetIds: ["asset-1", "asset-1", "asset-2"],
+  }, baseUser as never);
+
+  assert.equal(result.ok, true);
+  assert.equal(result.action, "settlement_draft_saved");
+  assert.equal(result.safety.approvalCreated, false);
+  assert.equal(result.safety.cardDeducted, false);
+  assert.equal(result.safety.balanceApplied, false);
+  assert.equal(result.safety.financeConfirmed, false);
+  assert.equal(result.safety.wecomSent, false);
+  assert.equal(calls.settlementCreates.length, 1);
+  assert.equal(calls.approvalCreates.length, 0);
+
+  const data = calls.settlementCreates[0].data as Record<string, unknown>;
+  assert.equal(data.customerId, "customer-1");
+  assert.equal(data.teacherId, "teacher-1");
+  assert.equal(data.cardMode, "PREPAID_CARD");
+  assert.equal(data.cardId, "card-1");
+  assert.equal(data.originalAmount, "688.00");
+  assert.equal(data.discountAmount, "0.00");
+  assert.equal(data.finalAmount, "688.00");
+  assert.equal(data.consumeAmount, "688.00");
+  assert.deepEqual(data.evidenceAssetIds, ["asset-1", "asset-2"]);
+  assert.equal(data.validationStatus, "READY_FOR_APPROVAL");
+  assert.equal(data.canSubmitApproval, true);
+  assert.equal(data.draftStatus, "READY_FOR_APPROVAL");
+  assert.equal(data.submittedByUserId, null);
+  assert.equal(data.submittedAt, null);
+  assert.equal(data.dataScope, RecordDataScope.REAL);
+});
+
+test("Daochong settlement draft submit rejects drafts that are not ready", async () => {
+  const service = createService({
+    prisma: createPrisma({
+      settlementFindFirst: settlementDraftRecord({
+        canSubmitApproval: false,
+        draftStatus: "BLOCKED_EVIDENCE",
+        validationStatus: "MISSING_EVIDENCE",
+      }),
+    }),
+  });
+
+  await assert.rejects(
+    () => service.submitSettlementDraft("settlement-1", baseUser as never),
+    BadRequestException,
+  );
+});
+
+test("Daochong settlement draft submit creates pending consumption approval without side effects", async () => {
+  const calls = {
+    settlementFindFirstArgs: [] as Array<Record<string, unknown>>,
+    settlementUpdates: [] as Array<Record<string, unknown>>,
+    approvalCreates: [] as Array<Record<string, unknown>>,
+  };
+  const service = createService({ prisma: createPrisma(calls) });
+
+  const result = await service.submitSettlementDraft("settlement-1", baseUser as never);
+
+  assert.equal(result.ok, true);
+  assert.equal(result.action, "settlement_submitted_pending_consumption_approval");
+  assert.equal(result.safety.approvalCreated, true);
+  assert.equal(result.safety.cardDeducted, false);
+  assert.equal(result.safety.balanceApplied, false);
+  assert.equal(result.safety.financeConfirmed, false);
+  assert.equal(result.safety.wecomSent, false);
+  assert.equal(calls.settlementUpdates.length, 1);
+  assert.equal(calls.approvalCreates.length, 1);
+
+  const settlementData = calls.settlementUpdates[0].data as Record<string, unknown>;
+  assert.equal(settlementData.draftStatus, "SUBMITTED_FOR_APPROVAL");
+  assert.equal(settlementData.submittedByUserId, "admin-1");
+  assert.ok(settlementData.submittedAt instanceof Date);
+  assert.equal(settlementData.returnedReason, null);
+  assert.ok((calls.settlementFindFirstArgs[0].where as Record<string, unknown>).customer);
+
+  const approvalData = calls.approvalCreates[0].data as Record<string, unknown>;
+  assert.equal(approvalData.settlementDraftId, "settlement-1");
+  assert.equal(approvalData.customerId, "customer-1");
+  assert.equal(approvalData.teacherId, "teacher-1");
+  assert.equal(approvalData.cardId, "card-1");
+  assert.equal(approvalData.consumeAmount, "688.00");
+  assert.deepEqual(approvalData.evidenceAssetIds, ["asset-1"]);
+  assert.equal(approvalData.approvalStatus, "PENDING");
+  assert.equal(approvalData.approvedByUserId, null);
+  assert.equal(approvalData.financeSummaryMonth, null);
+  assert.equal(approvalData.dataScope, RecordDataScope.REAL);
+});
+
+test("Daochong no-card settlement submit uses final amount without card deduction", async () => {
+  const calls = {
+    approvalCreates: [] as Array<Record<string, unknown>>,
+  };
+  const service = createService({
+    prisma: createPrisma({
+      ...calls,
+      settlementFindFirst: settlementDraftRecord({
+        cardMode: "NO_CARD",
+        cardId: null,
+        finalAmount: "398.00",
+        consumeAmount: null,
+      }),
+    }),
+  });
+
+  const result = await service.submitSettlementDraft("settlement-1", baseUser as never);
+
+  assert.equal(result.ok, true);
+  assert.equal(result.safety.cardDeducted, false);
+  assert.equal(calls.approvalCreates.length, 1);
+
+  const approvalData = calls.approvalCreates[0].data as Record<string, unknown>;
+  assert.equal(approvalData.cardId, null);
+  assert.equal(approvalData.consumeAmount, "398.00");
+  assert.equal(approvalData.financeSummaryMonth, null);
+});
+
+test("Daochong consumption approval approve does not deduct card or confirm finance", async () => {
+  const calls = {
+    approvalFindFirstArgs: [] as Array<Record<string, unknown>>,
+    approvalUpdates: [] as Array<Record<string, unknown>>,
+  };
+  const service = createService({ prisma: createPrisma(calls) });
+
+  const result = await service.approveConsumptionApproval("approval-1", baseUser as never);
+
+  assert.equal(result.ok, true);
+  assert.equal(result.action, "consumption_approved_no_card_deduction");
+  assert.equal(result.safety.cardDeducted, false);
+  assert.equal(result.safety.balanceApplied, false);
+  assert.equal(result.safety.financeConfirmed, false);
+  assert.equal(result.safety.wecomSent, false);
+  assert.equal(calls.approvalUpdates.length, 1);
+
+  const data = calls.approvalUpdates[0].data as Record<string, unknown>;
+  assert.equal(data.approvalStatus, "APPROVED");
+  assert.equal(data.approvedByUserId, "admin-1");
+  assert.ok(data.approvedAt instanceof Date);
+  assert.equal(data.returnedByUserId, null);
+  assert.equal(data.returnedAt, null);
+  assert.equal(data.returnReason, null);
+  assert.equal(data.supplementRequirements, null);
+  assert.equal(data.financeSummaryMonth, null);
+  assert.ok((calls.approvalFindFirstArgs[0].where as Record<string, unknown>).customer);
+});
+
+test("Daochong consumption approval return sends the draft back without finance effects", async () => {
+  const calls = {
+    approvalUpdates: [] as Array<Record<string, unknown>>,
+    settlementUpdates: [] as Array<Record<string, unknown>>,
+  };
+  const service = createService({ prisma: createPrisma(calls) });
+
+  const result = await service.returnConsumptionApproval("approval-1", {
+    returnReason: "耗卡凭证不清晰",
+    supplementRequirements: "补原图凭证",
+  }, baseUser as never);
+
+  assert.equal(result.ok, true);
+  assert.equal(result.action, "consumption_returned_to_settlement_draft");
+  assert.equal(result.safety.cardDeducted, false);
+  assert.equal(result.safety.balanceApplied, false);
+  assert.equal(result.safety.financeConfirmed, false);
+  assert.equal(result.safety.wecomSent, false);
+  assert.equal(calls.approvalUpdates.length, 1);
+  assert.equal(calls.settlementUpdates.length, 1);
+
+  const approvalData = calls.approvalUpdates[0].data as Record<string, unknown>;
+  assert.equal(approvalData.approvalStatus, "RETURNED");
+  assert.equal(approvalData.approvedByUserId, null);
+  assert.equal(approvalData.approvedAt, null);
+  assert.equal(approvalData.returnedByUserId, "admin-1");
+  assert.ok(approvalData.returnedAt instanceof Date);
+  assert.equal(approvalData.returnReason, "耗卡凭证不清晰");
+  assert.equal(approvalData.supplementRequirements, "补原图凭证");
+  assert.equal(approvalData.financeSummaryMonth, null);
+
+  const settlementData = calls.settlementUpdates[0].data as Record<string, unknown>;
+  assert.equal(settlementData.draftStatus, "RETURNED");
+  assert.equal(settlementData.returnedReason, "耗卡凭证不清晰");
+  assert.equal(settlementData.submittedByUserId, null);
+  assert.equal(settlementData.submittedAt, null);
 });
 
 test("Daochong recharge write creates a pending Chengcheng approval without applying balance", async () => {

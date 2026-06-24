@@ -12,8 +12,10 @@ import {
   DaochongHighRiskReadonlyQueryDto,
   DaochongServiceNotesReadonlyQueryDto,
   DaochongWecomReminderDryRunsReadonlyQueryDto,
+  ReturnDaochongConsumptionApprovalDto,
   ReturnDaochongRechargeByChengchengDto,
   ReturnDaochongRechargeByLimengDto,
+  SaveDaochongSettlementDraftDto,
   SendDaochongWecomReminderTestDto,
   UpdateDaochongServiceNoteDto,
 } from "./dto/daochong-mobile.dto";
@@ -185,12 +187,59 @@ export class DaochongMobileReadonlyController {
   }
 
   @Permissions("page.customers.detail")
+  @Post("settlement-drafts")
+  async createSettlementDraft(
+    @Body() body: SaveDaochongSettlementDraftDto,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.daochongReadonlyService.createSettlementDraft(body, req.user);
+  }
+
+  @Permissions("page.customers.detail")
+  @Patch("settlement-drafts/:settlementDraftId")
+  async updateSettlementDraft(
+    @Param("settlementDraftId") settlementDraftId: string,
+    @Body() body: SaveDaochongSettlementDraftDto,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.daochongReadonlyService.updateSettlementDraft(settlementDraftId, body, req.user);
+  }
+
+  @Permissions("page.customers.detail")
+  @Post("settlement-drafts/:settlementDraftId/submit")
+  async submitSettlementDraft(
+    @Param("settlementDraftId") settlementDraftId: string,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.daochongReadonlyService.submitSettlementDraft(settlementDraftId, req.user);
+  }
+
+  @Permissions("page.customers.detail")
   @Get("consumption-approvals")
   async listConsumptionApprovals(
     @Query() query: DaochongHighRiskReadonlyQueryDto,
     @Req() req: RequestWithUser,
   ) {
     return this.daochongReadonlyService.listHighRiskReadonlyResource("consumption_approvals", query, req.user);
+  }
+
+  @Permissions("page.customers.detail")
+  @Patch("consumption-approvals/:approvalId/approve")
+  async approveConsumptionApproval(
+    @Param("approvalId") approvalId: string,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.daochongReadonlyService.approveConsumptionApproval(approvalId, req.user);
+  }
+
+  @Permissions("page.customers.detail")
+  @Patch("consumption-approvals/:approvalId/return")
+  async returnConsumptionApproval(
+    @Param("approvalId") approvalId: string,
+    @Body() body: ReturnDaochongConsumptionApprovalDto,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.daochongReadonlyService.returnConsumptionApproval(approvalId, body, req.user);
   }
 
   @Permissions("page.finance.payroll")

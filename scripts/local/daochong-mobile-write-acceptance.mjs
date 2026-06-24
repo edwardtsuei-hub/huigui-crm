@@ -49,8 +49,13 @@ const checks = [
       controller.includes('@Patch("recharges/:rechargeId/chengcheng-return")') &&
       controller.includes('@Patch("recharges/:rechargeId/limeng-review")') &&
       controller.includes('@Patch("recharges/:rechargeId/limeng-return")') &&
+      controller.includes('@Post("settlement-drafts")') &&
+      controller.includes('@Patch("settlement-drafts/:settlementDraftId")') &&
+      controller.includes('@Post("settlement-drafts/:settlementDraftId/submit")') &&
+      controller.includes('@Patch("consumption-approvals/:approvalId/approve")') &&
+      controller.includes('@Patch("consumption-approvals/:approvalId/return")') &&
       controller.includes('@Post("wecom-reminders/send-test")'),
-    "Controller exposes service note write, recharge create, Chengcheng approval/return, Limeng review/return, and WeCom test-send routes.",
+    "Controller exposes service note write, recharge create/review, settlement draft save/submit, consumption approval, and WeCom test-send routes.",
   ),
   check(
     "limeng-dedicated-permissions",
@@ -108,16 +113,19 @@ const checks = [
       dto.includes("CreateDaochongRechargeDto") &&
       dto.includes("ReturnDaochongRechargeByChengchengDto") &&
       dto.includes("ReturnDaochongRechargeByLimengDto") &&
+      dto.includes("SaveDaochongSettlementDraftDto") &&
+      dto.includes("ReturnDaochongConsumptionApprovalDto") &&
       dto.includes("SendDaochongWecomReminderTestDto") &&
       dto.includes("DaochongServiceNotePreferenceWriteDto"),
-    "DTOs cover service-note write, recharge create/return, Limeng return, preference sync, and test-send payloads.",
+    "DTOs cover service-note write, recharge create/return, Limeng return, settlement draft save, consumption return, preference sync, and test-send payloads.",
   ),
   check(
     "write-switch",
     service.includes("DAOCHONG_MOBILE_WRITE_ENABLED") &&
       compose.includes("DAOCHONG_MOBILE_WRITE_ENABLED") &&
-      releaseScript.includes('DAOCHONG_MOBILE_WRITE_ENABLED: "true"'),
-    "Write chain is guarded by an API env switch and enabled by the narrow release switch set.",
+      releaseScript.includes("ENABLE_PRODUCTION_WRITES") &&
+      releaseScript.includes('DAOCHONG_MOBILE_WRITE_ENABLED: ENABLE_PRODUCTION_WRITES ? "true" : "false"'),
+    "Write chain is guarded by an API env switch; narrow release keeps production writes disabled unless explicitly re-enabled.",
   ),
   check(
     "wecom-allowlist",
@@ -182,6 +190,52 @@ const checks = [
     "Cash recharge requires a cash amount and linked cash-photo asset ids.",
   ),
   check(
+    "settlement-draft-save-chain",
+    service.includes("createSettlementDraft(") &&
+      service.includes("updateSettlementDraft(") &&
+      service.includes("buildSettlementDraftWriteData(") &&
+      service.includes("daochongServiceSettlementDraft.create") &&
+      service.includes("daochongServiceSettlementDraft.update") &&
+      service.includes('action: "settlement_draft_saved"') &&
+      service.includes("approvalCreated: false") &&
+      service.includes("cardDeducted: false") &&
+      service.includes("balanceApplied: false") &&
+      service.includes("financeConfirmed: false") &&
+      service.includes("wecomSent: false"),
+    "Settlement draft save/update writes only the draft and reports no approval, card, balance, finance, or WeCom side effects.",
+  ),
+  check(
+    "settlement-submit-chain",
+    service.includes("submitSettlementDraft(") &&
+      service.includes('draftStatus: "SUBMITTED_FOR_APPROVAL"') &&
+      service.includes("daochongCardConsumptionApproval.create") &&
+      service.includes('approvalStatus: "PENDING"') &&
+      service.includes("financeSummaryMonth: null") &&
+      service.includes('action: "settlement_submitted_pending_consumption_approval"') &&
+      service.includes("approvalCreated: true") &&
+      service.includes("cardDeducted: false") &&
+      service.includes("balanceApplied: false") &&
+      service.includes("financeConfirmed: false") &&
+      service.includes("wecomSent: false"),
+    "Settlement submit creates a pending consumption approval while keeping card deduction, balance application, finance, and WeCom disabled.",
+  ),
+  check(
+    "consumption-approval-chain",
+    service.includes("approveConsumptionApproval(") &&
+      service.includes("returnConsumptionApproval(") &&
+      service.includes("ensureConsumptionApprovalWriteAccess(") &&
+      service.includes('approvalStatus: "APPROVED"') &&
+      service.includes('approvalStatus: "RETURNED"') &&
+      service.includes('draftStatus: "RETURNED"') &&
+      service.includes('action: "consumption_approved_no_card_deduction"') &&
+      service.includes('action: "consumption_returned_to_settlement_draft"') &&
+      service.includes("cardDeducted: false") &&
+      service.includes("balanceApplied: false") &&
+      service.includes("financeConfirmed: false") &&
+      service.includes("wecomSent: false"),
+    "Consumption approval can approve or return the approval record without deducting cards, applying balance, confirming finance, or sending WeCom.",
+  ),
+  check(
     "frontend-write-panel",
     mobileApp.includes('data-testid="daochong-service-note-write-panel"') &&
       mobileApp.includes('data-testid="daochong-service-note-submit"') &&
@@ -228,6 +282,32 @@ const checks = [
     "Mobile UI exposes a finance/Limeng-only recharge review/return panel backed by structured readonly recharge ids.",
   ),
   check(
+    "frontend-settlement-draft-panel",
+    mobileApp.includes('data-testid="daochong-settlement-draft-write-panel"') &&
+      mobileApp.includes('data-testid="daochong-settlement-draft-save"') &&
+      mobileApp.includes('data-testid="daochong-settlement-draft-submit"') &&
+      mobileApp.includes("apiFetch<DaochongSettlementDraftWriteResponse>") &&
+      mobileApp.includes('"/daochong/mobile/settlement-drafts"') &&
+      mobileApp.includes('`/daochong/mobile/settlement-drafts/${encodeURIComponent(draftId)}/submit`') &&
+      mobileApp.includes('method: draftId ? "PATCH" : "POST"') &&
+      mobileApp.includes("不会扣卡或入账"),
+    "Mobile UI exposes settlement draft save and submit through guarded API calls and keeps no-card-deduction messaging visible.",
+  ),
+  check(
+    "frontend-consumption-approval-panel",
+    mobileApp.includes('data-testid="daochong-consumption-approval-panel"') &&
+      mobileApp.includes('data-testid="daochong-consumption-approve"') &&
+      mobileApp.includes('data-testid="daochong-consumption-return"') &&
+      mobileApp.includes('data-testid="daochong-consumption-return-reason"') &&
+      mobileApp.includes("apiFetch<DaochongConsumptionApprovalWriteResponse>") &&
+      mobileApp.includes("adaptReadonlyConsumptionApprovalsToActionItems") &&
+      mobileApp.includes("submitConsumptionApprovalDecision") &&
+      mobileApp.includes('action === "approve" ? "approve" : "return"') &&
+      mobileApp.includes("hasPermission(activeRole, \"approveConsumption\")") &&
+      mobileApp.includes("不会扣卡或入账"),
+    "Mobile UI exposes consumption approval approve/return through guarded API calls for approved roles only.",
+  ),
+  check(
     "frontend-recharge-chengcheng-submit-acceptance",
     submitAcceptance.includes("daochong-recharge-chengcheng-approve") &&
       submitAcceptance.includes("daochong-recharge-chengcheng-return") &&
@@ -261,6 +341,12 @@ const checks = [
   check(
     "regression-tests",
     tests.includes("Daochong service note write creates the note") &&
+      tests.includes("Daochong settlement draft save does not create approval or apply balance") &&
+      tests.includes("Daochong settlement draft submit rejects drafts that are not ready") &&
+      tests.includes("Daochong settlement draft submit creates pending consumption approval without side effects") &&
+      tests.includes("Daochong no-card settlement submit uses final amount without card deduction") &&
+      tests.includes("Daochong consumption approval approve does not deduct card or confirm finance") &&
+      tests.includes("Daochong consumption approval return sends the draft back without finance effects") &&
       tests.includes("Daochong recharge write creates a pending Chengcheng approval") &&
       tests.includes("Daochong cash recharge requires cash amount and cash photo ids") &&
       tests.includes("Daochong Chengcheng approval moves recharge to Limeng review") &&

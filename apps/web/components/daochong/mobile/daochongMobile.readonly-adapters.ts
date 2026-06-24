@@ -425,6 +425,17 @@ export type DaochongRechargeApprovalActionItem = {
   tone: DaochongTone;
 };
 
+export type DaochongConsumptionApprovalActionItem = {
+  id: string;
+  amount: string;
+  canApprove: boolean;
+  label: string;
+  note: string;
+  settlementDraftId: string;
+  status: string;
+  tone: DaochongTone;
+};
+
 export type DaochongReadonlySettlementDraftRecord = {
   id?: string;
   appointmentId?: string | null;
@@ -2660,6 +2671,37 @@ export function adaptReadonlyConsumptionApprovalsToRows(
       value: status.status === "已通过" ? formatMoney(record.consumeAmount) : status.status,
     };
   });
+}
+
+export function adaptReadonlyConsumptionApprovalsToActionItems(
+  response: DaochongReadonlyConsumptionApprovalResponse | null | undefined,
+): DaochongConsumptionApprovalActionItem[] {
+  return getConsumptionApprovalRecords(response)
+    .filter((record) => Boolean(record.id))
+    .slice()
+    .sort((a, b) => sortDateValue(b.updatedAt ?? b.createdAt) - sortDateValue(a.updatedAt ?? a.createdAt))
+    .slice(0, 8)
+    .map((record) => {
+      const status = consumptionApprovalStatusDisplay(record.approvalStatus);
+      const teacher = userDisplayName(record.teacher);
+      return {
+        id: record.id ?? "",
+        amount: formatMoney(record.consumeAmount),
+        canApprove: record.approvalStatus === "PENDING",
+        label: compactText([record.customer?.name, record.settlementDraftId]) || "耗卡审批",
+        note:
+          compactText([
+            teacher ? `老师 ${teacher}` : null,
+            record.cardId ? `卡 ${record.cardId}` : "无卡结算",
+            record.evidenceAssetIds?.length ? `凭证 ${record.evidenceAssetIds.length}` : null,
+            record.returnReason ? `退回 ${record.returnReason}` : null,
+            record.updatedAt ? formatDateLabel(record.updatedAt) : null,
+          ]) || "耗卡审批记录",
+        settlementDraftId: record.settlementDraftId ?? "",
+        status: status.status,
+        tone: status.tone,
+      };
+    });
 }
 
 export function adaptReadonlyConsumptionApprovalsToStatuses(

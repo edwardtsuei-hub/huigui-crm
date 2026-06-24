@@ -17,6 +17,7 @@ const SKIP_LOCAL_VERIFY = process.argv.includes("--skip-local-verify");
 const SKIP_REMOTE_BUILD = process.argv.includes("--skip-remote-build");
 const SKIP_MIGRATE = process.argv.includes("--skip-migrate");
 const SKIP_RESTART = process.argv.includes("--skip-restart");
+const ENABLE_PRODUCTION_WRITES = process.env.DAOCHONG_RELEASE_ENABLE_PRODUCTION_WRITES === "true";
 const STAGING_ROOT = path.join(ROOT, "output", "daochong-mobile-narrow-release", LABEL);
 const ORIGINAL_ROOT = path.join(STAGING_ROOT, "original");
 const MERGED_ROOT = path.join(STAGING_ROOT, "merged");
@@ -56,7 +57,7 @@ const envSwitches = {
   NEXT_PUBLIC_DAOCHONG_MOBILE_READONLY_FETCH: "true",
   DAOCHONG_MOBILE_SHADOW_READONLY: "true",
   DAOCHONG_MOBILE_HIGH_RISK_READONLY: "true",
-  DAOCHONG_MOBILE_WRITE_ENABLED: "true",
+  DAOCHONG_MOBILE_WRITE_ENABLED: ENABLE_PRODUCTION_WRITES ? "true" : "false",
 };
 
 const daochongEnumNames = [
@@ -607,6 +608,7 @@ function main() {
   log(`Mode: ${EXECUTE ? "execute" : "dry-run"}`);
   log(`Target: ${HOST}:${DEPLOY_PATH}`);
   log(`Label: ${LABEL}`);
+  log(`Production write switch: ${ENABLE_PRODUCTION_WRITES ? "enabled" : "disabled"}`);
 
   for (const relativePath of [...syncFiles, ...syncDirs]) {
     if (!existsSync(path.join(ROOT, relativePath))) {

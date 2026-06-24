@@ -26,13 +26,18 @@ const FILES = {
 const checks = [];
 const CURRENT_GRAY_MARKER = /DCM-00 到 DCM-176/;
 const ALLOWED_WRITE_DECORATORS = [
+  '@Patch("consumption-approvals/:approvalId/approve")',
+  '@Patch("consumption-approvals/:approvalId/return")',
   '@Patch("recharges/:rechargeId/chengcheng-approval")',
   '@Patch("recharges/:rechargeId/chengcheng-return")',
   '@Patch("recharges/:rechargeId/limeng-return")',
   '@Patch("recharges/:rechargeId/limeng-review")',
   '@Patch("service-notes/:serviceNoteId")',
+  '@Patch("settlement-drafts/:settlementDraftId")',
   '@Post("recharges")',
   '@Post("service-notes")',
+  '@Post("settlement-drafts")',
+  '@Post("settlement-drafts/:settlementDraftId/submit")',
   '@Post("wecom-reminders/send-test")',
 ];
 

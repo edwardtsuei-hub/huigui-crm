@@ -22,7 +22,9 @@ import type {
   DaochongServiceNotesReadonlyQueryDto,
   DaochongWecomReminderDryRunsReadonlyQueryDto,
   ReturnDaochongRechargeByChengchengDto,
+  ReturnDaochongConsumptionApprovalDto,
   ReturnDaochongRechargeByLimengDto,
+  SaveDaochongSettlementDraftDto,
   SendDaochongWecomReminderTestDto,
   UpdateDaochongServiceNoteDto,
 } from "./dto/daochong-mobile.dto";
@@ -51,13 +53,23 @@ type DaochongCustomerRechargeDelegate = ReadonlyDelegate & {
   update(args: Record<string, unknown>): Promise<unknown>;
 };
 
+type DaochongServiceSettlementDraftDelegate = ReadonlyDelegate & ReadonlySingleDelegate & {
+  create(args: Record<string, unknown>): Promise<unknown>;
+  update(args: Record<string, unknown>): Promise<unknown>;
+};
+
+type DaochongCardConsumptionApprovalDelegate = ReadonlyDelegate & ReadonlySingleDelegate & {
+  create(args: Record<string, unknown>): Promise<unknown>;
+  update(args: Record<string, unknown>): Promise<unknown>;
+};
+
 type DaochongReadonlyPrisma = {
   daochongBonusExpenseItem: ReadonlyDelegate;
-  daochongCardConsumptionApproval: ReadonlyDelegate;
+  daochongCardConsumptionApproval: DaochongCardConsumptionApprovalDelegate;
   daochongCustomerRecharge: DaochongCustomerRechargeDelegate;
   daochongFinanceEvidenceException: ReadonlyDelegate;
   daochongFinanceSummary: ReadonlyDelegate;
-  daochongServiceSettlementDraft: ReadonlyDelegate;
+  daochongServiceSettlementDraft: DaochongServiceSettlementDraftDelegate;
   daochongServiceNote: DaochongServiceNoteDelegate;
   daochongCustomerPreference: DaochongCustomerPreferenceDelegate;
   fileRecord: ReadonlyDelegate;
@@ -399,6 +411,9 @@ type DaochongServiceSettlementDraftRecord = {
   submittedByUserId: string | null;
   submittedAt: Date | null;
   returnedReason: string | null;
+  dataScope: RecordDataScope;
+  partitionKey: string;
+  testBatchId: string | null;
   createdAt: Date;
   updatedAt: Date;
   customer: DaochongReadonlyCustomerMiniRecord;
@@ -426,6 +441,9 @@ type DaochongCardConsumptionApprovalRecord = {
   returnReason: string | null;
   supplementRequirements: string | null;
   financeSummaryMonth: string | null;
+  dataScope: RecordDataScope;
+  partitionKey: string;
+  testBatchId: string | null;
   createdAt: Date;
   updatedAt: Date;
   settlementDraft: { id: string; appointmentId: string | null; draftStatus: string } | null;
@@ -660,6 +678,23 @@ export class DaochongMobileReadonlyService {
     const amount = Number(text);
     if (!Number.isFinite(amount) || amount <= 0) {
       throw new BadRequestException(`${label}必须大于 0。`);
+    }
+    if (amount > 9_999_999) {
+      throw new BadRequestException(`${label}不能超过 9999999。`);
+    }
+
+    return amount.toFixed(2);
+  }
+
+  private parseNonNegativeMoney(value: unknown, label: string) {
+    const text = this.requireText(value, `${label}不能为空。`).replace(/,/g, "");
+    if (!/^\d+(\.\d{1,2})?$/.test(text)) {
+      throw new BadRequestException(`${label}必须是最多两位小数的金额。`);
+    }
+
+    const amount = Number(text);
+    if (!Number.isFinite(amount) || amount < 0) {
+      throw new BadRequestException(`${label}不能小于 0。`);
     }
     if (amount > 9_999_999) {
       throw new BadRequestException(`${label}不能超过 9999999。`);
@@ -1701,6 +1736,74 @@ export class DaochongMobileReadonlyService {
     };
   }
 
+  private settlementDraftWriteSelect() {
+    return {
+      id: true,
+      appointmentId: true,
+      customerId: true,
+      teacherId: true,
+      projectId: true,
+      cardMode: true,
+      cardId: true,
+      originalAmount: true,
+      discountAmount: true,
+      discountReason: true,
+      finalAmount: true,
+      consumeAmount: true,
+      evidenceAssetIds: true,
+      referrerName: true,
+      referralBonusAmount: true,
+      validationStatus: true,
+      canSubmitApproval: true,
+      draftStatus: true,
+      submittedByUserId: true,
+      submittedAt: true,
+      returnedReason: true,
+      dataScope: true,
+      partitionKey: true,
+      testBatchId: true,
+      createdAt: true,
+      updatedAt: true,
+      customer: { select: DAOCHONG_CUSTOMER_SELECT },
+      teacher: { select: DAOCHONG_USER_SELECT },
+      project: { select: DAOCHONG_PRODUCT_SELECT },
+      submittedBy: { select: DAOCHONG_USER_SELECT },
+    };
+  }
+
+  private consumptionApprovalWriteSelect() {
+    return {
+      id: true,
+      settlementDraftId: true,
+      customerId: true,
+      teacherId: true,
+      cardId: true,
+      consumeAmount: true,
+      evidenceAssetIds: true,
+      discountReason: true,
+      referrerName: true,
+      referralBonusAmount: true,
+      approvalStatus: true,
+      approvedByUserId: true,
+      approvedAt: true,
+      returnedByUserId: true,
+      returnedAt: true,
+      returnReason: true,
+      supplementRequirements: true,
+      financeSummaryMonth: true,
+      dataScope: true,
+      partitionKey: true,
+      testBatchId: true,
+      createdAt: true,
+      updatedAt: true,
+      settlementDraft: { select: { id: true, appointmentId: true, draftStatus: true } },
+      customer: { select: DAOCHONG_CUSTOMER_SELECT },
+      teacher: { select: DAOCHONG_USER_SELECT },
+      approvedBy: { select: DAOCHONG_USER_SELECT },
+      returnedBy: { select: DAOCHONG_USER_SELECT },
+    };
+  }
+
   private mapSettlementDraft(record: DaochongServiceSettlementDraftRecord) {
     return {
       id: record.id,
@@ -2346,6 +2449,131 @@ export class DaochongMobileReadonlyService {
     return recharge;
   }
 
+  private async ensureSettlementDraftWriteAccess(
+    settlementDraftId: string,
+    user: AuthenticatedUser,
+  ) {
+    const partition = this.recordPartition.resolveContext(user);
+    const settlementDraft = await this.daochongPrisma.daochongServiceSettlementDraft.findFirst({
+      where: {
+        id: settlementDraftId,
+        dataScope: partition.dataScope,
+        partitionKey: partition.partitionKey,
+        testBatchId: partition.testBatchId,
+        customer: await this.accessControl.buildCustomerWhere(user),
+      },
+      select: this.settlementDraftWriteSelect(),
+    }) as DaochongServiceSettlementDraftRecord | null;
+
+    if (!settlementDraft) {
+      throw new NotFoundException("结算草稿不存在或无权操作");
+    }
+
+    return settlementDraft;
+  }
+
+  private async ensureConsumptionApprovalWriteAccess(
+    approvalId: string,
+    user: AuthenticatedUser,
+  ) {
+    const partition = this.recordPartition.resolveContext(user);
+    const approval = await this.daochongPrisma.daochongCardConsumptionApproval.findFirst({
+      where: {
+        id: approvalId,
+        dataScope: partition.dataScope,
+        partitionKey: partition.partitionKey,
+        testBatchId: partition.testBatchId,
+        customer: await this.accessControl.buildCustomerWhere(user),
+      },
+      select: this.consumptionApprovalWriteSelect(),
+    }) as DaochongCardConsumptionApprovalRecord | null;
+
+    if (!approval) {
+      throw new NotFoundException("耗卡审批不存在或无权操作");
+    }
+
+    return approval;
+  }
+
+  private async buildSettlementDraftWriteData(
+    body: SaveDaochongSettlementDraftDto,
+    user: AuthenticatedUser,
+  ) {
+    const customerId = this.requireText(body.customerId, "结算草稿缺少客户。");
+    const teacherId = this.requireText(body.teacherId, "结算草稿缺少服务老师。");
+    const projectId = this.optionalText(body.projectId);
+    const cardMode = (this.optionalText(body.cardMode) ?? "NO_CARD").toUpperCase();
+    if (!DAOCHONG_CARD_MODES.has(cardMode)) {
+      throw new BadRequestException("结算草稿耗卡模式无效。");
+    }
+
+    await this.ensureCustomerWriteAccess(customerId, user);
+    await this.ensureTeacherExists(teacherId);
+    await this.ensureProjectExists(projectId);
+    await this.ensureAppointmentAccess(this.optionalText(body.appointmentId), customerId, teacherId, user);
+
+    const originalAmount = this.parsePositiveMoney(body.originalAmount, "结算原价");
+    const discountAmount = this.optionalText(body.discountAmount)
+      ? this.parseNonNegativeMoney(body.discountAmount, "优惠金额")
+      : "0.00";
+    const finalAmount = this.parsePositiveMoney(body.finalAmount, "结算实收金额");
+    const consumeAmount = this.optionalText(body.consumeAmount)
+      ? this.parsePositiveMoney(body.consumeAmount, "耗卡金额")
+      : null;
+    const evidenceAssetIds = this.normalizeTextList(body.evidenceAssetIds, "结算凭证", 20);
+    const discountReason = this.nullableText(body.discountReason);
+    const referrerName = this.nullableText(body.referrerName);
+    const referralBonusAmount = this.optionalText(body.referralBonusAmount)
+      ? this.parseNonNegativeMoney(body.referralBonusAmount, "推荐奖金")
+      : null;
+
+    const blockers: string[] = [];
+    if (evidenceAssetIds.length === 0) {
+      blockers.push("MISSING_EVIDENCE");
+    }
+    if (Number(discountAmount) > 0 && !discountReason) {
+      blockers.push("MISSING_DISCOUNT_REASON");
+    }
+    if (cardMode !== "NO_CARD") {
+      if (!this.optionalText(body.cardId)) {
+        blockers.push("MISSING_CARD_ID");
+      }
+      if (!consumeAmount) {
+        blockers.push("MISSING_CONSUME_AMOUNT");
+      }
+    }
+    if (Number(referralBonusAmount ?? "0") > 0 && !referrerName) {
+      blockers.push("MISSING_REFERRER");
+    }
+
+    const canSubmitApproval = blockers.length === 0;
+    const draftStatus = canSubmitApproval
+      ? "READY_FOR_APPROVAL"
+      : blockers.includes("MISSING_EVIDENCE")
+        ? "BLOCKED_EVIDENCE"
+        : "DRAFT";
+
+    return {
+      appointmentId: this.nullableText(body.appointmentId),
+      customerId,
+      teacherId,
+      projectId: projectId ?? null,
+      cardMode,
+      cardId: cardMode === "NO_CARD" ? null : this.nullableText(body.cardId),
+      originalAmount,
+      discountAmount,
+      discountReason,
+      finalAmount,
+      consumeAmount,
+      evidenceAssetIds,
+      referrerName,
+      referralBonusAmount,
+      validationStatus: canSubmitApproval ? "READY_FOR_APPROVAL" : blockers.join(","),
+      canSubmitApproval,
+      draftStatus,
+    };
+  }
+
   async getAppointmentDetail(appointmentId: string, user: AuthenticatedUser) {
     if (!this.isShadowReadonlyEnabled()) {
       return this.disabledResponse("appointment_detail_shadow_readonly_disabled");
@@ -2576,6 +2804,255 @@ export class DaochongMobileReadonlyService {
     ]);
 
     return this.mapCustomerCardBalancePreview(customer, recharges, approvals);
+  }
+
+  async createSettlementDraft(
+    body: SaveDaochongSettlementDraftDto,
+    user: AuthenticatedUser,
+  ) {
+    this.assertWriteEnabled();
+    const partition = await this.recordPartition.getWritableCreateData(user);
+    const draftData = await this.buildSettlementDraftWriteData(body, user);
+
+    const created = await this.daochongPrisma.daochongServiceSettlementDraft.create({
+      data: {
+        ...draftData,
+        submittedByUserId: null,
+        submittedAt: null,
+        returnedReason: null,
+        dataScope: partition.dataScope,
+        partitionKey: partition.partitionKey,
+        testBatchId: partition.testBatchId,
+      },
+      select: this.settlementDraftWriteSelect(),
+    }) as DaochongServiceSettlementDraftRecord;
+
+    return {
+      ok: true,
+      action: "settlement_draft_saved",
+      item: this.mapSettlementDraft(created),
+      safety: {
+        approvalCreated: false,
+        cardDeducted: false,
+        balanceApplied: false,
+        financeConfirmed: false,
+        wecomSent: false,
+      },
+    };
+  }
+
+  async updateSettlementDraft(
+    settlementDraftId: string,
+    body: SaveDaochongSettlementDraftDto,
+    user: AuthenticatedUser,
+  ) {
+    this.assertWriteEnabled();
+    await this.recordPartition.getWritableCreateData(user);
+    const existing = await this.ensureSettlementDraftWriteAccess(settlementDraftId, user);
+    if (!["DRAFT", "BLOCKED_EVIDENCE", "READY_FOR_APPROVAL", "RETURNED"].includes(existing.draftStatus)) {
+      throw new BadRequestException("只有草稿、待补凭证、可提交或已退回的结算草稿可继续保存。");
+    }
+
+    const draftData = await this.buildSettlementDraftWriteData(body, user);
+    const updated = await this.daochongPrisma.daochongServiceSettlementDraft.update({
+      where: { id: existing.id },
+      data: {
+        ...draftData,
+        submittedByUserId: null,
+        submittedAt: null,
+        returnedReason: null,
+      },
+      select: this.settlementDraftWriteSelect(),
+    }) as DaochongServiceSettlementDraftRecord;
+
+    return {
+      ok: true,
+      action: "settlement_draft_saved",
+      item: this.mapSettlementDraft(updated),
+      safety: {
+        approvalCreated: false,
+        cardDeducted: false,
+        balanceApplied: false,
+        financeConfirmed: false,
+        wecomSent: false,
+      },
+    };
+  }
+
+  async submitSettlementDraft(
+    settlementDraftId: string,
+    user: AuthenticatedUser,
+  ) {
+    this.assertWriteEnabled();
+    await this.recordPartition.getWritableCreateData(user);
+    const existing = await this.ensureSettlementDraftWriteAccess(settlementDraftId, user);
+    if (existing.draftStatus !== "READY_FOR_APPROVAL" || !existing.canSubmitApproval) {
+      throw new BadRequestException("只有校验通过的结算草稿可提交耗卡审批。");
+    }
+    if (existing.cardMode !== "NO_CARD" && !existing.consumeAmount) {
+      throw new BadRequestException("卡类结算提交前必须填写耗卡金额。");
+    }
+
+    const submittedAt = new Date();
+    const approvalConsumeAmount = existing.consumeAmount === null || existing.consumeAmount === undefined
+      ? this.toDecimalText(existing.finalAmount)
+      : this.toDecimalText(existing.consumeAmount);
+    const submitted = await this.prisma.$transaction(async (tx) => {
+      const daochongTx = tx as unknown as DaochongReadonlyPrisma;
+      const draft = await daochongTx.daochongServiceSettlementDraft.update({
+        where: { id: existing.id },
+        data: {
+          draftStatus: "SUBMITTED_FOR_APPROVAL",
+          submittedByUserId: user.id,
+          submittedAt,
+          returnedReason: null,
+        },
+        select: this.settlementDraftWriteSelect(),
+      }) as DaochongServiceSettlementDraftRecord;
+
+      const approval = await daochongTx.daochongCardConsumptionApproval.create({
+        data: {
+          settlementDraftId: existing.id,
+          customerId: existing.customerId,
+          teacherId: existing.teacherId,
+          cardId: existing.cardId,
+          consumeAmount: approvalConsumeAmount,
+          evidenceAssetIds: this.asTextList(existing.evidenceAssetIds),
+          discountReason: existing.discountReason,
+          referrerName: existing.referrerName,
+          referralBonusAmount: existing.referralBonusAmount === null || existing.referralBonusAmount === undefined
+            ? null
+            : this.toDecimalText(existing.referralBonusAmount),
+          approvalStatus: "PENDING",
+          approvedByUserId: null,
+          approvedAt: null,
+          returnedByUserId: null,
+          returnedAt: null,
+          returnReason: null,
+          supplementRequirements: null,
+          financeSummaryMonth: null,
+          dataScope: existing.dataScope,
+          partitionKey: existing.partitionKey,
+          testBatchId: existing.testBatchId,
+        },
+        select: this.consumptionApprovalWriteSelect(),
+      }) as DaochongCardConsumptionApprovalRecord;
+
+      return { draft, approval };
+    });
+
+    return {
+      ok: true,
+      action: "settlement_submitted_pending_consumption_approval",
+      item: this.mapSettlementDraft(submitted.draft),
+      approval: this.mapConsumptionApproval(submitted.approval),
+      safety: {
+        approvalCreated: true,
+        cardDeducted: false,
+        balanceApplied: false,
+        financeConfirmed: false,
+        wecomSent: false,
+      },
+    };
+  }
+
+  async approveConsumptionApproval(
+    approvalId: string,
+    user: AuthenticatedUser,
+  ) {
+    this.assertWriteEnabled();
+    await this.recordPartition.getWritableCreateData(user);
+    const existing = await this.ensureConsumptionApprovalWriteAccess(approvalId, user);
+    if (existing.approvalStatus !== "PENDING") {
+      throw new BadRequestException("只有待审批的耗卡记录可通过。");
+    }
+
+    const updated = await this.daochongPrisma.daochongCardConsumptionApproval.update({
+      where: { id: existing.id },
+      data: {
+        approvalStatus: "APPROVED",
+        approvedByUserId: user.id,
+        approvedAt: new Date(),
+        returnedByUserId: null,
+        returnedAt: null,
+        returnReason: null,
+        supplementRequirements: null,
+        financeSummaryMonth: null,
+      },
+      select: this.consumptionApprovalWriteSelect(),
+    }) as DaochongCardConsumptionApprovalRecord;
+
+    return {
+      ok: true,
+      action: "consumption_approved_no_card_deduction",
+      item: this.mapConsumptionApproval(updated),
+      safety: {
+        cardDeducted: false,
+        balanceApplied: false,
+        financeConfirmed: false,
+        wecomSent: false,
+      },
+    };
+  }
+
+  async returnConsumptionApproval(
+    approvalId: string,
+    body: ReturnDaochongConsumptionApprovalDto,
+    user: AuthenticatedUser,
+  ) {
+    this.assertWriteEnabled();
+    await this.recordPartition.getWritableCreateData(user);
+    const existing = await this.ensureConsumptionApprovalWriteAccess(approvalId, user);
+    if (existing.approvalStatus !== "PENDING") {
+      throw new BadRequestException("只有待审批的耗卡记录可退回。");
+    }
+
+    const returnReason = this.requireText(body.returnReason, "耗卡审批退回必须填写原因。");
+    const supplementRequirements = this.nullableText(body.supplementRequirements);
+    const returnedAt = new Date();
+    const returned = await this.prisma.$transaction(async (tx) => {
+      const daochongTx = tx as unknown as DaochongReadonlyPrisma;
+      const approval = await daochongTx.daochongCardConsumptionApproval.update({
+        where: { id: existing.id },
+        data: {
+          approvalStatus: "RETURNED",
+          approvedByUserId: null,
+          approvedAt: null,
+          returnedByUserId: user.id,
+          returnedAt,
+          returnReason,
+          supplementRequirements,
+          financeSummaryMonth: null,
+        },
+        select: this.consumptionApprovalWriteSelect(),
+      }) as DaochongCardConsumptionApprovalRecord;
+
+      const draft = await daochongTx.daochongServiceSettlementDraft.update({
+        where: { id: existing.settlementDraftId },
+        data: {
+          draftStatus: "RETURNED",
+          returnedReason: returnReason,
+          submittedByUserId: null,
+          submittedAt: null,
+        },
+        select: this.settlementDraftWriteSelect(),
+      }) as DaochongServiceSettlementDraftRecord;
+
+      return { approval, draft };
+    });
+
+    return {
+      ok: true,
+      action: "consumption_returned_to_settlement_draft",
+      item: this.mapConsumptionApproval(returned.approval),
+      settlementDraft: this.mapSettlementDraft(returned.draft),
+      safety: {
+        cardDeducted: false,
+        balanceApplied: false,
+        financeConfirmed: false,
+        wecomSent: false,
+      },
+    };
   }
 
   async createRecharge(
