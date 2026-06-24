@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@
 import { Reflector } from "@nestjs/core";
 import type { Request } from "express";
 import { AccessControlService } from "../services/access-control.service";
-import { PERMISSIONS_KEY } from "../decorators/permissions.decorator";
+import { ANY_PERMISSIONS_KEY, PERMISSIONS_KEY } from "../decorators/permissions.decorator";
 import type { AuthenticatedUser } from "../types/authenticated-user";
 
 type RequestWithUser = Request & {
@@ -21,8 +21,12 @@ export class PermissionsGuard implements CanActivate {
       context.getHandler(),
       context.getClass()
     ]);
+    const anyPermissions = this.reflector.getAllAndOverride<string[]>(ANY_PERMISSIONS_KEY, [
+      context.getHandler(),
+      context.getClass()
+    ]);
 
-    if (!permissions?.length) {
+    if (!permissions?.length && !anyPermissions?.length) {
       return true;
     }
 
@@ -32,11 +36,18 @@ export class PermissionsGuard implements CanActivate {
       throw new ForbiddenException("未获取到登录身份");
     }
 
-    const missingPermission = permissions.find(
+    const missingPermission = permissions?.find(
       (permissionCode) => !this.accessControl.hasPermission(request.user, permissionCode)
     );
 
     if (missingPermission) {
+      throw new ForbiddenException("当前账号无权执行该操作");
+    }
+
+    if (
+      anyPermissions?.length &&
+      !anyPermissions.some((permissionCode) => this.accessControl.hasPermission(request.user, permissionCode))
+    ) {
       throw new ForbiddenException("当前账号无权执行该操作");
     }
 

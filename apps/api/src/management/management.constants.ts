@@ -1,4 +1,5 @@
 import { ApprovalRuleType, DataScope } from "@prisma/client";
+import { DAOCHONG_MOBILE_PERMISSIONS } from "../daochong-mobile/daochong-mobile.permissions";
 
 export type PermissionDefinition = {
   code: string;
@@ -115,6 +116,13 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
   { code: "page.orders.shipments", name: "发货记录", module: "orders", category: "PAGE", sortOrder: 288 },
   { code: "page.orders.channel_settlements", name: "渠道结算", module: "orders", category: "PAGE", sortOrder: 289 },
   { code: "page.finance.payroll", name: "薪资上传与发送", module: "finance", category: "PAGE", sortOrder: 291 },
+  {
+    code: DAOCHONG_MOBILE_PERMISSIONS.rechargeReviewRead,
+    name: "道冲充值复核读取",
+    module: "daochong",
+    category: "PAGE",
+    sortOrder: 292,
+  },
   { code: "page.files.center", name: "档案中心", module: "files", category: "PAGE", sortOrder: 290 },
   { code: "page.management.members", name: "成员管理", module: "management", category: "PAGE", sortOrder: 300 },
   { code: "page.management.roles", name: "角色权限", module: "management", category: "PAGE", sortOrder: 310 },
@@ -168,6 +176,20 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
   { code: "action.order.settle_channel", name: "处理渠道结算", module: "orders", category: "ACTION", sortOrder: 668 },
   { code: "action.finance_account.update", name: "维护财务账户", module: "settings", category: "ACTION", sortOrder: 669 },
   { code: "action.payroll.publish", name: "发布薪资条", module: "finance", category: "ACTION", sortOrder: 670 },
+  {
+    code: DAOCHONG_MOBILE_PERMISSIONS.limengRechargeReview,
+    name: "道冲立猛复核充值",
+    module: "daochong",
+    category: "ACTION",
+    sortOrder: 671,
+  },
+  {
+    code: DAOCHONG_MOBILE_PERMISSIONS.limengRechargeReturn,
+    name: "道冲立猛退回充值",
+    module: "daochong",
+    category: "ACTION",
+    sortOrder: 672,
+  },
 
   { code: "action.work_management.create", name: "新建工作管理内容", module: "work_management", category: "ACTION", sortOrder: 670 },
   { code: "action.work_management.update", name: "编辑工作管理内容", module: "work_management", category: "ACTION", sortOrder: 671 },
@@ -380,6 +402,7 @@ export const DEFAULT_ROLE_PERMISSION_CODES: Record<string, string[]> = {
     "page.orders.shipments",
     "page.orders.channel_settlements",
     "page.finance.payroll",
+    DAOCHONG_MOBILE_PERMISSIONS.rechargeReviewRead,
     "page.files.center",
     "page.settings.finance_accounts",
     "action.work_management.create",
@@ -392,7 +415,9 @@ export const DEFAULT_ROLE_PERMISSION_CODES: Record<string, string[]> = {
     "action.order.record_payment",
     "action.order.settle_channel",
     "action.finance_account.update",
-    "action.payroll.publish"
+    "action.payroll.publish",
+    DAOCHONG_MOBILE_PERMISSIONS.limengRechargeReview,
+    DAOCHONG_MOBILE_PERMISSIONS.limengRechargeReturn
   ]
 };
 

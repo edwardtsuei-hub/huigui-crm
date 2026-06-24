@@ -23,10 +23,23 @@ const PREVIEW_ROUTE_REDIRECTS: Record<string, string> = {
   "/search-preview": "/dashboard",
 };
 
+const PREVIEW_ROUTE_ALIASES: Record<string, string> = {
+  "/daochong-mobile-gray": "/daochong-mobile-preview",
+};
+
+const DAOCHONG_MOBILE_GRAY_PATH = "/daochong-mobile";
+
 function previewRoutesEnabled() {
   return (
     process.env.ENABLE_PREVIEW_ROUTES === "true" ||
     process.env.NEXT_PUBLIC_ENABLE_PREVIEW_ROUTES === "true"
+  );
+}
+
+function daochongMobileGrayEnabled() {
+  return (
+    process.env.ENABLE_DAOCHONG_MOBILE_GRAY === "true" ||
+    process.env.NEXT_PUBLIC_ENABLE_DAOCHONG_MOBILE_GRAY === "true"
   );
 }
 
@@ -44,6 +57,18 @@ function redirectTo(request: NextRequest, pathname: string) {
 export function middleware(request: NextRequest) {
   const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
   const pathname = request.nextUrl.pathname;
+
+  if (pathname in PREVIEW_ROUTE_ALIASES) {
+    return redirectTo(request, PREVIEW_ROUTE_ALIASES[pathname]);
+  }
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    pathname === DAOCHONG_MOBILE_GRAY_PATH &&
+    !daochongMobileGrayEnabled()
+  ) {
+    return redirectTo(request, "/dashboard");
+  }
 
   if (
     process.env.NODE_ENV === "production" &&

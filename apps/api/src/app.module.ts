@@ -27,6 +27,8 @@ import {
   CustomersController
 } from "./customers/customers.controller";
 import { CustomersService } from "./customers/customers.service";
+import { DaochongMobileReadonlyController } from "./daochong-mobile/daochong-mobile.controller";
+import { DaochongMobileReadonlyService } from "./daochong-mobile/daochong-mobile.service";
 import { DiscussionsService } from "./discussions/discussions.service";
 import { EmployeeLaunchController } from "./employee-launch/employee-launch.controller";
 import { EmployeeLaunchService } from "./employee-launch/employee-launch.service";
@@ -125,6 +127,7 @@ import { SettingsService } from "./settings/settings.service";
     ChannelPartnersController,
     CustomersController,
     CustomerFollowupsController,
+    DaochongMobileReadonlyController,
     ContractsController,
     ProductsController,
     InspectionsController,
@@ -158,6 +161,7 @@ import { SettingsService } from "./settings/settings.service";
     ManagementService,
     OrdersService,
     CustomersService,
+    DaochongMobileReadonlyService,
     ContractsService,
     ProductsService,
     InspectionsService,

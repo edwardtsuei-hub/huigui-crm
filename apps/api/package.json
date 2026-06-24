@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
+    "dev": "NODE_ENV=development CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000 ts-node-dev --respawn --transpile-only src/main.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/main.js",
     "lint": "tsc --noEmit -p tsconfig.json"
