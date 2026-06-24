@@ -24,6 +24,17 @@ const FILES = {
 };
 
 const checks = [];
+const CURRENT_GRAY_MARKER = /DCM-00 到 DCM-176/;
+const ALLOWED_WRITE_DECORATORS = [
+  '@Patch("recharges/:rechargeId/chengcheng-approval")',
+  '@Patch("recharges/:rechargeId/chengcheng-return")',
+  '@Patch("recharges/:rechargeId/limeng-return")',
+  '@Patch("recharges/:rechargeId/limeng-review")',
+  '@Patch("service-notes/:serviceNoteId")',
+  '@Post("recharges")',
+  '@Post("service-notes")',
+  '@Post("wecom-reminders/send-test")',
+];
 
 function usage() {
   return `Daochong mobile cutover precheck
@@ -67,18 +78,19 @@ function addFileChecks() {
 
 function addCutoverChecks(sources) {
   addCheck(
-    "gray-full-score-marker",
-    /DCM-00 到 DCM-168/.test(sources.app),
-    "Gray route source marker must remain at DCM-00 to DCM-168 before any cutover discussion.",
+    "gray-current-marker",
+    CURRENT_GRAY_MARKER.test(sources.app),
+    "Gray route source marker must remain aligned with the current DCM-176 source boundary before any cutover discussion.",
   );
 
   addCheck(
     "readonly-acceptance-aligned",
     /phase: "DCM-145-DCM-168"/.test(sources.acceptance) &&
+      /CURRENT_GRAY_MARKER/.test(sources.acceptance) &&
       /DCM-165 到 DCM-168/.test(sources.docsFieldMap) &&
       /DCM-19C-17/.test(sources.docsTaskBreakdown) &&
-      /DCM-165 to DCM-168/.test(sources.tests),
-    "Readonly acceptance, docs and tests are aligned through DCM-168.",
+      /DAOCHONG_CURRENT_GRAY_MARKER/.test(sources.tests),
+    "Readonly acceptance, docs and tests are aligned with DCM-168 historical docs and the current DCM-176 source marker.",
   );
 
   addCheck(
@@ -110,20 +122,25 @@ function addCutoverChecks(sources) {
   );
 
   const apiForbidden = forbiddenHits([sources.controller, sources.service].join("\n"), [
-    /@(Post|Put|Patch|Delete)\b/,
-    /\.create\s*\(/,
-    /\.update\s*\(/,
     /\.delete\s*\(/,
-    /sendWecom/i,
-    /wecom.*send/i,
   ]);
+  const writeDecorators = [...sources.controller.matchAll(/@(Post|Patch|Put|Delete)\("[^"]+"\)/g)]
+    .map((match) => match[0])
+    .sort();
   addCheck(
-    "api-write-actions-absent",
-    apiForbidden.length === 0,
-    apiForbidden.length === 0 ? "Daochong API source still has no write delegates or WeCom send calls." : apiForbidden.join(", "),
+    "api-readonly-and-write-gates-separated",
+    apiForbidden.length === 0 &&
+      JSON.stringify(writeDecorators) === JSON.stringify(ALLOWED_WRITE_DECORATORS) &&
+      /DAOCHONG_MOBILE_WRITE_ENABLED/.test(sources.service) &&
+      /assertWriteEnabled\(\)/.test(sources.service) &&
+      /DAOCHONG_WECOM_TEST_SEND_ENABLED/.test(sources.service) &&
+      /DAOCHONG_WECOM_TEST_ALLOWLIST/.test(sources.service),
+    apiForbidden.length === 0
+      ? "Readonly routes remain GET-only; approved write routes are present behind explicit write and WeCom gates."
+      : apiForbidden.join(", "),
   );
 
-  const frontendForbidden = forbiddenHits([sources.fetch, sources.app].join("\n"), [
+  const frontendForbidden = forbiddenHits(sources.fetch, [
     /method:\s*["'](POST|PUT|PATCH|DELETE)["']/,
     /\.create\s*\(/,
     /\.update\s*\(/,
@@ -132,9 +149,9 @@ function addCutoverChecks(sources) {
     /wecom.*send/i,
   ]);
   addCheck(
-    "frontend-write-actions-absent",
+    "frontend-readonly-fetch-actions-absent",
     frontendForbidden.length === 0,
-    frontendForbidden.length === 0 ? "Frontend Daochong source still uses readonly GET paths only." : frontendForbidden.join(", "),
+    frontendForbidden.length === 0 ? "Frontend readonly fetch client still uses GET paths only." : frontendForbidden.join(", "),
   );
 
   addCheck(
