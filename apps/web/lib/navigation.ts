@@ -620,6 +620,14 @@ const quickCreatePresets = {
     href: "/mobile/expense?from=quick-create",
     permissionCode: "action.work_management.create",
   },
+  managementPaymentExpense: {
+    key: "management-payment-expense",
+    label: "申请付款/报销",
+    description: "提交付款、报销或票据说明",
+    icon: "finance",
+    href: "/mobile/expense?from=quick-create&intent=payment-expense",
+    permissionCode: "action.work_management.create",
+  },
   meetingMinutes: {
     key: "meeting-minutes",
     label: "会议纪要",
@@ -1004,6 +1012,8 @@ function mapManagementSearchItem(item: SearchCatalogItem): SearchCatalogItem {
 function getManagementQuickCreateGroups(): QuickCreateGroup[] {
   const fallbackGroups = [
     buildQuickCreateGroup("collaboration", "协作事项", [
+      quickCreatePresets.meetingMinutes,
+      quickCreatePresets.managementPaymentExpense,
       quickCreatePresets.weeklyReport,
       quickCreatePresets.reminder,
       quickCreatePresets.todo,
