@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import {
@@ -13,15 +13,20 @@ import {
   readErrorMessage,
   setAuth,
 } from "../../../lib/api";
-import { resolveAuthenticatedEntryPath } from "../../../lib/public-entry";
+import {
+  resolveAuthenticatedEntryPath,
+  resolveAuthenticatedUserEntryPath,
+} from "../../../lib/public-entry";
 import {
   MANAGEMENT_SITE_BRAND,
   PUBLIC_SITE_BRAND,
 } from "../../../lib/site-brand";
 import {
   buildWecomLoginUrl,
+  isWecomBrowser,
   WECOM_LEGACY_LOGIN_STATE,
   WECOM_LOGIN_ACTION_STORAGE_KEY,
+  WECOM_LOGIN_RETURN_PATH_STORAGE_KEY,
   WECOM_LOGIN_STATE_STORAGE_KEY,
   type WecomConfig,
   type WecomLoginAction,
@@ -40,6 +45,22 @@ function displayUserName(user: CurrentUser) {
 
 function userNeedsWecomBinding(user: CurrentUser | null) {
   return Boolean(user && !user.wecomUserId);
+}
+
+function resolveSafeReturnPath(
+  value: string | null | undefined,
+  fallback: string,
+) {
+  if (
+    !value ||
+    !value.startsWith("/") ||
+    value.startsWith("//") ||
+    value.startsWith("/login")
+  ) {
+    return fallback;
+  }
+
+  return value;
 }
 
 function PublicStoryScene() {
@@ -66,13 +87,44 @@ function PublicStoryScene() {
         </linearGradient>
       </defs>
 
-      <rect x="0" y="0" width="760" height="430" fill="url(#skyGradient)" rx="42" />
+      <rect
+        x="0"
+        y="0"
+        width="760"
+        height="430"
+        fill="url(#skyGradient)"
+        rx="42"
+      />
 
       <g className={styles.cloudDrift}>
-        <ellipse cx="118" cy="82" rx="46" ry="20" fill="rgba(255,255,255,0.75)" />
-        <ellipse cx="156" cy="74" rx="36" ry="18" fill="rgba(255,255,255,0.62)" />
-        <ellipse cx="604" cy="98" rx="44" ry="18" fill="rgba(255,255,255,0.68)" />
-        <ellipse cx="640" cy="90" rx="32" ry="14" fill="rgba(255,255,255,0.54)" />
+        <ellipse
+          cx="118"
+          cy="82"
+          rx="46"
+          ry="20"
+          fill="rgba(255,255,255,0.75)"
+        />
+        <ellipse
+          cx="156"
+          cy="74"
+          rx="36"
+          ry="18"
+          fill="rgba(255,255,255,0.62)"
+        />
+        <ellipse
+          cx="604"
+          cy="98"
+          rx="44"
+          ry="18"
+          fill="rgba(255,255,255,0.68)"
+        />
+        <ellipse
+          cx="640"
+          cy="90"
+          rx="32"
+          ry="14"
+          fill="rgba(255,255,255,0.54)"
+        />
       </g>
 
       <circle cx="592" cy="92" r="44" fill="rgba(255,209,109,0.65)" />
@@ -95,7 +147,13 @@ function PublicStoryScene() {
       />
 
       <g className={styles.grandmaFocus}>
-        <ellipse cx="512" cy="242" rx="92" ry="118" fill="rgba(255,241,214,0.18)" />
+        <ellipse
+          cx="512"
+          cy="242"
+          rx="92"
+          ry="118"
+          fill="rgba(255,241,214,0.18)"
+        />
         <ellipse
           className={`${styles.orbitTrail} ${styles.orbitTrailOuter}`}
           cx="522"
@@ -121,12 +179,22 @@ function PublicStoryScene() {
       </g>
 
       <g className={styles.flowerBob}>
-        <path d="M138 360 L138 388" stroke="#3d7d4d" strokeWidth="4" strokeLinecap="round" />
+        <path
+          d="M138 360 L138 388"
+          stroke="#3d7d4d"
+          strokeWidth="4"
+          strokeLinecap="round"
+        />
         <circle cx="138" cy="354" r="10" fill="#ff8fb5" />
         <circle cx="126" cy="354" r="7" fill="#ffd479" />
         <circle cx="149" cy="354" r="7" fill="#ffcfda" />
 
-        <path d="M626 344 L626 384" stroke="#3d7d4d" strokeWidth="4" strokeLinecap="round" />
+        <path
+          d="M626 344 L626 384"
+          stroke="#3d7d4d"
+          strokeWidth="4"
+          strokeLinecap="round"
+        />
         <circle cx="626" cy="338" r="11" fill="#ff8fb5" />
         <circle cx="614" cy="338" r="7" fill="#ffd479" />
         <circle cx="638" cy="338" r="7" fill="#9bf1b7" />
@@ -233,7 +301,14 @@ function PublicStoryScene() {
               <ellipse cx="11" cy="0" rx="13" ry="18" fill="#ffd96d" />
               <ellipse cx="-8" cy="18" rx="10" ry="13" fill="#88efaa" />
               <ellipse cx="8" cy="18" rx="10" ry="13" fill="#ffd1e2" />
-              <rect x="-2" y="-8" width="4" height="42" rx="99" fill="#2f5138" />
+              <rect
+                x="-2"
+                y="-8"
+                width="4"
+                height="42"
+                rx="99"
+                fill="#2f5138"
+              />
               <circle cx="-24" cy="12" r="4" fill="rgba(255,255,255,0.6)" />
               <circle cx="-34" cy="18" r="2.5" fill="rgba(255,231,168,0.55)" />
             </g>
@@ -253,26 +328,56 @@ function ManagementStoryScene() {
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
-        <linearGradient id="managementSkyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+        <linearGradient
+          id="managementSkyGradient"
+          x1="0%"
+          y1="0%"
+          x2="0%"
+          y2="100%"
+        >
           <stop offset="0%" stopColor="#fff8d6" />
           <stop offset="44%" stopColor="#fff1c6" />
           <stop offset="82%" stopColor="#d8f6c0" />
           <stop offset="100%" stopColor="#9cdb82" />
         </linearGradient>
-        <linearGradient id="managementHorizonGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+        <linearGradient
+          id="managementHorizonGradient"
+          x1="0%"
+          y1="0%"
+          x2="0%"
+          y2="100%"
+        >
           <stop offset="0%" stopColor="rgba(255, 234, 182, 0.9)" />
           <stop offset="100%" stopColor="rgba(255, 234, 182, 0)" />
         </linearGradient>
-        <linearGradient id="managementSunGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient
+          id="managementSunGradient"
+          x1="0%"
+          y1="0%"
+          x2="100%"
+          y2="100%"
+        >
           <stop offset="0%" stopColor="#fff8d5" />
           <stop offset="38%" stopColor="#ffe98f" />
           <stop offset="100%" stopColor="#ffc65d" />
         </linearGradient>
-        <linearGradient id="managementGroundBack" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient
+          id="managementGroundBack"
+          x1="0%"
+          y1="0%"
+          x2="100%"
+          y2="100%"
+        >
           <stop offset="0%" stopColor="#7dcc75" />
           <stop offset="100%" stopColor="#5d9f46" />
         </linearGradient>
-        <linearGradient id="managementGroundFront" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient
+          id="managementGroundFront"
+          x1="0%"
+          y1="0%"
+          x2="100%"
+          y2="100%"
+        >
           <stop offset="0%" stopColor="#84d770" />
           <stop offset="100%" stopColor="#2f7e44" />
         </linearGradient>
@@ -283,7 +388,14 @@ function ManagementStoryScene() {
         </radialGradient>
       </defs>
 
-      <rect x="0" y="0" width="760" height="430" rx="42" fill="url(#managementSkyGradient)" />
+      <rect
+        x="0"
+        y="0"
+        width="760"
+        height="430"
+        rx="42"
+        fill="url(#managementSkyGradient)"
+      />
 
       <rect
         className={styles.managementHorizonGlow}
@@ -295,10 +407,34 @@ function ManagementStoryScene() {
       />
 
       <g className={styles.managementCloudDrift}>
-        <ellipse cx="108" cy="92" rx="52" ry="19" fill="rgba(255,255,255,0.66)" />
-        <ellipse cx="156" cy="84" rx="34" ry="16" fill="rgba(255,255,255,0.54)" />
-        <ellipse cx="614" cy="116" rx="60" ry="22" fill="rgba(255,255,255,0.62)" />
-        <ellipse cx="664" cy="104" rx="34" ry="14" fill="rgba(255,255,255,0.46)" />
+        <ellipse
+          cx="108"
+          cy="92"
+          rx="52"
+          ry="19"
+          fill="rgba(255,255,255,0.66)"
+        />
+        <ellipse
+          cx="156"
+          cy="84"
+          rx="34"
+          ry="16"
+          fill="rgba(255,255,255,0.54)"
+        />
+        <ellipse
+          cx="614"
+          cy="116"
+          rx="60"
+          ry="22"
+          fill="rgba(255,255,255,0.62)"
+        />
+        <ellipse
+          cx="664"
+          cy="104"
+          rx="34"
+          ry="14"
+          fill="rgba(255,255,255,0.46)"
+        />
       </g>
 
       <g className={styles.managementSunAura}>
@@ -317,7 +453,13 @@ function ManagementStoryScene() {
         <line x1="612" y1="60" x2="636" y2="36" />
       </g>
 
-      <circle className={styles.managementSunCore} cx="576" cy="96" r="44" fill="url(#managementSunGradient)" />
+      <circle
+        className={styles.managementSunCore}
+        cx="576"
+        cy="96"
+        r="44"
+        fill="url(#managementSunGradient)"
+      />
 
       <g className={styles.managementSparkles}>
         <circle cx="466" cy="70" r="3.5" />
@@ -345,8 +487,20 @@ function ManagementStoryScene() {
       />
 
       <g className={styles.managementFigureDrift}>
-        <ellipse cx="380" cy="244" rx="116" ry="136" fill="url(#managementFigureGlow)" />
-        <ellipse cx="380" cy="276" rx="78" ry="38" fill="rgba(255,255,255,0.18)" />
+        <ellipse
+          cx="380"
+          cy="244"
+          rx="116"
+          ry="136"
+          fill="url(#managementFigureGlow)"
+        />
+        <ellipse
+          cx="380"
+          cy="276"
+          rx="78"
+          ry="38"
+          fill="rgba(255,255,255,0.18)"
+        />
         <g className={styles.managementFigure}>
           <circle
             cx="380"
@@ -394,7 +548,13 @@ function ManagementStoryScene() {
             strokeWidth="12"
             strokeLinecap="round"
           />
-          <circle className={styles.managementHeartGlow} cx="380" cy="248" r="14" fill="rgba(255,248,201,0.95)" />
+          <circle
+            className={styles.managementHeartGlow}
+            cx="380"
+            cy="248"
+            r="14"
+            fill="rgba(255,248,201,0.95)"
+          />
         </g>
       </g>
     </svg>
@@ -422,13 +582,39 @@ export default function LoginPageClient({
   const [showCredentialForm, setShowCredentialForm] = useState(false);
   const [returningUserName, setReturningUserName] = useState("");
   const [wecomConfig, setWecomConfig] = useState<WecomConfig | null>(null);
+  const [wecomBrowser, setWecomBrowser] = useState(false);
+  const autoWecomLoginStartedRef = useRef(false);
 
+  const defaultEntryPath = useMemo(
+    () => resolveAuthenticatedEntryPath(initialHost),
+    [initialHost],
+  );
+  const hasExplicitReturnPath = useMemo(
+    () => Boolean(searchParams.get("next")),
+    [searchParams],
+  );
+  const loginReturnPath = useMemo(
+    () => resolveSafeReturnPath(searchParams.get("next"), defaultEntryPath),
+    [defaultEntryPath, searchParams],
+  );
   const brand = useMemo(
     () => (initialManagementEntry ? MANAGEMENT_SITE_BRAND : PUBLIC_SITE_BRAND),
     [initialManagementEntry],
   );
   const showWecomBindingModal =
     hasSavedSession && requiresWecomBinding && !showCredentialForm;
+
+  function resolveReturnPathForUser(user: CurrentUser | null | undefined) {
+    if (hasExplicitReturnPath) {
+      return loginReturnPath;
+    }
+
+    return resolveAuthenticatedUserEntryPath(user, initialHost);
+  }
+
+  useEffect(() => {
+    setWecomBrowser(isWecomBrowser());
+  }, []);
 
   useEffect(() => {
     const token = getToken();
@@ -491,16 +677,32 @@ export default function LoginPageClient({
       setError("");
 
       try {
-        const expectedState = window.sessionStorage.getItem(WECOM_LOGIN_STATE_STORAGE_KEY);
+        const expectedState = window.sessionStorage.getItem(
+          WECOM_LOGIN_STATE_STORAGE_KEY,
+        );
         const loginAction =
-          window.sessionStorage.getItem(WECOM_LOGIN_ACTION_STORAGE_KEY) === "bind"
+          window.sessionStorage.getItem(WECOM_LOGIN_ACTION_STORAGE_KEY) ===
+          "bind"
             ? "bind"
             : "login";
+        const storedReturnPath = window.sessionStorage.getItem(
+          WECOM_LOGIN_RETURN_PATH_STORAGE_KEY,
+        );
+        const returnPath = resolveSafeReturnPath(
+          storedReturnPath,
+          resolveReturnPathForUser(null),
+        );
         window.sessionStorage.removeItem(WECOM_LOGIN_STATE_STORAGE_KEY);
         window.sessionStorage.removeItem(WECOM_LOGIN_ACTION_STORAGE_KEY);
+        window.sessionStorage.removeItem(WECOM_LOGIN_RETURN_PATH_STORAGE_KEY);
         const isLegacyLoginState =
-          !expectedState && loginAction === "login" && state === WECOM_LEGACY_LOGIN_STATE;
-        if (!isLegacyLoginState && (!expectedState || expectedState !== state)) {
+          !expectedState &&
+          loginAction === "login" &&
+          state === WECOM_LEGACY_LOGIN_STATE;
+        if (
+          !isLegacyLoginState &&
+          (!expectedState || expectedState !== state)
+        ) {
           throw new Error("企业微信登录状态校验失败，请重新扫码登录");
         }
 
@@ -515,7 +717,11 @@ export default function LoginPageClient({
           });
           setAuth(payload);
           if (!cancelled) {
-            router.replace(resolveAuthenticatedEntryPath(initialHost));
+            router.replace(
+              hasExplicitReturnPath
+                ? returnPath
+                : resolveReturnPathForUser(payload.user),
+            );
           }
           return;
         }
@@ -533,11 +739,19 @@ export default function LoginPageClient({
         const payload = (await response.json()) as LoginAuthPayload;
         setAuth(payload);
         if (!cancelled) {
-          router.replace(resolveAuthenticatedEntryPath(initialHost));
+          router.replace(
+            hasExplicitReturnPath
+              ? returnPath
+              : resolveReturnPathForUser(payload.user),
+          );
         }
       } catch (requestError) {
         if (!cancelled) {
-          setError(requestError instanceof Error ? requestError.message : "企业微信登录失败");
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "企业微信登录失败",
+          );
         }
       } finally {
         if (!cancelled) {
@@ -551,10 +765,10 @@ export default function LoginPageClient({
     return () => {
       cancelled = true;
     };
-  }, [initialHost, router, searchParams]);
+  }, [hasExplicitReturnPath, initialHost, loginReturnPath, router, searchParams]);
 
   function handleContinueIntoWorkspace() {
-    router.replace(resolveAuthenticatedEntryPath(initialHost));
+    router.replace(resolveReturnPathForUser(getCurrentUser()));
   }
 
   function handleSwitchAccount() {
@@ -596,9 +810,11 @@ export default function LoginPageClient({
         return;
       }
 
-      router.replace(resolveAuthenticatedEntryPath(initialHost));
+      router.replace(resolveReturnPathForUser(payload.user));
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "登录失败");
+      setError(
+        requestError instanceof Error ? requestError.message : "登录失败",
+      );
     } finally {
       setLoading(false);
     }
@@ -619,12 +835,54 @@ export default function LoginPageClient({
     setWecomLoading(true);
 
     try {
-      window.location.assign(buildWecomLoginUrl(wecomConfig, action));
+      window.location.assign(
+        buildWecomLoginUrl(wecomConfig, action, {
+          mode: wecomBrowser ? "oauth" : "qr",
+          returnPath: hasExplicitReturnPath ? loginReturnPath : null,
+        }),
+      );
     } catch (requestError) {
       setWecomLoading(false);
-      setError(requestError instanceof Error ? requestError.message : "企业微信登录回调地址不可用");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "企业微信登录回调地址不可用",
+      );
     }
   }
+
+  useEffect(() => {
+    const code = searchParams.get("code");
+    const state = searchParams.get("state");
+
+    if (
+      code ||
+      state ||
+      autoWecomLoginStartedRef.current ||
+      !wecomBrowser ||
+      hasSavedSession ||
+      showCredentialForm ||
+      wecomLoading ||
+      loading
+    ) {
+      return;
+    }
+
+    if (!wecomConfig?.enabled || !wecomConfig.corpId || !wecomConfig.agentId) {
+      return;
+    }
+
+    autoWecomLoginStartedRef.current = true;
+    handleWecomLogin("login");
+  }, [
+    hasSavedSession,
+    loading,
+    searchParams,
+    showCredentialForm,
+    wecomBrowser,
+    wecomConfig,
+    wecomLoading,
+  ]);
 
   return (
     <main
@@ -645,7 +903,9 @@ export default function LoginPageClient({
           <div className={styles.heroCopy}>
             <p className={styles.companyName}>{brand.loginCompanyName}</p>
             <div className={styles.titleBlock}>
-              <span className={styles.sloganLabel}>{brand.loginSloganLabel}</span>
+              <span className={styles.sloganLabel}>
+                {brand.loginSloganLabel}
+              </span>
               <h1 className={styles.heroTitle}>
                 {brand.loginHeroTitleLines.map((line) => (
                   <span className={styles.heroTitleLine} key={line}>
@@ -658,7 +918,11 @@ export default function LoginPageClient({
           </div>
 
           <div className={styles.storyStage} aria-hidden="true">
-            {initialManagementEntry ? <ManagementStoryScene /> : <PublicStoryScene />}
+            {initialManagementEntry ? (
+              <ManagementStoryScene />
+            ) : (
+              <PublicStoryScene />
+            )}
           </div>
 
           {initialManagementEntry ? (
@@ -678,7 +942,8 @@ export default function LoginPageClient({
             <span className={styles.panelBadge}>{brand.loginPanelBadge}</span>
             <h2>{brand.loginPanelTitle}</h2>
             <p>
-              从 <strong>{initialEntryHost}</strong> {brand.loginPanelDescription}
+              从 <strong>{initialEntryHost}</strong>{" "}
+              {brand.loginPanelDescription}
             </p>
           </div>
 
@@ -698,11 +963,15 @@ export default function LoginPageClient({
               </h3>
               <p className={styles.returningSessionDescription}>
                 {requiresWecomBinding
-                  ? "这个系统账号还没有绑定企业微信。请用本人企业微信扫码完成绑定，之后就能进入协作空间。"
+                  ? wecomBrowser
+                    ? "这个系统账号还没有绑定企业微信。请用本人企业微信完成授权绑定，之后就能进入协作空间。"
+                    : "这个系统账号还没有绑定企业微信。请用本人企业微信扫码完成绑定，之后就能进入协作空间。"
                   : "这台设备上的登录仍在有效期内，你可以直接继续进入协作空间；如需更换账号，也可以重新登录。"}
               </p>
 
-              {error ? <div className={styles.errorMessage}>{error}</div> : null}
+              {error ? (
+                <div className={styles.errorMessage}>{error}</div>
+              ) : null}
 
               <div className={styles.returningSessionActions}>
                 {requiresWecomBinding ? (
@@ -715,8 +984,12 @@ export default function LoginPageClient({
                     {!wecomConfig?.enabled
                       ? "企业微信入口未配置"
                       : wecomLoading
-                        ? "正在打开扫码..."
-                        : "扫码绑定企业微信"}
+                        ? wecomBrowser
+                          ? "正在打开授权..."
+                          : "正在打开扫码..."
+                        : wecomBrowser
+                          ? "一键绑定企业微信"
+                          : "扫码绑定企业微信"}
                   </button>
                 ) : (
                   <button
@@ -745,7 +1018,11 @@ export default function LoginPageClient({
                   onClick={() => handleWecomLogin("login")}
                   disabled={wecomLoading || loading}
                 >
-                  {wecomLoading ? "企业微信登录中..." : "企业微信扫码登录"}
+                  {wecomLoading
+                    ? "企业微信登录中..."
+                    : wecomBrowser
+                      ? "企业微信一键登录"
+                      : "企业微信扫码登录"}
                 </button>
               ) : null}
 
@@ -779,9 +1056,15 @@ export default function LoginPageClient({
                   />
                 </label>
 
-                {error ? <div className={styles.errorMessage}>{error}</div> : null}
+                {error ? (
+                  <div className={styles.errorMessage}>{error}</div>
+                ) : null}
 
-                <button className={styles.submitButton} type="submit" disabled={loading || wecomLoading}>
+                <button
+                  className={styles.submitButton}
+                  type="submit"
+                  disabled={loading || wecomLoading}
+                >
                   {loading ? "登录中..." : brand.loginButtonLabel}
                 </button>
               </form>
@@ -793,13 +1076,20 @@ export default function LoginPageClient({
       </div>
 
       {showWecomBindingModal ? (
-        <div className={styles.wecomBindOverlay} role="dialog" aria-modal="true">
+        <div
+          className={styles.wecomBindOverlay}
+          role="dialog"
+          aria-modal="true"
+        >
           <div className={styles.wecomBindModal}>
             <span className={styles.wecomBindBadge}>企业微信绑定</span>
             <div className={styles.wecomBindHeading}>
               <h3>请绑定本人企业微信</h3>
               <p>
-                {returningUserName || "当前账号"} 已通过密码验证。首次进入系统前，请扫码完成企业微信绑定。
+                {returningUserName || "当前账号"}{" "}
+                已通过密码验证。首次进入系统前，请
+                {wecomBrowser ? "完成企业微信授权绑定" : "扫码完成企业微信绑定"}
+                。
               </p>
             </div>
 
@@ -822,8 +1112,12 @@ export default function LoginPageClient({
                 {!wecomConfig?.enabled
                   ? "企业微信入口未配置"
                   : wecomLoading
-                    ? "正在打开扫码..."
-                    : "扫码绑定企业微信"}
+                    ? wecomBrowser
+                      ? "正在打开授权..."
+                      : "正在打开扫码..."
+                    : wecomBrowser
+                      ? "一键绑定企业微信"
+                      : "扫码绑定企业微信"}
               </button>
             </div>
           </div>
