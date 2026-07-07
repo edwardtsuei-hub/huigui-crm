@@ -139,6 +139,37 @@ test("Daochong page path uses Daochong actions even for admin preview", () => {
   assert.ok(labels.includes("客户充值"));
 });
 
+test("Management founder quick create starts with minutes and payment expense", () => {
+  const permissions = [
+    "action.work_management.create",
+    "action.schedule.create",
+    "action.management.member.create",
+    "action.management.role.update",
+  ];
+  const labels = visibleLabels(
+    groupsFor({
+      username: "admin",
+      displayName: "崔以达",
+      loginAccount: "admin",
+      department: "管理中心",
+      title: "创始人",
+      roleCode: "SUPER_ADMIN",
+      roleName: "超级管理员",
+      wecomUserId: "edwardtsuei",
+      permissions,
+    }),
+    permissions,
+  );
+
+  assert.deepEqual(labels.slice(0, 3), [
+    "会议纪要",
+    "申请付款/报销",
+    "创建周报",
+  ]);
+  assert.ok(labels.includes("新增成员"));
+  assert.ok(labels.length > 3);
+});
+
 async function main() {
   for (const item of tests) {
     await item.run();

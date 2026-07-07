@@ -506,7 +506,12 @@ export default function DashboardLayoutClient({
         mobileChromeCondensed={mobileChromeCondensed}
         mobileDock={
           mobileDockItems.length ? (
-            <MobileDockNav items={mobileDockItems} pathname={pathname} />
+            <MobileDockNav
+              items={mobileDockItems}
+              pathname={pathname}
+              quickCreateGroups={quickCreateMenuGroups}
+              user={user}
+            />
           ) : null
         }
         mobileViewport={mobileViewport}

@@ -12416,7 +12416,8 @@ button.wm-shortcut-card:disabled {
     bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
     z-index: 70;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: end;
     gap: 6px;
     width: min(calc(100vw - 20px), 420px);
     padding: 8px;
@@ -12434,6 +12435,45 @@ button.wm-shortcut-card:disabled {
     transition:
       transform 220ms ease,
       opacity 220ms ease;
+  }
+
+  .mobile-dock__create {
+    display: grid;
+    justify-items: center;
+    min-width: 0;
+  }
+
+  .quick-create--dock {
+    display: grid;
+    justify-items: center;
+    width: 100%;
+  }
+
+  .quick-create--dock .quick-create__trigger--mobile {
+    position: relative;
+    inset: auto;
+    width: 56px;
+    height: 56px;
+    margin: -24px auto 0;
+    border-radius: 20px;
+    background: var(--brand-gradient);
+    color: var(--text-strong);
+    box-shadow: 0 16px 30px rgba(105, 94, 35, 0.22);
+  }
+
+  .quick-create--dock .quick-create__trigger--mobile svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .quick-create--dock .quick-create__panel--mobile {
+    position: absolute;
+    top: auto;
+    right: auto;
+    bottom: 72px;
+    left: 50%;
+    width: min(calc(100vw - 24px), 420px);
+    transform: translateX(-50%);
   }
 
   .app-shell--mobile-condensed .mobile-dock {
