@@ -11,6 +11,7 @@ import {
   Topbar,
 } from "../../components/system/shell";
 import {
+  getQuickCreateGroupsForUser,
   getNavigationWorkspaceConfig,
   resolvePageMeta,
   type WorkspaceIconKey,
@@ -351,6 +352,10 @@ export default function DashboardLayoutClient({
     () => resolvePageMeta(pathname, brand.key),
     [brand.key, pathname],
   );
+  const quickCreateMenuGroups = useMemo(
+    () => getQuickCreateGroupsForUser(brand.key, user, pathname),
+    [brand.key, pathname, user],
+  );
   const requiresWecomBinding = Boolean(user && !user.wecomUserId);
   const mobileDockItems = useMemo(() => {
     if (brand.key !== "management") {
@@ -496,7 +501,7 @@ export default function DashboardLayoutClient({
           entrySearchCatalog={navigationConfig.searchCatalog}
           pageMeta={pageMeta}
           pathname={pathname}
-          quickCreateGroups={navigationConfig.quickCreateGroups}
+          quickCreateGroups={quickCreateMenuGroups}
           recordDataMode={dataMode}
           searchDescription={navigationConfig.searchDescription}
           searchEmptyState={navigationConfig.searchEmptyState}
