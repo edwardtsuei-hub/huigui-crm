@@ -62,6 +62,20 @@ export type QuickCreateGroup = {
   items: QuickCreateItem[];
 };
 
+export type QuickCreateIdentity = {
+  username?: string | null;
+  displayName?: string | null;
+  name?: string | null;
+  loginAccount?: string | null;
+  department?: string | null;
+  title?: string | null;
+  roleCode?: string | null;
+  roleName?: string | null;
+  wecomName?: string | null;
+  wecomUserId?: string | null;
+  permissions?: string[] | null;
+};
+
 export type PageMeta = {
   title: string;
   subtitle: string;
@@ -557,6 +571,314 @@ export const quickCreateGroups: QuickCreateGroup[] = [
   },
 ];
 
+const quickCreatePresets = {
+  weeklyReport: {
+    key: "weekly-report",
+    label: "创建周报",
+    description: "填写本周完成和下周计划",
+    icon: "work",
+    href: "/work-management/weekly-reports?intent=create-weekly",
+    permissionCode: "action.work_management.create",
+  },
+  ecomWeekly: {
+    key: "ecom-weekly",
+    label: "电商周报",
+    description: "整理电商本周数据、动作和下周计划",
+    icon: "work",
+    href: "/work-management/ecom-weekly?from=quick-create",
+    permissionCode: "action.work_management.create",
+  },
+  reminder: {
+    key: "reminder",
+    label: "新增提醒",
+    description: "添加与工作台相关的轻量提醒事项",
+    icon: "calendar",
+    composeKind: "reminder",
+    permissionCode: "action.schedule.create",
+  },
+  activity: {
+    key: "activity",
+    label: "创建活动",
+    description: "安排活动、会议或部门协作日程",
+    icon: "calendar",
+    composeKind: "schedule",
+    permissionCode: "action.schedule.create",
+  },
+  todo: {
+    key: "todo",
+    label: "新建待办",
+    description: "创建需要推进的个人或团队动作",
+    icon: "plus",
+    composeKind: "todo",
+    permissionCode: "action.schedule.create",
+  },
+  expense: {
+    key: "expense-claim",
+    label: "申请报销",
+    description: "提交票据、金额和报销说明",
+    icon: "finance",
+    href: "/mobile/expense?from=quick-create",
+    permissionCode: "action.work_management.create",
+  },
+  meetingMinutes: {
+    key: "meeting-minutes",
+    label: "会议纪要",
+    description: "记录结论、负责人和后续待办",
+    icon: "work",
+    href: "/work-management/meeting-minutes?from=quick-create",
+    permissionCode: "action.work_management.create",
+  },
+  daochongAppointment: {
+    key: "daochong-appointment",
+    label: "添加预约",
+    description: "进入道冲工作台处理预约和到店",
+    icon: "calendar",
+    href: "/daochong-mobile?from=quick-create&action=appointment",
+    permissionCode: "action.schedule.create",
+  },
+  daochongRecharge: {
+    key: "daochong-recharge",
+    label: "客户充值",
+    description: "进入道冲充值、截图和现金照片流程",
+    icon: "finance",
+    href: "/daochong-mobile?from=quick-create&action=recharge",
+    permissionCode: "action.work_management.create",
+  },
+  daochongSettlement: {
+    key: "daochong-settlement",
+    label: "服务结算",
+    description: "完成服务后补充结算和凭证",
+    icon: "orders",
+    href: "/daochong-mobile?from=quick-create&action=settlement",
+    permissionCode: "action.work_management.create",
+  },
+  daochongServiceNote: {
+    key: "daochong-service-note",
+    label: "补填纪要",
+    description: "补充服务纪要、反馈和后续建议",
+    icon: "work",
+    href: "/daochong-mobile?from=quick-create&action=service-note",
+    permissionCode: "action.work_management.create",
+  },
+  financeExpenses: {
+    key: "finance-expenses",
+    label: "报销审核",
+    description: "处理票据、金额和付款信息复核",
+    icon: "finance",
+    href: "/finance/expenses?from=quick-create",
+    permissionCode: "menu.finance",
+  },
+  payroll: {
+    key: "payroll",
+    label: "薪资处理",
+    description: "进入薪资上传、核对与发送",
+    icon: "finance",
+    href: "/finance/payroll?from=quick-create",
+    permissionCode: "page.finance.payroll",
+  },
+  financeAccounts: {
+    key: "finance-accounts",
+    label: "财务账户",
+    description: "维护主体公司和收款账户",
+    icon: "settings",
+    href: "/settings/finance-accounts?from=quick-create",
+    permissionCode: "page.settings.finance_accounts",
+  },
+  customer: {
+    key: "customer",
+    label: "新增客户",
+    description: "录入客户资料并开始后续跟进",
+    icon: "customers",
+    href: "/customers/new?from=quick-create",
+    permissionCode: "action.customer.create",
+  },
+} satisfies Record<string, QuickCreateItem>;
+
+function cloneQuickCreateItem(item: QuickCreateItem): QuickCreateItem {
+  return { ...item };
+}
+
+function cloneQuickCreateGroups(groups: QuickCreateGroup[]): QuickCreateGroup[] {
+  return groups.map((group) => ({
+    ...group,
+    items: group.items.map(cloneQuickCreateItem),
+  }));
+}
+
+function buildQuickCreateGroup(
+  key: string,
+  label: string,
+  items: QuickCreateItem[],
+): QuickCreateGroup {
+  return {
+    key,
+    label,
+    items: items.map(cloneQuickCreateItem),
+  };
+}
+
+function buildQuickCreateIdentityText(user?: QuickCreateIdentity | null) {
+  if (!user) {
+    return "";
+  }
+
+  return [
+    user.username,
+    user.displayName,
+    user.name,
+    user.loginAccount,
+    user.department,
+    user.title,
+    user.roleCode,
+    user.roleName,
+    user.wecomName,
+    user.wecomUserId,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function roleCodeOf(user?: QuickCreateIdentity | null) {
+  return (user?.roleCode ?? "").toUpperCase();
+}
+
+function isDaochongContext(user: QuickCreateIdentity | null | undefined, pathname: string) {
+  return /道冲|道沖|daochong/.test(`${buildQuickCreateIdentityText(user)} ${pathname}`);
+}
+
+function isEcommerceContext(user: QuickCreateIdentity | null | undefined, pathname: string) {
+  const roleCode = roleCodeOf(user);
+  return (
+    roleCode === "ECOMMERCE_MANAGER" ||
+    /电商|電商|ecommerce|有赞|有讚|ecom/.test(
+      `${buildQuickCreateIdentityText(user)} ${pathname}`,
+    )
+  );
+}
+
+function isEcotechContext(user: QuickCreateIdentity | null | undefined, pathname: string) {
+  const roleCode = roleCodeOf(user);
+  return (
+    roleCode === "ECOTECH_MANAGER" ||
+    /洄归|洄歸|生态科技|生態科技|ecotech/.test(
+      `${buildQuickCreateIdentityText(user)} ${pathname}`,
+    )
+  );
+}
+
+function isCourseContext(user: QuickCreateIdentity | null | undefined, pathname: string) {
+  const roleCode = roleCodeOf(user);
+  return (
+    roleCode === "PRODUCT_SPECIALIST" ||
+    /课程|課程|光的家园|光的家園|course|courses/.test(
+      `${buildQuickCreateIdentityText(user)} ${pathname}`,
+    )
+  );
+}
+
+function isFinanceContext(user: QuickCreateIdentity | null | undefined, pathname: string) {
+  const roleCode = roleCodeOf(user);
+  return (
+    roleCode === "FINANCE" ||
+    /财务|財務|finance|payroll/.test(`${buildQuickCreateIdentityText(user)} ${pathname}`)
+  );
+}
+
+function isBearhugContext(user: QuickCreateIdentity | null | undefined, pathname: string) {
+  const roleCode = roleCodeOf(user);
+  return (
+    roleCode === "BEARHUG_KITCHEN" ||
+    /熊抱|bearhug|餐饮|餐飲|前厅|前廳|后厨|後廚|门店|門店|calendar/.test(
+      `${buildQuickCreateIdentityText(user)} ${pathname}`,
+    )
+  );
+}
+
+function getDaochongQuickCreateGroups(): QuickCreateGroup[] {
+  return [
+    buildQuickCreateGroup("daochong-field", "道冲现场", [
+      quickCreatePresets.weeklyReport,
+      quickCreatePresets.daochongAppointment,
+      quickCreatePresets.daochongServiceNote,
+      quickCreatePresets.activity,
+    ]),
+    buildQuickCreateGroup("daochong-money", "资金与凭证", [
+      quickCreatePresets.expense,
+      quickCreatePresets.daochongRecharge,
+      quickCreatePresets.daochongSettlement,
+      quickCreatePresets.meetingMinutes,
+    ]),
+  ];
+}
+
+function getEcommerceQuickCreateGroups(): QuickCreateGroup[] {
+  return [
+    buildQuickCreateGroup("ecommerce-operations", "电商运营", [
+      quickCreatePresets.ecomWeekly,
+      quickCreatePresets.activity,
+      quickCreatePresets.todo,
+      quickCreatePresets.expense,
+    ]),
+    buildQuickCreateGroup("ecommerce-collaboration", "协作记录", [
+      quickCreatePresets.meetingMinutes,
+      quickCreatePresets.weeklyReport,
+    ]),
+  ];
+}
+
+function getEcotechQuickCreateGroups(): QuickCreateGroup[] {
+  return [
+    buildQuickCreateGroup("ecotech-business", "洄归生态", [
+      quickCreatePresets.customer,
+      quickCreatePresets.weeklyReport,
+      quickCreatePresets.activity,
+      quickCreatePresets.expense,
+    ]),
+    buildQuickCreateGroup("ecotech-collaboration", "协作记录", [
+      quickCreatePresets.meetingMinutes,
+      quickCreatePresets.todo,
+    ]),
+  ];
+}
+
+function getCourseQuickCreateGroups(): QuickCreateGroup[] {
+  return [
+    buildQuickCreateGroup("course-work", "课程协作", [
+      quickCreatePresets.weeklyReport,
+      quickCreatePresets.activity,
+      quickCreatePresets.meetingMinutes,
+      quickCreatePresets.expense,
+    ]),
+  ];
+}
+
+function getFinanceQuickCreateGroups(): QuickCreateGroup[] {
+  return [
+    buildQuickCreateGroup("finance-work", "财务处理", [
+      quickCreatePresets.financeExpenses,
+      quickCreatePresets.payroll,
+      quickCreatePresets.financeAccounts,
+      quickCreatePresets.weeklyReport,
+    ]),
+    buildQuickCreateGroup("finance-personal", "个人事项", [
+      quickCreatePresets.expense,
+      quickCreatePresets.todo,
+    ]),
+  ];
+}
+
+function getBearhugQuickCreateGroups(): QuickCreateGroup[] {
+  return [
+    buildQuickCreateGroup("bearhug-store", "门店现场", [
+      quickCreatePresets.activity,
+      quickCreatePresets.todo,
+      quickCreatePresets.expense,
+      quickCreatePresets.weeklyReport,
+    ]),
+  ];
+}
+
 const MANAGEMENT_NAVIGATION_KEYS = new Set([
   "dashboard",
   "work-management",
@@ -564,6 +886,11 @@ const MANAGEMENT_NAVIGATION_KEYS = new Set([
   "finance",
   "management",
   "settings",
+]);
+
+const MANAGEMENT_QUICK_CREATE_GROUP_KEYS = new Set([
+  "collaboration",
+  "management",
 ]);
 
 const MANAGEMENT_HIDDEN_SEARCH_PREFIXES = [
@@ -675,14 +1002,60 @@ function mapManagementSearchItem(item: SearchCatalogItem): SearchCatalogItem {
 }
 
 function getManagementQuickCreateGroups(): QuickCreateGroup[] {
-  return quickCreateGroups
-    .filter((group) => group.key === "management")
+  const fallbackGroups = [
+    buildQuickCreateGroup("collaboration", "协作事项", [
+      quickCreatePresets.weeklyReport,
+      quickCreatePresets.reminder,
+      quickCreatePresets.todo,
+    ]),
+    ...quickCreateGroups.filter((group) => group.key === "management"),
+  ];
+
+  return fallbackGroups
+    .filter((group) => MANAGEMENT_QUICK_CREATE_GROUP_KEYS.has(group.key))
     .map((group) => ({
       ...group,
       items: group.items
         .filter((item) => item.key !== "approval-rule")
-        .map((item) => ({ ...item })),
-    }));
+        .map(cloneQuickCreateItem),
+    }))
+    .filter((group) => group.items.length > 0);
+}
+
+export function getQuickCreateGroupsForUser(
+  brandKey: SiteBrandKey,
+  user?: QuickCreateIdentity | null,
+  pathname = "",
+): QuickCreateGroup[] {
+  if (brandKey !== "management") {
+    return cloneQuickCreateGroups(quickCreateGroups);
+  }
+
+  if (isDaochongContext(user, pathname)) {
+    return getDaochongQuickCreateGroups();
+  }
+
+  if (isEcommerceContext(user, pathname)) {
+    return getEcommerceQuickCreateGroups();
+  }
+
+  if (isEcotechContext(user, pathname)) {
+    return getEcotechQuickCreateGroups();
+  }
+
+  if (isCourseContext(user, pathname)) {
+    return getCourseQuickCreateGroups();
+  }
+
+  if (isFinanceContext(user, pathname)) {
+    return getFinanceQuickCreateGroups();
+  }
+
+  if (isBearhugContext(user, pathname)) {
+    return getBearhugQuickCreateGroups();
+  }
+
+  return getManagementQuickCreateGroups();
 }
 
 export function getNavigationWorkspaceConfig(
@@ -716,10 +1089,7 @@ export function getNavigationWorkspaceConfig(
       children: item.children ? [...item.children] : [],
     })),
     searchCatalog: searchCatalog.map((item) => ({ ...item })),
-    quickCreateGroups: quickCreateGroups.map((group) => ({
-      ...group,
-      items: group.items.map((item) => ({ ...item })),
-    })),
+    quickCreateGroups: cloneQuickCreateGroups(quickCreateGroups),
     searchPlaceholder: "搜索客户、报价、订单、检测、成员或入口",
     searchEmptyState:
       "输入客户名称、报价单号、订单号、检测单号、成员姓名，或直接搜索工作台入口。",
