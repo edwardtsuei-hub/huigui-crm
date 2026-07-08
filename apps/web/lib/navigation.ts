@@ -812,7 +812,6 @@ function getDaochongQuickCreateGroups(): QuickCreateGroup[] {
       quickCreatePresets.activity,
     ]),
     buildQuickCreateGroup("daochong-money", "资金与凭证", [
-      quickCreatePresets.expense,
       quickCreatePresets.daochongRecharge,
       quickCreatePresets.daochongSettlement,
       quickCreatePresets.meetingMinutes,
@@ -826,7 +825,6 @@ function getEcommerceQuickCreateGroups(): QuickCreateGroup[] {
       quickCreatePresets.ecomWeekly,
       quickCreatePresets.activity,
       quickCreatePresets.todo,
-      quickCreatePresets.expense,
     ]),
     buildQuickCreateGroup("ecommerce-collaboration", "协作记录", [
       quickCreatePresets.meetingMinutes,
@@ -841,7 +839,6 @@ function getEcotechQuickCreateGroups(): QuickCreateGroup[] {
       quickCreatePresets.customer,
       quickCreatePresets.weeklyReport,
       quickCreatePresets.activity,
-      quickCreatePresets.expense,
     ]),
     buildQuickCreateGroup("ecotech-collaboration", "协作记录", [
       quickCreatePresets.meetingMinutes,
@@ -856,7 +853,6 @@ function getCourseQuickCreateGroups(): QuickCreateGroup[] {
       quickCreatePresets.weeklyReport,
       quickCreatePresets.activity,
       quickCreatePresets.meetingMinutes,
-      quickCreatePresets.expense,
     ]),
   ];
 }
@@ -864,13 +860,11 @@ function getCourseQuickCreateGroups(): QuickCreateGroup[] {
 function getFinanceQuickCreateGroups(): QuickCreateGroup[] {
   return [
     buildQuickCreateGroup("finance-work", "财务处理", [
-      quickCreatePresets.financeExpenses,
       quickCreatePresets.payroll,
       quickCreatePresets.financeAccounts,
       quickCreatePresets.weeklyReport,
     ]),
     buildQuickCreateGroup("finance-personal", "个人事项", [
-      quickCreatePresets.expense,
       quickCreatePresets.todo,
     ]),
   ];
@@ -881,7 +875,6 @@ function getBearhugQuickCreateGroups(): QuickCreateGroup[] {
     buildQuickCreateGroup("bearhug-store", "门店现场", [
       quickCreatePresets.activity,
       quickCreatePresets.todo,
-      quickCreatePresets.expense,
       quickCreatePresets.weeklyReport,
     ]),
   ];
@@ -1013,7 +1006,6 @@ function getManagementQuickCreateGroups(): QuickCreateGroup[] {
   const fallbackGroups = [
     buildQuickCreateGroup("collaboration", "协作事项", [
       quickCreatePresets.meetingMinutes,
-      quickCreatePresets.managementPaymentExpense,
       quickCreatePresets.weeklyReport,
       quickCreatePresets.reminder,
       quickCreatePresets.todo,
