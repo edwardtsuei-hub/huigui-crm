@@ -886,11 +886,13 @@ export function SidebarNav({
 }
 
 export function QuickCreateMenu({
+  dock = false,
   groups = quickCreateGroups,
   mobileViewport = false,
   onOpenChange,
   user,
 }: {
+  dock?: boolean;
   groups?: QuickCreateGroup[];
   mobileViewport?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -951,7 +953,11 @@ export function QuickCreateMenu({
       ) : null}
 
       <div
-        className={cn("quick-create", mobileViewport && "quick-create--mobile")}
+        className={cn(
+          "quick-create",
+          mobileViewport && "quick-create--mobile",
+          dock && "quick-create--dock",
+        )}
         ref={ref}
       >
         <button
@@ -1767,58 +1773,78 @@ export function Topbar({
 export function MobileDockNav({
   items,
   pathname,
+  quickCreateGroups,
+  user,
 }: {
   items: MobileDockItem[];
   pathname: string;
+  quickCreateGroups?: QuickCreateGroup[];
+  user: CurrentUser;
 }) {
   if (!items.length) {
     return null;
   }
 
+  const leadingItems = items.slice(0, 2);
+  const trailingItems = items.slice(2);
+
+  function renderDockItem(item: MobileDockItem) {
+    const active = getMatchScore(pathname, item.matchPrefixes) > 0;
+
+    if (item.href) {
+      return (
+        <Link
+          className={cn("mobile-dock__item", active && "active")}
+          href={item.href}
+          key={item.key}
+        >
+          <span className="mobile-dock__icon">
+            <WorkspaceIcon icon={item.icon} />
+            {item.badgeCount ? (
+              <span className="mobile-dock__badge">
+                {item.badgeCount > 99 ? "99+" : item.badgeCount}
+              </span>
+            ) : null}
+          </span>
+          <span className="mobile-dock__label">{item.label}</span>
+        </Link>
+      );
+    }
+
+    return (
+      <button
+        className={cn("mobile-dock__item", active && "active")}
+        key={item.key}
+        onClick={item.onClick}
+        type="button"
+      >
+        <span className="mobile-dock__icon">
+          <WorkspaceIcon icon={item.icon} />
+          {item.badgeCount ? (
+            <span className="mobile-dock__badge">
+              {item.badgeCount > 99 ? "99+" : item.badgeCount}
+            </span>
+          ) : null}
+        </span>
+        <span className="mobile-dock__label">{item.label}</span>
+      </button>
+    );
+  }
+
   return (
     <nav className="mobile-dock" aria-label="移动导航">
-      {items.map((item) => {
-        const active = getMatchScore(pathname, item.matchPrefixes) > 0;
-
-        if (item.href) {
-          return (
-            <Link
-              className={cn("mobile-dock__item", active && "active")}
-              href={item.href}
-              key={item.key}
-            >
-              <span className="mobile-dock__icon">
-                <WorkspaceIcon icon={item.icon} />
-                {item.badgeCount ? (
-                  <span className="mobile-dock__badge">
-                    {item.badgeCount > 99 ? "99+" : item.badgeCount}
-                  </span>
-                ) : null}
-              </span>
-              <span className="mobile-dock__label">{item.label}</span>
-            </Link>
-          );
-        }
-
-        return (
-          <button
-            className={cn("mobile-dock__item", active && "active")}
-            key={item.key}
-            onClick={item.onClick}
-            type="button"
-          >
-            <span className="mobile-dock__icon">
-              <WorkspaceIcon icon={item.icon} />
-              {item.badgeCount ? (
-                <span className="mobile-dock__badge">
-                  {item.badgeCount > 99 ? "99+" : item.badgeCount}
-                </span>
-              ) : null}
-            </span>
-            <span className="mobile-dock__label">{item.label}</span>
-          </button>
-        );
-      })}
+      {leadingItems.map(renderDockItem)}
+      {quickCreateGroups?.length ? (
+        <div className="mobile-dock__create">
+          <QuickCreateMenu
+            dock
+            groups={quickCreateGroups}
+            mobileViewport
+            user={user}
+          />
+        </div>
+      ) : null}
+      {trailingItems.map(renderDockItem)}
     </nav>
   );
 }

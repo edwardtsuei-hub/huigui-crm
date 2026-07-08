@@ -101,10 +101,13 @@ export class WecomAuthService {
     const fallbackUserId = user.wecomUserId ?? user.loginAccount ?? user.id;
     const mappedIdentity = this.resolveMappedEmployeeIdentity(fallbackUserId);
     const userId = mappedIdentity?.userId ?? mappedIdentity?.userid ?? mappedIdentity?.employeeId ?? fallbackUserId;
-    const moduleScopes = this.resolveMappedModuleScopes(mappedIdentity) ?? this.resolveEmployeeModuleScopes(
+    const moduleScopes = this.mergeModuleScopes(
+      this.resolveMappedModuleScopes(mappedIdentity),
+      this.resolveEmployeeModuleScopes(
       user.roleCode,
       user.permissions,
       `${user.roleName ?? ""} ${user.department ?? ""} ${user.title ?? ""} ${user.name ?? ""} ${user.wecomName ?? ""} ${user.loginAccount ?? ""}`
+      )
     );
     const identityId = mappedIdentity?.identityId ?? this.resolveEmployeeIdentityId(
       user.roleCode,
@@ -384,6 +387,18 @@ export class WecomAuthService {
     return scopes.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
   }
 
+  private mergeModuleScopes(...scopeGroups: Array<string[] | undefined>) {
+    const scopes = new Set<string>();
+    scopeGroups.forEach((scopeGroup) => {
+      scopeGroup?.forEach((scope) => {
+        if (scope.trim()) {
+          scopes.add(scope.trim());
+        }
+      });
+    });
+    return Array.from(scopes);
+  }
+
   private resolveEmployeeModuleScopes(roleCode: string, permissions: string[], profileText = "") {
     if (roleCode === "SUPER_ADMIN") {
       return ["platform", "schedule", "finance", "daochong", "courses", "bearhug", "ecotech", "products"];
@@ -411,8 +426,18 @@ export class WecomAuthService {
     if (/ecotech|洄归|洄歸/i.test(identityText)) {
       scopes.add("ecotech");
     }
-    if (/ecommerce|电商|電商|product|产品|產品/i.test(identityText)) {
+    if (/ecommerce|电商|電商|product|产品|產品|郭美辰|尹筱娟|yinxiaojuan/i.test(identityText)) {
       scopes.add("products");
+      scopes.add("ecommerce");
+      scopes.add("ecommerce-manager");
+      scopes.add("ecom");
+      scopes.add("ecom-weekly");
+      scopes.add("ecom-profit");
+      scopes.add("work-management");
+      scopes.add("work-report");
+      scopes.add("weekly-report");
+      scopes.add("电商");
+      scopes.add("電商");
     }
 
     return Array.from(scopes);

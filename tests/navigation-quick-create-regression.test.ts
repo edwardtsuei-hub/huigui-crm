@@ -28,7 +28,13 @@ function groupsFor(user: QuickCreateIdentity, pathname = "/work-management/home"
   return getQuickCreateGroupsForUser("management", user, pathname);
 }
 
-test("Daochong quick create exposes field and reimbursement actions", () => {
+function assertNoReimbursementLabels(labels: string[]) {
+  assert.equal(labels.includes("申请报销"), false);
+  assert.equal(labels.includes("报销审核"), false);
+  assert.equal(labels.includes("申请付款/报销"), false);
+}
+
+test("Daochong quick create hides reimbursement while keeping field actions", () => {
   const permissions = ["action.work_management.create", "action.schedule.create"];
   const labels = visibleLabels(
     groupsFor({
@@ -44,12 +50,12 @@ test("Daochong quick create exposes field and reimbursement actions", () => {
 
   assert.ok(labels.includes("创建周报"));
   assert.ok(labels.includes("添加预约"));
-  assert.ok(labels.includes("申请报销"));
   assert.ok(labels.includes("客户充值"));
+  assertNoReimbursementLabels(labels);
   assert.ok(labels.length > 1);
 });
 
-test("Finance quick create exposes review work instead of only weekly report", () => {
+test("Finance quick create hides reimbursement review while keeping finance actions", () => {
   const permissions = [
     "menu.finance",
     "page.finance.payroll",
@@ -68,10 +74,10 @@ test("Finance quick create exposes review work instead of only weekly report", (
     permissions,
   );
 
-  assert.ok(labels.includes("报销审核"));
   assert.ok(labels.includes("薪资处理"));
   assert.ok(labels.includes("财务账户"));
   assert.ok(labels.includes("创建周报"));
+  assertNoReimbursementLabels(labels);
   assert.ok(labels.length > 1);
 });
 
@@ -91,8 +97,7 @@ test("Ecommerce quick create uses ecommerce-specific weekly entry", () => {
 
   assert.ok(labels.includes("电商周报"));
   assert.ok(labels.includes("创建活动"));
-  assert.ok(labels.includes("申请报销"));
-  assert.equal(labels.includes("报销审核"), false);
+  assertNoReimbursementLabels(labels);
 });
 
 test("Ecotech quick create keeps CRM business action separate", () => {
@@ -116,7 +121,7 @@ test("Ecotech quick create keeps CRM business action separate", () => {
   assert.ok(labels.includes("新增客户"));
   assert.ok(labels.includes("创建周报"));
   assert.ok(labels.includes("创建活动"));
-  assert.ok(labels.includes("申请报销"));
+  assertNoReimbursementLabels(labels);
 });
 
 test("Daochong page path uses Daochong actions even for admin preview", () => {
@@ -137,6 +142,38 @@ test("Daochong page path uses Daochong actions even for admin preview", () => {
 
   assert.ok(labels.includes("添加预约"));
   assert.ok(labels.includes("客户充值"));
+});
+
+test("Management founder quick create starts with minutes and weekly report", () => {
+  const permissions = [
+    "action.work_management.create",
+    "action.schedule.create",
+    "action.management.member.create",
+    "action.management.role.update",
+  ];
+  const labels = visibleLabels(
+    groupsFor({
+      username: "admin",
+      displayName: "崔以达",
+      loginAccount: "admin",
+      department: "管理中心",
+      title: "创始人",
+      roleCode: "SUPER_ADMIN",
+      roleName: "超级管理员",
+      wecomUserId: "edwardtsuei",
+      permissions,
+    }),
+    permissions,
+  );
+
+  assert.deepEqual(labels.slice(0, 3), [
+    "会议纪要",
+    "创建周报",
+    "新增提醒",
+  ]);
+  assertNoReimbursementLabels(labels);
+  assert.ok(labels.includes("新增成员"));
+  assert.ok(labels.length > 3);
 });
 
 async function main() {

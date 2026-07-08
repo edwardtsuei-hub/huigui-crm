@@ -6,7 +6,7 @@ import {
   Post,
   Query,
   Req,
-  Res
+  Res,
 } from "@nestjs/common";
 import type { Request, Response } from "express";
 import { Public } from "../../common/decorators/public.decorator";
@@ -17,7 +17,7 @@ import {
   WecomCallbackQueryDto,
   WecomLoginDto,
   WecomOAuthCallbackDto,
-  WecomSendMessageDto
+  WecomSendMessageDto,
 } from "./dto/wecom.dto";
 import { WecomAuthService } from "./wecom-auth.service";
 import { WecomCalendarService } from "./wecom-calendar.service";
@@ -77,7 +77,7 @@ export class WecomController {
     private readonly wecomService: WecomService,
     private readonly wecomAuthService: WecomAuthService,
     private readonly wecomMessageService: WecomMessageService,
-    private readonly wecomCalendarService: WecomCalendarService
+    private readonly wecomCalendarService: WecomCalendarService,
   ) {}
 
   @Public()
@@ -88,42 +88,71 @@ export class WecomController {
 
   @Public()
   @Get("oauth/login-url")
-  getOAuthLoginUrl(@Req() req: Request) {
+  getOAuthLoginUrl(
+    @Req() req: Request,
+    @Query("next") nextPath?: string,
+    @Query("mode") mode?: string,
+  ) {
     const origin = this.resolvePublicOrigin(req);
     const config = this.wecomAuthService.getClientConfig(origin);
-    const redirectUri = config.redirectUri || `${origin ?? "https://management.hui-health.com"}/login/wecom/callback`;
-    const state = `employee-launch-${Date.now().toString(36)}`;
-    const params = new URLSearchParams({
+    const targetPath = this.resolveSafeNextPath(nextPath);
+    const callbackUri = this.appendNextPathToCallbackUri(
+      config.redirectUri ||
+        `${origin ?? "https://management.hui-health.com"}/login/wecom/callback`,
+      targetPath,
+    );
+    const state = "wecom-login";
+    const agentId = config.agentId || "1000025";
+    const oauthParams = new URLSearchParams({
       appid: config.corpId,
-      agentid: config.agentId || "1000025",
-      redirect_uri: redirectUri,
-      state
+      redirect_uri: callbackUri,
+      response_type: "code",
+      scope: "snsapi_base",
+      state,
+      agentid: agentId,
     });
+    const qrParams = new URLSearchParams({
+      appid: config.corpId,
+      agentid: agentId,
+      redirect_uri: callbackUri,
+      state,
+    });
+    const oauthLoginUrl = `https://open.weixin.qq.com/connect/oauth2/authorize?${oauthParams.toString()}#wechat_redirect`;
+    const qrLoginUrl = `https://open.work.weixin.qq.com/wwopen/sso/qrConnect?${qrParams.toString()}`;
+    const loginUrl = mode === "qr" ? qrLoginUrl : oauthLoginUrl;
 
     return {
-      ok: Boolean(config.corpId && (config.agentId || "1000025") && redirectUri),
-      loginUrl: `https://open.work.weixin.qq.com/wwopen/sso/qrConnect?${params.toString()}`,
-      redirectUri,
-      callbackDomain: this.resolveDomain(redirectUri),
-      agentId: config.agentId || "1000025",
+      ok: Boolean(config.corpId && agentId && callbackUri),
+      loginUrl,
+      oauthLoginUrl,
+      qrLoginUrl,
+      redirectUri: callbackUri,
+      callbackDomain: this.resolveDomain(callbackUri),
+      agentId,
       corpId: config.corpId,
-      state
+      state,
     };
   }
 
   @Public()
   @Post("login")
   async login(@Body() dto: WecomLoginDto, @Req() req: Request) {
-    return this.wecomAuthService.loginWithCode(dto.code, this.resolvePublicOrigin(req));
+    return this.wecomAuthService.loginWithCode(
+      dto.code,
+      this.resolvePublicOrigin(req),
+    );
   }
 
   @Public()
   @Post("oauth/callback")
-  async handleOAuthCallback(@Body() dto: WecomOAuthCallbackDto, @Req() req: Request) {
+  async handleOAuthCallback(
+    @Body() dto: WecomOAuthCallbackDto,
+    @Req() req: Request,
+  ) {
     return this.wecomAuthService.loginWithOAuthCallback(
       dto.code,
       dto.state,
-      this.resolvePublicOrigin(req)
+      this.resolvePublicOrigin(req),
     );
   }
 
@@ -140,7 +169,9 @@ export class WecomController {
         message: config.enabled
           ? "企业微信当前为 dry-run 模式，未发起真实连接测试。"
           : "企业微信基础配置未补齐，暂不能发起真实连接测试。",
-        warnings: config.enabled ? ["WECOM_DRY_RUN 已开启。"] : ["请确认 CorpID、AgentId 和应用 Secret 已配置。"],
+        warnings: config.enabled
+          ? ["WECOM_DRY_RUN 已开启。"]
+          : ["请确认 CorpID、AgentId 和应用 Secret 已配置。"],
         checkedAt,
       };
     }
@@ -149,7 +180,7 @@ export class WecomController {
       const response = await this.wecomService.get<WecomAgentGetResponse>(
         "/cgi-bin/agent/get",
         { agentid: config.agentId },
-        origin
+        origin,
       );
 
       return {
@@ -172,8 +203,11 @@ export class WecomController {
       return {
         ok: false,
         mode: "live",
-        message: error instanceof Error ? error.message : "企业微信连接测试失败。",
-        warnings: ["请检查企业微信应用 Secret、可信 IP、应用可见范围和 AgentId。"],
+        message:
+          error instanceof Error ? error.message : "企业微信连接测试失败。",
+        warnings: [
+          "请检查企业微信应用 Secret、可信 IP、应用可见范围和 AgentId。",
+        ],
         checkedAt,
       };
     }
@@ -192,7 +226,9 @@ export class WecomController {
         message: config.enabled
           ? "企业微信当前为 dry-run 模式，已回退本地成员档案。"
           : "企业微信通讯录配置未补齐，已回退本地成员档案。",
-        warnings: config.enabled ? ["WECOM_DRY_RUN 已开启。"] : ["请确认 CorpID、AgentId 和应用 Secret 已配置。"],
+        warnings: config.enabled
+          ? ["WECOM_DRY_RUN 已开启。"]
+          : ["请确认 CorpID、AgentId 和应用 Secret 已配置。"],
         loadedAt,
         departments: [],
         members: [],
@@ -204,12 +240,12 @@ export class WecomController {
         this.wecomService.get<WecomDepartmentListResponse>(
           "/cgi-bin/department/list",
           undefined,
-          origin
+          origin,
         ),
         this.wecomService.get<WecomSimpleUserListResponse>(
           "/cgi-bin/user/simplelist",
           { department_id: 1, fetch_child: 1 },
-          origin
+          origin,
         ),
       ]);
 
@@ -258,19 +294,29 @@ export class WecomController {
     return this.wecomAuthService.bindCurrentUserWithCode(
       req.user.id,
       dto.code,
-      this.resolvePublicOrigin(req)
+      this.resolvePublicOrigin(req),
     );
   }
 
   @Permissions("action.management.member.update")
   @Post("message/send")
-  async sendMessage(@Body() dto: WecomSendMessageDto) {
+  async sendMessage(
+    @Body() dto: WecomSendMessageDto,
+    @Req() req: RequestWithUser,
+  ) {
     if (dto.msgType !== "text") {
       throw new BadRequestException("当前仅支持文本消息");
     }
 
-    const content = this.wecomMessageService.formatTextMessage(dto.title, dto.content);
-    await this.wecomMessageService.sendTextMessage(dto.toUser, content);
+    const content = this.wecomMessageService.formatTextMessage(
+      dto.title,
+      dto.content,
+    );
+    await this.wecomMessageService.sendTextMessage(
+      dto.toUser,
+      content,
+      this.resolvePublicOrigin(req),
+    );
 
     return { success: true };
   }
@@ -287,9 +333,12 @@ export class WecomController {
   async handleCallback(
     @Query() query: WecomCallbackQueryDto,
     @Req() req: XmlRequest,
-    @Res() res: Response
+    @Res() res: Response,
   ) {
-    await this.wecomService.handleCallback(query, typeof req.body === "string" ? req.body : "");
+    await this.wecomService.handleCallback(
+      query,
+      typeof req.body === "string" ? req.body : "",
+    );
     res.type("text/plain").send("success");
   }
 
@@ -317,10 +366,14 @@ export class WecomController {
   }
 
   private resolvePublicOrigin(req: Request) {
-    const proto = String(req.headers["x-forwarded-proto"] ?? req.protocol ?? "https")
+    const proto = String(
+      req.headers["x-forwarded-proto"] ?? req.protocol ?? "https",
+    )
       .split(",")[0]
       .trim();
-    const host = String(req.headers["x-forwarded-host"] ?? req.headers.host ?? "")
+    const host = String(
+      req.headers["x-forwarded-host"] ?? req.headers.host ?? "",
+    )
       .split(",")[0]
       .trim();
 
@@ -333,5 +386,29 @@ export class WecomController {
     } catch {
       return "";
     }
+  }
+
+  private resolveSafeNextPath(value?: string) {
+    const trimmed = value?.trim();
+    if (
+      !trimmed ||
+      !trimmed.startsWith("/") ||
+      trimmed.startsWith("//") ||
+      trimmed.startsWith("/login")
+    ) {
+      return undefined;
+    }
+
+    return trimmed;
+  }
+
+  private appendNextPathToCallbackUri(callbackUri: string, nextPath?: string) {
+    if (!nextPath) {
+      return callbackUri;
+    }
+
+    const url = new URL(callbackUri);
+    url.searchParams.set("next", nextPath);
+    return url.toString();
   }
 }

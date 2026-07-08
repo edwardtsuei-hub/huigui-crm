@@ -9,6 +9,7 @@ import { WecomCalendarService } from "../apps/api/src/modules/wecom/wecom-calend
 import { resolveWecomAppConfig } from "../apps/api/src/modules/wecom/wecom-app-config";
 import { WecomMessageService } from "../apps/api/src/modules/wecom/wecom-message.service";
 import { WecomService } from "../apps/api/src/modules/wecom/wecom.service";
+import { isWecomBrowser } from "../apps/web/lib/wecom-auth";
 
 Logger.overrideLogger(false);
 
@@ -58,6 +59,19 @@ test("WeCom app config does not fall back to CRM credentials for employee domain
   assert.equal(resolved.appKey, "employee");
   assert.equal(resolved.agentId, "");
   assert.equal(resolved.secret, "");
+});
+
+test("WeCom browser detection recognizes wxwork clients", () => {
+  assert.equal(
+    isWecomBrowser(
+      "Mozilla/5.0 MicroMessenger/8.0.48 wxwork/4.1.30 Language/zh",
+    ),
+    true,
+  );
+  assert.equal(
+    isWecomBrowser("Mozilla/5.0 Chrome/125.0.0.0 Safari/537.36"),
+    false,
+  );
 });
 
 function createCalendarPrisma(existing?: Record<string, unknown> | null) {

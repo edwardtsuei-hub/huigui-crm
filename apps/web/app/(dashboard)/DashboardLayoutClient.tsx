@@ -24,6 +24,7 @@ import {
   DATA_MODE_CHANGED_EVENT,
   NOTIFICATIONS_CHANGED_EVENT,
   apiFetch,
+  buildLoginRedirectPath,
   clearAuth,
   fetchApi,
   getCurrentUser,
@@ -35,6 +36,7 @@ import {
 import type { SiteBrand } from "../../lib/site-brand";
 import {
   buildWecomLoginUrl,
+  isWecomBrowser,
   type WecomConfig,
 } from "../../lib/wecom-auth";
 
@@ -49,6 +51,11 @@ type NotificationResponse = {
     createdAt: string;
     readAt: string | null;
   }>;
+};
+
+type WecomOAuthLoginUrlResponse = {
+  ok?: boolean;
+  loginUrl?: string;
 };
 
 export default function DashboardLayoutClient({
@@ -82,30 +89,70 @@ export default function DashboardLayoutClient({
   });
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function redirectUnauthenticatedUser() {
+      const returnPath =
+        typeof window !== "undefined"
+          ? `${window.location.pathname}${window.location.search}${window.location.hash}`
+          : pathname;
+
+      if (
+        brand.key === "management" &&
+        typeof window !== "undefined" &&
+        isWecomBrowser()
+      ) {
+        try {
+          const params = new URLSearchParams({ next: returnPath });
+          const response = await fetchApi(
+            `/wecom/oauth/login-url?${params.toString()}`,
+          );
+          if (response.ok) {
+            const payload =
+              (await response.json()) as WecomOAuthLoginUrlResponse;
+            if (!cancelled && payload.ok && payload.loginUrl) {
+              window.location.assign(payload.loginUrl);
+              return;
+            }
+          }
+        } catch {
+          // Fall back to the regular login page if enterprise WeChat OAuth is unavailable.
+        }
+      }
+
+      if (cancelled) {
+        return;
+      }
+
+      const loginPath = buildLoginRedirectPath(returnPath);
+      setAuthChecked(true);
+      router.replace(loginPath);
+
+      if (typeof window !== "undefined") {
+        window.setTimeout(() => {
+          if (window.location.pathname !== "/login") {
+            window.location.replace(loginPath);
+          }
+        }, 160);
+      }
+    }
+
     const token = getToken();
     const currentUser = getCurrentUser();
 
     if (!token || !currentUser) {
       clearAuth();
       setUser(null);
+      void redirectUnauthenticatedUser();
+    } else {
+      setUser(currentUser);
       setAuthChecked(true);
-
-      router.replace("/login");
-
-      if (typeof window !== "undefined") {
-        window.setTimeout(() => {
-          if (window.location.pathname !== "/login") {
-            window.location.replace("/login");
-          }
-        }, 160);
-      }
-
-      return;
     }
 
-    setUser(currentUser);
-    setAuthChecked(true);
-  }, [router]);
+    return () => {
+      cancelled = true;
+    };
+  }, [brand.key, pathname, router]);
 
   useEffect(() => {
     let cancelled = false;
@@ -158,7 +205,11 @@ export default function DashboardLayoutClient({
   }, []);
 
   useEffect(() => {
-    if (typeof document === "undefined" || !mobileViewport || !mobileSidebarOpen) {
+    if (
+      typeof document === "undefined" ||
+      !mobileViewport ||
+      !mobileSidebarOpen
+    ) {
       return;
     }
 
@@ -272,7 +323,10 @@ export default function DashboardLayoutClient({
     window.addEventListener(DATA_MODE_CHANGED_EVENT, handleDataModeChanged);
 
     return () => {
-      window.removeEventListener(DATA_MODE_CHANGED_EVENT, handleDataModeChanged);
+      window.removeEventListener(
+        DATA_MODE_CHANGED_EVENT,
+        handleDataModeChanged,
+      );
     };
   }, []);
 
@@ -440,9 +494,7 @@ export default function DashboardLayoutClient({
   if (!user) {
     return (
       <main className="screen-center">
-        <div className="panel compact">
-          登录信息已失效，正在返回登录页...
-        </div>
+        <div className="panel compact">登录信息已失效，正在返回登录页...</div>
       </main>
     );
   }
@@ -450,142 +502,153 @@ export default function DashboardLayoutClient({
   return (
     <SiteBrandProvider brandKey={brand.key}>
       <AppShell
-      collapsed={sidebarCollapsed}
-      mobileChromeCondensed={mobileChromeCondensed}
-      mobileDock={
-        mobileDockItems.length ? (
-          <MobileDockNav
-            items={mobileDockItems}
+        collapsed={sidebarCollapsed}
+        mobileChromeCondensed={mobileChromeCondensed}
+        mobileDock={
+          mobileDockItems.length ? (
+            <MobileDockNav
+              items={mobileDockItems}
+              pathname={pathname}
+              quickCreateGroups={quickCreateMenuGroups}
+              user={user}
+            />
+          ) : null
+        }
+        mobileViewport={mobileViewport}
+        sidebar={
+          <SidebarNav
+            brand={brand}
+            collapsed={sidebarCollapsed}
+            items={navigationConfig.items}
+            mobileOpen={mobileSidebarOpen}
+            mobileViewport={mobileViewport}
+            notificationCount={unreadCount}
+            onCloseMobileSidebar={() => setMobileSidebarOpen(false)}
+            onToggleCollapse={() => {
+              const next = !sidebarCollapsed;
+              setSidebarCollapsed(next);
+              if (typeof window !== "undefined") {
+                window.localStorage.setItem(
+                  SIDEBAR_COLLAPSED_STORAGE_KEY,
+                  next ? "1" : "0",
+                );
+              }
+            }}
             pathname={pathname}
+            user={user}
           />
-        ) : null
-      }
-      mobileViewport={mobileViewport}
-      sidebar={
-        <SidebarNav
-          brand={brand}
-          collapsed={sidebarCollapsed}
-          items={navigationConfig.items}
-          mobileOpen={mobileSidebarOpen}
-          mobileViewport={mobileViewport}
-          notificationCount={unreadCount}
-          onCloseMobileSidebar={() => setMobileSidebarOpen(false)}
-          onToggleCollapse={() => {
-            const next = !sidebarCollapsed;
-            setSidebarCollapsed(next);
-            if (typeof window !== "undefined") {
-              window.localStorage.setItem(
-                SIDEBAR_COLLAPSED_STORAGE_KEY,
-                next ? "1" : "0",
-              );
+        }
+        topbar={
+          <Topbar
+            notificationsOpen={drawerOpen}
+            notificationCount={unreadCount}
+            mobileChromeCondensed={mobileChromeCondensed}
+            mobileViewport={mobileViewport}
+            onLogout={() => {
+              clearAuth();
+              router.replace("/login");
+            }}
+            onToggleMobileSidebar={() =>
+              setMobileSidebarOpen((current) => !current)
             }
-          }}
-          pathname={pathname}
-          user={user}
-        />
-      }
-      topbar={
-        <Topbar
-          notificationsOpen={drawerOpen}
-          notificationCount={unreadCount}
-          mobileChromeCondensed={mobileChromeCondensed}
-          mobileViewport={mobileViewport}
-          onLogout={() => {
-            clearAuth();
-            router.replace("/login");
-          }}
-          onToggleMobileSidebar={() =>
-            setMobileSidebarOpen((current) => !current)
-          }
-          onToggleNotifications={() => setDrawerOpen((current) => !current)}
-          entrySearchCatalog={navigationConfig.searchCatalog}
-          pageMeta={pageMeta}
-          pathname={pathname}
-          quickCreateGroups={quickCreateMenuGroups}
-          recordDataMode={dataMode}
-          searchDescription={navigationConfig.searchDescription}
-          searchEmptyState={navigationConfig.searchEmptyState}
-          searchFooter={navigationConfig.searchFooter}
-          searchModules={navigationConfig.searchModules}
-          searchNoResults={navigationConfig.searchNoResults}
-          searchPlaceholder={navigationConfig.searchPlaceholder}
-          user={user}
+            onToggleNotifications={() => setDrawerOpen((current) => !current)}
+            entrySearchCatalog={navigationConfig.searchCatalog}
+            pageMeta={pageMeta}
+            pathname={pathname}
+            quickCreateGroups={quickCreateMenuGroups}
+            recordDataMode={dataMode}
+            searchDescription={navigationConfig.searchDescription}
+            searchEmptyState={navigationConfig.searchEmptyState}
+            searchFooter={navigationConfig.searchFooter}
+            searchModules={navigationConfig.searchModules}
+            searchNoResults={navigationConfig.searchNoResults}
+            searchPlaceholder={navigationConfig.searchPlaceholder}
+            user={user}
           />
-      }
-    >
-      {children}
+        }
+      >
+        {children}
 
-      {requiresWecomBinding ? (
-        <div className="wecom-bind-modal" role="dialog" aria-modal="true">
-          <div className="wecom-bind-modal__card">
-            <div className="wecom-bind-modal__badge">企业微信绑定</div>
-            <div className="section-heading">
-              <h3>请先绑定本人企业微信</h3>
-              <p>
-                {user.displayName || user.name || user.username}，你的系统账号已经通过密码登录。
-                完成企业微信绑定后，后续可以接收通知、同步日程，并使用扫码登录。
-              </p>
-            </div>
+        {requiresWecomBinding ? (
+          <div className="wecom-bind-modal" role="dialog" aria-modal="true">
+            <div className="wecom-bind-modal__card">
+              <div className="wecom-bind-modal__badge">企业微信绑定</div>
+              <div className="section-heading">
+                <h3>请先绑定本人企业微信</h3>
+                <p>
+                  {user.displayName || user.name || user.username}
+                  ，你的系统账号已经通过密码登录。
+                  完成企业微信绑定后，后续可以接收通知、同步日程，并使用扫码登录。
+                </p>
+              </div>
 
-            {wecomBindingError ? (
-              <div className="danger-text small">{wecomBindingError}</div>
-            ) : null}
+              {wecomBindingError ? (
+                <div className="danger-text small">{wecomBindingError}</div>
+              ) : null}
 
-            <div className="drawer-footer-actions">
-              <button
-                className="button secondary"
-                onClick={() => {
-                  clearAuth();
-                  router.replace("/login");
-                }}
-                type="button"
-              >
-                退出当前账号
-              </button>
-              <button
-                className="button"
-                disabled={wecomBindingLoading || !wecomConfig?.enabled}
-                onClick={() => {
-                  if (!wecomConfig?.enabled || !wecomConfig.corpId || !wecomConfig.agentId) {
-                    setWecomBindingError("企业微信登录尚未配置完整，请联系管理员。");
-                    return;
-                  }
+              <div className="drawer-footer-actions">
+                <button
+                  className="button secondary"
+                  onClick={() => {
+                    clearAuth();
+                    router.replace("/login");
+                  }}
+                  type="button"
+                >
+                  退出当前账号
+                </button>
+                <button
+                  className="button"
+                  disabled={wecomBindingLoading || !wecomConfig?.enabled}
+                  onClick={() => {
+                    if (
+                      !wecomConfig?.enabled ||
+                      !wecomConfig.corpId ||
+                      !wecomConfig.agentId
+                    ) {
+                      setWecomBindingError(
+                        "企业微信登录尚未配置完整，请联系管理员。",
+                      );
+                      return;
+                    }
 
-                  setWecomBindingLoading(true);
-                  setWecomBindingError("");
+                    setWecomBindingLoading(true);
+                    setWecomBindingError("");
 
-                  try {
-                    window.location.assign(buildWecomLoginUrl(wecomConfig, "bind"));
-                  } catch (requestError) {
-                    setWecomBindingLoading(false);
-                    setWecomBindingError(
-                      requestError instanceof Error
-                        ? requestError.message
-                        : "企业微信登录回调地址不可用",
-                    );
-                  }
-                }}
-                type="button"
-              >
-                {!wecomConfig?.enabled
-                  ? "企业微信入口未配置"
-                  : wecomBindingLoading
-                    ? "正在打开扫码..."
-                    : "扫码绑定企业微信"}
-              </button>
+                    try {
+                      window.location.assign(
+                        buildWecomLoginUrl(wecomConfig, "bind"),
+                      );
+                    } catch (requestError) {
+                      setWecomBindingLoading(false);
+                      setWecomBindingError(
+                        requestError instanceof Error
+                          ? requestError.message
+                          : "企业微信登录回调地址不可用",
+                      );
+                    }
+                  }}
+                  type="button"
+                >
+                  {!wecomConfig?.enabled
+                    ? "企业微信入口未配置"
+                    : wecomBindingLoading
+                      ? "正在打开扫码..."
+                      : "扫码绑定企业微信"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
 
-      <NotificationDrawer
-        error={drawerError}
-        items={drawerItems}
-        loading={drawerLoading}
-        onClose={() => setDrawerOpen(false)}
-        open={drawerOpen}
-        unreadCount={unreadCount}
-      />
+        <NotificationDrawer
+          error={drawerError}
+          items={drawerItems}
+          loading={drawerLoading}
+          onClose={() => setDrawerOpen(false)}
+          open={drawerOpen}
+          unreadCount={unreadCount}
+        />
       </AppShell>
     </SiteBrandProvider>
   );

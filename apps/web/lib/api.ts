@@ -4,6 +4,9 @@ export const NOTIFICATIONS_CHANGED_EVENT = "huigui:notifications-changed";
 export const DATA_MODE_CHANGED_EVENT = "huigui:data-mode-changed";
 const AUTH_EXPIRES_AT_STORAGE_KEY = "huigui_auth_expires_at";
 const AUTH_LAST_LOGIN_AT_STORAGE_KEY = "huigui_auth_last_login_at";
+const AUTH_TOKEN_STORAGE_KEY = "huigui_token";
+const AUTH_USER_STORAGE_KEY = "huigui_user";
+const EMPLOYEE_AUTH_TOKEN_STORAGE_KEY = "da-ai-employee-auth-token-v1";
 const RECORD_SCOPE_STORAGE_KEY = "huigui-record-scope";
 const TEST_BATCH_ID_STORAGE_KEY = "huigui-test-batch-id";
 const TEST_BATCH_NAME_STORAGE_KEY = "huigui-test-batch-name";
@@ -48,7 +51,8 @@ export type RecordDataMode = {
 };
 
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "http://localhost:4000/api";
+  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ??
+  "http://localhost:4000/api";
 
 const API_FALLBACK_STATUS_CODES = new Set([404, 405, 502, 503, 504]);
 const LOCAL_API_PORTS = [3001, 4000];
@@ -81,32 +85,61 @@ export async function fetchApi(path: string, init?: RequestInit) {
     return retryFetchWithFallbacks(path, init, error);
   }
 
-  if (!shouldRetryWithSameOrigin(response.status)) {
-    if (!shouldFallbackToLocalApi(response.status)) {
-      return response;
-    }
-  } else {
-    return fetch(buildApiUrl("/api", path), init);
+  if (shouldRetryWithSameOrigin(response.status)) {
+    response = await fetch(buildApiUrl("/api", path), init);
   }
 
-  return fetch(buildApiUrl(getLocalApiBaseUrl(), path), init);
+  if (!shouldFallbackToLocalApi(response.status)) {
+    return response;
+  }
+
+  const fallbackApiResponse = await fetchWithFallbackBaseUrls(
+    getFallbackApiBaseUrls(),
+    path,
+    init,
+    response,
+  );
+  return fallbackApiResponse ?? response;
 }
 
-async function retryFetchWithFallbacks(path: string, init: RequestInit | undefined, originalError: unknown) {
-  const fallbackBaseUrls = getFallbackApiBaseUrls();
+async function retryFetchWithFallbacks(
+  path: string,
+  init: RequestInit | undefined,
+  originalError: unknown,
+) {
+  const response = await fetchWithFallbackBaseUrls(
+    getFallbackApiBaseUrls(),
+    path,
+    init,
+  );
+  if (response) {
+    return response;
+  }
 
-  for (const baseUrl of fallbackBaseUrls) {
+  throw originalError;
+}
+
+async function fetchWithFallbackBaseUrls(
+  baseUrls: string[],
+  path: string,
+  init: RequestInit | undefined,
+  fallbackResponse?: Response,
+) {
+  let lastResponse = fallbackResponse;
+
+  for (const baseUrl of baseUrls) {
     try {
       const response = await fetch(buildApiUrl(baseUrl, path), init);
       if (!API_FALLBACK_STATUS_CODES.has(response.status)) {
         return response;
       }
+      lastResponse = response;
     } catch {
       continue;
     }
   }
 
-  throw originalError;
+  return lastResponse;
 }
 
 function getFallbackApiBaseUrls() {
@@ -151,7 +184,10 @@ function getFallbackApiBaseUrls() {
 }
 
 function shouldFallbackToLocalApi(status: number) {
-  if (typeof window === "undefined" || ![404, 405, 502, 503, 504].includes(status)) {
+  if (
+    typeof window === "undefined" ||
+    ![404, 405, 502, 503, 504].includes(status)
+  ) {
     return false;
   }
 
@@ -168,14 +204,6 @@ function shouldFallbackToLocalApi(status: number) {
   }
 }
 
-function getLocalApiBaseUrl() {
-  if (typeof window === "undefined") {
-    return "http://127.0.0.1:3001/api";
-  }
-
-  return `${window.location.protocol}//${window.location.hostname}:3001/api`;
-}
-
 export function getToken() {
   if (typeof window === "undefined") {
     return null;
@@ -185,7 +213,7 @@ export function getToken() {
     return null;
   }
 
-  return window.localStorage.getItem("huigui_token");
+  return window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
 }
 
 export function getCurrentUser() {
@@ -197,7 +225,7 @@ export function getCurrentUser() {
     return null;
   }
 
-  const raw = window.localStorage.getItem("huigui_user");
+  const raw = window.localStorage.getItem(AUTH_USER_STORAGE_KEY);
   if (!raw) {
     return null;
   }
@@ -217,18 +245,58 @@ export function setAuth(payload: AuthPayload) {
   }
 
   const now = new Date();
-  window.localStorage.setItem("huigui_token", accessToken);
-  window.localStorage.setItem("huigui_user", JSON.stringify(payload.user));
-  window.localStorage.setItem(AUTH_LAST_LOGIN_AT_STORAGE_KEY, now.toISOString());
+  window.localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, accessToken);
+  window.localStorage.setItem(EMPLOYEE_AUTH_TOKEN_STORAGE_KEY, accessToken);
+  window.localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(payload.user));
+  window.localStorage.setItem(
+    AUTH_LAST_LOGIN_AT_STORAGE_KEY,
+    now.toISOString(),
+  );
   window.localStorage.setItem(
     AUTH_EXPIRES_AT_STORAGE_KEY,
     buildAuthExpiryDate(now).toISOString(),
   );
 }
 
+function isSafeReturnPath(path?: string | null) {
+  return Boolean(
+    path &&
+    path.startsWith("/") &&
+    !path.startsWith("//") &&
+    !path.startsWith("/login"),
+  );
+}
+
+function getCurrentReturnPath() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const path = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  return isSafeReturnPath(path) ? path : null;
+}
+
+export function buildLoginRedirectPath(returnPath?: string | null) {
+  const safeReturnPath = isSafeReturnPath(returnPath)
+    ? returnPath
+    : getCurrentReturnPath();
+  return safeReturnPath
+    ? `/login?next=${encodeURIComponent(safeReturnPath)}`
+    : "/login";
+}
+
+export function redirectToLogin() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.location.href = buildLoginRedirectPath();
+}
+
 export function clearAuth() {
-  window.localStorage.removeItem("huigui_token");
-  window.localStorage.removeItem("huigui_user");
+  window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+  window.localStorage.removeItem(EMPLOYEE_AUTH_TOKEN_STORAGE_KEY);
+  window.localStorage.removeItem(AUTH_USER_STORAGE_KEY);
   window.localStorage.removeItem(AUTH_EXPIRES_AT_STORAGE_KEY);
   window.localStorage.removeItem(AUTH_LAST_LOGIN_AT_STORAGE_KEY);
   window.localStorage.removeItem(RECORD_SCOPE_STORAGE_KEY);
@@ -247,8 +315,8 @@ function hasValidAuthSession() {
     return false;
   }
 
-  const token = window.localStorage.getItem("huigui_token");
-  const rawUser = window.localStorage.getItem("huigui_user");
+  const token = window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+  const rawUser = window.localStorage.getItem(AUTH_USER_STORAGE_KEY);
   if (!token || !rawUser) {
     return false;
   }
@@ -256,7 +324,10 @@ function hasValidAuthSession() {
   const expiresAt = window.localStorage.getItem(AUTH_EXPIRES_AT_STORAGE_KEY);
   if (!expiresAt) {
     const now = new Date();
-    window.localStorage.setItem(AUTH_LAST_LOGIN_AT_STORAGE_KEY, now.toISOString());
+    window.localStorage.setItem(
+      AUTH_LAST_LOGIN_AT_STORAGE_KEY,
+      now.toISOString(),
+    );
     window.localStorage.setItem(
       AUTH_EXPIRES_AT_STORAGE_KEY,
       buildAuthExpiryDate(now).toISOString(),
@@ -265,7 +336,10 @@ function hasValidAuthSession() {
   }
 
   const expiryDate = new Date(expiresAt);
-  if (Number.isNaN(expiryDate.getTime()) || expiryDate.getTime() <= Date.now()) {
+  if (
+    Number.isNaN(expiryDate.getTime()) ||
+    expiryDate.getTime() <= Date.now()
+  ) {
     clearAuth();
     return false;
   }
@@ -287,7 +361,9 @@ export function getRecordDataMode(): RecordDataMode {
       ? "TEST"
       : "REAL";
   const testBatchId = window.localStorage.getItem(TEST_BATCH_ID_STORAGE_KEY);
-  const testBatchName = window.localStorage.getItem(TEST_BATCH_NAME_STORAGE_KEY);
+  const testBatchName = window.localStorage.getItem(
+    TEST_BATCH_NAME_STORAGE_KEY,
+  );
 
   if (scope === "TEST" && testBatchId) {
     return {
@@ -317,7 +393,10 @@ export function setRecordDataMode(mode: {
     window.localStorage.setItem(RECORD_SCOPE_STORAGE_KEY, "TEST");
     window.localStorage.setItem(TEST_BATCH_ID_STORAGE_KEY, mode.testBatchId);
     if (mode.testBatchName) {
-      window.localStorage.setItem(TEST_BATCH_NAME_STORAGE_KEY, mode.testBatchName);
+      window.localStorage.setItem(
+        TEST_BATCH_NAME_STORAGE_KEY,
+        mode.testBatchName,
+      );
     } else {
       window.localStorage.removeItem(TEST_BATCH_NAME_STORAGE_KEY);
     }
@@ -367,8 +446,10 @@ export function canMaintainPayroll(user: CurrentUser | null | undefined) {
     return false;
   }
 
-  return ["SUPER_ADMIN", "ADMIN", "FINANCE"].includes(user.roleCode)
-    || Boolean(user.permissions?.includes("action.payroll.publish"));
+  return (
+    ["SUPER_ADMIN", "ADMIN", "FINANCE"].includes(user.roleCode) ||
+    Boolean(user.permissions?.includes("action.payroll.publish"))
+  );
 }
 
 export function isExecutionSalesRole(user: CurrentUser | null | undefined) {
@@ -408,9 +489,9 @@ export async function readErrorMessage(response: Response) {
   const contentType = response.headers.get("content-type") ?? "";
 
   if (contentType.includes("application/json")) {
-    const payload = (await response.json().catch(() => null)) as
-      | { message?: string | string[] }
-      | null;
+    const payload = (await response.json().catch(() => null)) as {
+      message?: string | string[];
+    } | null;
 
     if (Array.isArray(payload?.message)) {
       return payload.message.join("；");
@@ -435,7 +516,10 @@ export async function readErrorMessage(response: Response) {
   return normalizedText;
 }
 
-export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+export async function apiFetch<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
   const token = getToken();
   const dataMode = getRecordDataMode();
   const isFormDataBody =
@@ -449,15 +533,13 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
       ...(dataMode.scope === "TEST" && dataMode.testBatchId
         ? { "x-huigui-test-batch-id": dataMode.testBatchId }
         : {}),
-      ...(init?.headers ?? {})
-    }
+      ...(init?.headers ?? {}),
+    },
   });
 
   if (response.status === 401) {
     clearAuth();
-    if (typeof window !== "undefined") {
-      window.location.href = "/login";
-    }
+    redirectToLogin();
     throw new Error("登录已失效");
   }
 
@@ -479,15 +561,13 @@ export async function apiFetchBlob(path: string, init?: RequestInit) {
       ...(dataMode.scope === "TEST" && dataMode.testBatchId
         ? { "x-huigui-test-batch-id": dataMode.testBatchId }
         : {}),
-      ...(init?.headers ?? {})
-    }
+      ...(init?.headers ?? {}),
+    },
   });
 
   if (response.status === 401) {
     clearAuth();
-    if (typeof window !== "undefined") {
-      window.location.href = "/login";
-    }
+    redirectToLogin();
     throw new Error("登录已失效");
   }
 
